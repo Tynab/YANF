@@ -29,17 +29,92 @@ namespace YANF
         /// </summary>
         private void InitializeComponent()
         {
+            this.yanCmb2 = new YANF.Control.YANCmb();
+            this.yanCmb1 = new YANF.Control.YANCmb();
             this.yanPic1 = new YANF.Control.YANPic();
             this.yanBtn2 = new YANF.Control.YANBtn();
             this.yanBtn1 = new YANF.Control.YANBtn();
-            this.yanCmb1 = new YANF.Control.YANCmb();
-            this.yanCmb2 = new YANF.Control.YANCmb();
+            this.yanPic2 = new YANF.Control.YANPic();
+            this.yanPic3 = new YANF.Control.YANPic();
+            this.yanPic4 = new YANF.Control.YANPic();
+            this.yanPic5 = new YANF.Control.YANPic();
+            this.yanPic6 = new YANF.Control.YANPic();
+            this.yanPic7 = new YANF.Control.YANPic();
+            this.yanPic8 = new YANF.Control.YANPic();
+            this.yanPic9 = new YANF.Control.YANPic();
+            this.yanPic10 = new YANF.Control.YANPic();
+            this.yanPic11 = new YANF.Control.YANPic();
+            this.yanPic12 = new YANF.Control.YANPic();
+            this.yanPic13 = new YANF.Control.YANPic();
+            this.yanPic14 = new YANF.Control.YANPic();
+            this.yanPic15 = new YANF.Control.YANPic();
+            this.yanPic16 = new YANF.Control.YANPic();
+            this.panel1 = new System.Windows.Forms.Panel();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic3)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic4)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic5)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic6)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic7)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic8)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic9)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic10)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic11)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic12)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic13)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic14)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic15)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic16)).BeginInit();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
+            // 
+            // yanCmb2
+            // 
+            this.yanCmb2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
+            this.yanCmb2.BorderColor = System.Drawing.Color.MediumSlateBlue;
+            this.yanCmb2.BorderSize = 1;
+            this.yanCmb2.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown;
+            this.yanCmb2.ForeColor = System.Drawing.Color.White;
+            this.yanCmb2.IconColor = System.Drawing.Color.Cyan;
+            this.yanCmb2.Items.AddRange(new object[] {
+            "yanCmb",
+            "yanCmb2"});
+            this.yanCmb2.ListBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(52)))), ((int)(((byte)(74)))));
+            this.yanCmb2.ListTextColor = System.Drawing.Color.WhiteSmoke;
+            this.yanCmb2.Location = new System.Drawing.Point(12, 58);
+            this.yanCmb2.MinimumSize = new System.Drawing.Size(200, 30);
+            this.yanCmb2.Name = "yanCmb2";
+            this.yanCmb2.Padding = new System.Windows.Forms.Padding(1);
+            this.yanCmb2.Size = new System.Drawing.Size(200, 35);
+            this.yanCmb2.TabIndex = 3;
+            this.yanCmb2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.yanCmb2.Txt = "Nhập hoặc chọn...";
+            // 
+            // yanCmb1
+            // 
+            this.yanCmb1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(38)))), ((int)(((byte)(126)))), ((int)(((byte)(86)))));
+            this.yanCmb1.BorderColor = System.Drawing.Color.MediumSlateBlue;
+            this.yanCmb1.BorderSize = 0;
+            this.yanCmb1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.yanCmb1.ForeColor = System.Drawing.Color.White;
+            this.yanCmb1.IconColor = System.Drawing.Color.White;
+            this.yanCmb1.Items.AddRange(new object[] {
+            "yanCmb0",
+            "yanCmb1"});
+            this.yanCmb1.ListBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(68)))), ((int)(((byte)(156)))), ((int)(((byte)(116)))));
+            this.yanCmb1.ListTextColor = System.Drawing.Color.WhiteSmoke;
+            this.yanCmb1.Location = new System.Drawing.Point(506, 58);
+            this.yanCmb1.MinimumSize = new System.Drawing.Size(200, 30);
+            this.yanCmb1.Name = "yanCmb1";
+            this.yanCmb1.Size = new System.Drawing.Size(200, 35);
+            this.yanCmb1.TabIndex = 2;
+            this.yanCmb1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.yanCmb1.Txt = "Chọn...";
             // 
             // yanPic1
             // 
-            this.yanPic1.Angle = 45F;
+            this.yanPic1.Angle = 315F;
             this.yanPic1.BorderAngle = 50F;
             this.yanPic1.BorderBottomColor = System.Drawing.Color.HotPink;
             this.yanPic1.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Flat;
@@ -47,27 +122,28 @@ namespace YANF
             this.yanPic1.BorderSize = 0;
             this.yanPic1.BorderTopColor = System.Drawing.Color.RoyalBlue;
             this.yanPic1.BottomColor = System.Drawing.Color.Cyan;
-            this.yanPic1.Location = new System.Drawing.Point(672, 449);
+            this.yanPic1.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic1.Location = new System.Drawing.Point(397, 12);
             this.yanPic1.Name = "yanPic1";
             this.yanPic1.Size = new System.Drawing.Size(100, 100);
-            this.yanPic1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.yanPic1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
             this.yanPic1.TabIndex = 1;
             this.yanPic1.TabStop = false;
-            this.yanPic1.TopColor = System.Drawing.Color.DarkBlue;
+            this.yanPic1.TopColor = System.Drawing.Color.RoyalBlue;
             // 
             // yanBtn2
             // 
             this.yanBtn2.BackColor = System.Drawing.Color.Transparent;
-            this.yanBtn2.BorderColor = System.Drawing.Color.SeaGreen;
+            this.yanBtn2.BorderColor = System.Drawing.Color.MediumSeaGreen;
             this.yanBtn2.BorderRadius = 20;
             this.yanBtn2.BorderSize = 2;
             this.yanBtn2.FlatAppearance.BorderSize = 0;
-            this.yanBtn2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(224)))), ((int)(((byte)(192)))));
-            this.yanBtn2.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
+            this.yanBtn2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(66)))), ((int)(((byte)(71)))), ((int)(((byte)(93)))));
+            this.yanBtn2.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(56)))), ((int)(((byte)(61)))), ((int)(((byte)(83)))));
             this.yanBtn2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.yanBtn2.Font = new System.Drawing.Font("Tahoma", 9F, System.Drawing.FontStyle.Bold);
-            this.yanBtn2.ForeColor = System.Drawing.Color.SeaGreen;
-            this.yanBtn2.Location = new System.Drawing.Point(12, 58);
+            this.yanBtn2.ForeColor = System.Drawing.Color.White;
+            this.yanBtn2.Location = new System.Drawing.Point(12, 12);
             this.yanBtn2.Name = "yanBtn2";
             this.yanBtn2.Size = new System.Drawing.Size(150, 40);
             this.yanBtn2.TabIndex = 0;
@@ -85,7 +161,7 @@ namespace YANF
             this.yanBtn1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.yanBtn1.Font = new System.Drawing.Font("Tahoma", 9F, System.Drawing.FontStyle.Bold);
             this.yanBtn1.ForeColor = System.Drawing.Color.White;
-            this.yanBtn1.Location = new System.Drawing.Point(12, 12);
+            this.yanBtn1.Location = new System.Drawing.Point(506, 12);
             this.yanBtn1.Name = "yanBtn1";
             this.yanBtn1.Size = new System.Drawing.Size(150, 40);
             this.yanBtn1.TabIndex = 0;
@@ -93,58 +169,325 @@ namespace YANF
             this.yanBtn1.Text = "yanBtn1";
             this.yanBtn1.UseVisualStyleBackColor = false;
             // 
-            // yanCmb1
+            // yanPic2
             // 
-            this.yanCmb1.BackColor = System.Drawing.Color.SeaGreen;
-            this.yanCmb1.BorderColor = System.Drawing.Color.MediumSlateBlue;
-            this.yanCmb1.BorderSize = 0;
-            this.yanCmb1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.yanCmb1.ForeColor = System.Drawing.Color.White;
-            this.yanCmb1.IconColor = System.Drawing.Color.White;
-            this.yanCmb1.Items.AddRange(new object[] {
-            "yanCmb0",
-            "yanCmb1"});
-            this.yanCmb1.ListBackColor = System.Drawing.Color.MediumSeaGreen;
-            this.yanCmb1.ListTextColor = System.Drawing.Color.WhiteSmoke;
-            this.yanCmb1.Location = new System.Drawing.Point(168, 12);
-            this.yanCmb1.MinimumSize = new System.Drawing.Size(200, 30);
-            this.yanCmb1.Name = "yanCmb1";
-            this.yanCmb1.Size = new System.Drawing.Size(200, 35);
-            this.yanCmb1.TabIndex = 2;
-            this.yanCmb1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.yanCmb1.Txt = "yanCmb1";
+            this.yanPic2.Angle = 0F;
+            this.yanPic2.BorderAngle = 50F;
+            this.yanPic2.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic2.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Flat;
+            this.yanPic2.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+            this.yanPic2.BorderSize = 6;
+            this.yanPic2.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic2.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic2.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic2.Location = new System.Drawing.Point(1122, 12);
+            this.yanPic2.Name = "yanPic2";
+            this.yanPic2.Size = new System.Drawing.Size(130, 130);
+            this.yanPic2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic2.TabIndex = 4;
+            this.yanPic2.TabStop = false;
+            this.yanPic2.TopColor = System.Drawing.Color.Transparent;
             // 
-            // yanCmb2
+            // yanPic3
             // 
-            this.yanCmb2.BackColor = System.Drawing.Color.White;
-            this.yanCmb2.BorderColor = System.Drawing.Color.MediumSlateBlue;
-            this.yanCmb2.BorderSize = 1;
-            this.yanCmb2.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown;
-            this.yanCmb2.ForeColor = System.Drawing.Color.DimGray;
-            this.yanCmb2.IconColor = System.Drawing.Color.MediumSlateBlue;
-            this.yanCmb2.Items.AddRange(new object[] {
-            "yanCmb",
-            "yanCmb2"});
-            this.yanCmb2.ListBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(228)))), ((int)(((byte)(245)))));
-            this.yanCmb2.ListTextColor = System.Drawing.Color.DimGray;
-            this.yanCmb2.Location = new System.Drawing.Point(168, 63);
-            this.yanCmb2.MinimumSize = new System.Drawing.Size(200, 30);
-            this.yanCmb2.Name = "yanCmb2";
-            this.yanCmb2.Padding = new System.Windows.Forms.Padding(1);
-            this.yanCmb2.Size = new System.Drawing.Size(200, 35);
-            this.yanCmb2.TabIndex = 3;
-            this.yanCmb2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.yanCmb2.Txt = "yanCmb2";
+            this.yanPic3.Angle = 0F;
+            this.yanPic3.BorderAngle = 50F;
+            this.yanPic3.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic3.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Flat;
+            this.yanPic3.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.Dot;
+            this.yanPic3.BorderSize = 5;
+            this.yanPic3.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic3.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic3.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic3.Location = new System.Drawing.Point(1122, 148);
+            this.yanPic3.Name = "yanPic3";
+            this.yanPic3.Size = new System.Drawing.Size(130, 130);
+            this.yanPic3.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic3.TabIndex = 4;
+            this.yanPic3.TabStop = false;
+            this.yanPic3.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic4
+            // 
+            this.yanPic4.Angle = 0F;
+            this.yanPic4.BorderAngle = 50F;
+            this.yanPic4.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic4.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Flat;
+            this.yanPic4.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.DashDot;
+            this.yanPic4.BorderSize = 6;
+            this.yanPic4.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic4.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic4.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic4.Location = new System.Drawing.Point(1122, 284);
+            this.yanPic4.Name = "yanPic4";
+            this.yanPic4.Size = new System.Drawing.Size(130, 130);
+            this.yanPic4.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic4.TabIndex = 4;
+            this.yanPic4.TabStop = false;
+            this.yanPic4.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic5
+            // 
+            this.yanPic5.Angle = 0F;
+            this.yanPic5.BorderAngle = 50F;
+            this.yanPic5.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic5.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Flat;
+            this.yanPic5.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.DashDotDot;
+            this.yanPic5.BorderSize = 3;
+            this.yanPic5.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic5.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic5.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic5.Location = new System.Drawing.Point(1122, 420);
+            this.yanPic5.Name = "yanPic5";
+            this.yanPic5.Size = new System.Drawing.Size(130, 130);
+            this.yanPic5.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic5.TabIndex = 4;
+            this.yanPic5.TabStop = false;
+            this.yanPic5.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic6
+            // 
+            this.yanPic6.Angle = 0F;
+            this.yanPic6.BorderAngle = 50F;
+            this.yanPic6.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic6.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Round;
+            this.yanPic6.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.DashDotDot;
+            this.yanPic6.BorderSize = 3;
+            this.yanPic6.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic6.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic6.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic6.Location = new System.Drawing.Point(986, 420);
+            this.yanPic6.Name = "yanPic6";
+            this.yanPic6.Size = new System.Drawing.Size(130, 130);
+            this.yanPic6.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic6.TabIndex = 4;
+            this.yanPic6.TabStop = false;
+            this.yanPic6.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic7
+            // 
+            this.yanPic7.Angle = 0F;
+            this.yanPic7.BorderAngle = 50F;
+            this.yanPic7.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic7.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Round;
+            this.yanPic7.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.DashDot;
+            this.yanPic7.BorderSize = 6;
+            this.yanPic7.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic7.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic7.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic7.Location = new System.Drawing.Point(986, 284);
+            this.yanPic7.Name = "yanPic7";
+            this.yanPic7.Size = new System.Drawing.Size(130, 130);
+            this.yanPic7.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic7.TabIndex = 4;
+            this.yanPic7.TabStop = false;
+            this.yanPic7.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic8
+            // 
+            this.yanPic8.Angle = 0F;
+            this.yanPic8.BorderAngle = 50F;
+            this.yanPic8.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic8.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Round;
+            this.yanPic8.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.Dot;
+            this.yanPic8.BorderSize = 5;
+            this.yanPic8.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic8.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic8.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic8.Location = new System.Drawing.Point(986, 148);
+            this.yanPic8.Name = "yanPic8";
+            this.yanPic8.Size = new System.Drawing.Size(130, 130);
+            this.yanPic8.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic8.TabIndex = 4;
+            this.yanPic8.TabStop = false;
+            this.yanPic8.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic9
+            // 
+            this.yanPic9.Angle = 0F;
+            this.yanPic9.BorderAngle = 50F;
+            this.yanPic9.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic9.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Round;
+            this.yanPic9.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+            this.yanPic9.BorderSize = 6;
+            this.yanPic9.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic9.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic9.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic9.Location = new System.Drawing.Point(986, 12);
+            this.yanPic9.Name = "yanPic9";
+            this.yanPic9.Size = new System.Drawing.Size(130, 130);
+            this.yanPic9.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic9.TabIndex = 4;
+            this.yanPic9.TabStop = false;
+            this.yanPic9.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic10
+            // 
+            this.yanPic10.Angle = 0F;
+            this.yanPic10.BorderAngle = 50F;
+            this.yanPic10.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic10.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Triangle;
+            this.yanPic10.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+            this.yanPic10.BorderSize = 6;
+            this.yanPic10.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic10.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic10.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic10.Location = new System.Drawing.Point(850, 12);
+            this.yanPic10.Name = "yanPic10";
+            this.yanPic10.Size = new System.Drawing.Size(130, 130);
+            this.yanPic10.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic10.TabIndex = 4;
+            this.yanPic10.TabStop = false;
+            this.yanPic10.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic11
+            // 
+            this.yanPic11.Angle = 0F;
+            this.yanPic11.BorderAngle = 50F;
+            this.yanPic11.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic11.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Triangle;
+            this.yanPic11.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.Dot;
+            this.yanPic11.BorderSize = 5;
+            this.yanPic11.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic11.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic11.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic11.Location = new System.Drawing.Point(850, 148);
+            this.yanPic11.Name = "yanPic11";
+            this.yanPic11.Size = new System.Drawing.Size(130, 130);
+            this.yanPic11.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic11.TabIndex = 4;
+            this.yanPic11.TabStop = false;
+            this.yanPic11.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic12
+            // 
+            this.yanPic12.Angle = 0F;
+            this.yanPic12.BorderAngle = 50F;
+            this.yanPic12.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic12.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Triangle;
+            this.yanPic12.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.DashDot;
+            this.yanPic12.BorderSize = 6;
+            this.yanPic12.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic12.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic12.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic12.Location = new System.Drawing.Point(850, 284);
+            this.yanPic12.Name = "yanPic12";
+            this.yanPic12.Size = new System.Drawing.Size(130, 130);
+            this.yanPic12.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic12.TabIndex = 4;
+            this.yanPic12.TabStop = false;
+            this.yanPic12.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic13
+            // 
+            this.yanPic13.Angle = 0F;
+            this.yanPic13.BorderAngle = 50F;
+            this.yanPic13.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic13.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Triangle;
+            this.yanPic13.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.DashDotDot;
+            this.yanPic13.BorderSize = 3;
+            this.yanPic13.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic13.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic13.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic13.Location = new System.Drawing.Point(850, 420);
+            this.yanPic13.Name = "yanPic13";
+            this.yanPic13.Size = new System.Drawing.Size(130, 130);
+            this.yanPic13.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic13.TabIndex = 4;
+            this.yanPic13.TabStop = false;
+            this.yanPic13.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic14
+            // 
+            this.yanPic14.Angle = 0F;
+            this.yanPic14.BorderAngle = 50F;
+            this.yanPic14.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic14.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Flat;
+            this.yanPic14.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.Custom;
+            this.yanPic14.BorderSize = 5;
+            this.yanPic14.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic14.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic14.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic14.Location = new System.Drawing.Point(1122, 556);
+            this.yanPic14.Name = "yanPic14";
+            this.yanPic14.Size = new System.Drawing.Size(130, 130);
+            this.yanPic14.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic14.TabIndex = 4;
+            this.yanPic14.TabStop = false;
+            this.yanPic14.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic15
+            // 
+            this.yanPic15.Angle = 0F;
+            this.yanPic15.BorderAngle = 50F;
+            this.yanPic15.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic15.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Round;
+            this.yanPic15.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.Custom;
+            this.yanPic15.BorderSize = 5;
+            this.yanPic15.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic15.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic15.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic15.Location = new System.Drawing.Point(986, 556);
+            this.yanPic15.Name = "yanPic15";
+            this.yanPic15.Size = new System.Drawing.Size(130, 130);
+            this.yanPic15.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic15.TabIndex = 4;
+            this.yanPic15.TabStop = false;
+            this.yanPic15.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // yanPic16
+            // 
+            this.yanPic16.Angle = 0F;
+            this.yanPic16.BorderAngle = 50F;
+            this.yanPic16.BorderBottomColor = System.Drawing.Color.HotPink;
+            this.yanPic16.BorderCapStyle = System.Drawing.Drawing2D.DashCap.Triangle;
+            this.yanPic16.BorderLineStyle = System.Drawing.Drawing2D.DashStyle.Custom;
+            this.yanPic16.BorderSize = 5;
+            this.yanPic16.BorderTopColor = System.Drawing.Color.RoyalBlue;
+            this.yanPic16.BottomColor = System.Drawing.Color.Transparent;
+            this.yanPic16.Image = global::YANF.Properties.Resources.pPA;
+            this.yanPic16.Location = new System.Drawing.Point(850, 556);
+            this.yanPic16.Name = "yanPic16";
+            this.yanPic16.Size = new System.Drawing.Size(130, 130);
+            this.yanPic16.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.yanPic16.TabIndex = 4;
+            this.yanPic16.TabStop = false;
+            this.yanPic16.TopColor = System.Drawing.Color.Transparent;
+            // 
+            // panel1
+            // 
+            this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
+            this.panel1.Controls.Add(this.yanBtn2);
+            this.panel1.Controls.Add(this.yanCmb2);
+            this.panel1.Controls.Add(this.yanPic1);
+            this.panel1.Dock = System.Windows.Forms.DockStyle.Left;
+            this.panel1.Location = new System.Drawing.Point(0, 0);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(500, 761);
+            this.panel1.TabIndex = 5;
             // 
             // MainFrm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(784, 561);
-            this.Controls.Add(this.yanCmb2);
+            this.ClientSize = new System.Drawing.Size(1264, 761);
+            this.Controls.Add(this.panel1);
+            this.Controls.Add(this.yanPic16);
+            this.Controls.Add(this.yanPic13);
+            this.Controls.Add(this.yanPic15);
+            this.Controls.Add(this.yanPic6);
+            this.Controls.Add(this.yanPic14);
+            this.Controls.Add(this.yanPic5);
+            this.Controls.Add(this.yanPic12);
+            this.Controls.Add(this.yanPic7);
+            this.Controls.Add(this.yanPic4);
+            this.Controls.Add(this.yanPic11);
+            this.Controls.Add(this.yanPic8);
+            this.Controls.Add(this.yanPic3);
+            this.Controls.Add(this.yanPic10);
+            this.Controls.Add(this.yanPic9);
+            this.Controls.Add(this.yanPic2);
             this.Controls.Add(this.yanCmb1);
-            this.Controls.Add(this.yanPic1);
-            this.Controls.Add(this.yanBtn2);
             this.Controls.Add(this.yanBtn1);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
@@ -154,6 +497,22 @@ namespace YANF
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form Main";
             ((System.ComponentModel.ISupportInitialize)(this.yanPic1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic3)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic4)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic5)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic6)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic7)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic8)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic9)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic10)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic11)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic12)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic13)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic14)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic15)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.yanPic16)).EndInit();
+            this.panel1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -165,6 +524,22 @@ namespace YANF
         private Control.YANPic yanPic1;
         private Control.YANCmb yanCmb1;
         private Control.YANCmb yanCmb2;
+        private Control.YANPic yanPic2;
+        private Control.YANPic yanPic3;
+        private Control.YANPic yanPic4;
+        private Control.YANPic yanPic5;
+        private Control.YANPic yanPic6;
+        private Control.YANPic yanPic7;
+        private Control.YANPic yanPic8;
+        private Control.YANPic yanPic9;
+        private Control.YANPic yanPic10;
+        private Control.YANPic yanPic11;
+        private Control.YANPic yanPic12;
+        private Control.YANPic yanPic13;
+        private Control.YANPic yanPic14;
+        private Control.YANPic yanPic15;
+        private Control.YANPic yanPic16;
+        private System.Windows.Forms.Panel panel1;
     }
 }
 
