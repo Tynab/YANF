@@ -3,9 +3,11 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+
 using static System.Drawing.Color;
 using static System.Drawing.Drawing2D.PenAlignment;
 using static System.Drawing.Drawing2D.SmoothingMode;
+using static System.Drawing.FontStyle;
 using static System.Drawing.Rectangle;
 using static System.Windows.Forms.ControlStyles;
 using static System.Windows.Forms.Cursors;
@@ -26,6 +28,7 @@ namespace YANF.Control
         public YANBtn()
         {
             SetStyle(Selectable, false);
+            // property
             TabStop = false;
             TabIndex = 0;
             FlatStyle = Flat;
@@ -33,6 +36,8 @@ namespace YANF.Control
             Size = new Size(150, 40);
             BackColor = MediumSlateBlue;
             ForeColor = White;
+            Font = new Font("Tahoma", 9, Bold);
+            // event
             Resize += Ctrl_Resize;
         }
         #endregion
@@ -55,11 +60,8 @@ namespace YANF.Control
             get => _borderSize;
             set
             {
-                if (value >= 0 && value <= Width / 2 && value <= Height / 2)
-                {
-                    _borderSize = value;
-                    Invalidate();
-                }
+                _borderSize = value;
+                Invalidate();
             }
         }
 
@@ -69,11 +71,8 @@ namespace YANF.Control
             get => _borderRadius;
             set
             {
-                if (value >= 0 && value <= Width / 2 && value <= Height / 2)
-                {
-                    _borderRadius = value;
-                    Invalidate();
-                }
+                _borderRadius = value;
+                Invalidate();
             }
         }
         #endregion

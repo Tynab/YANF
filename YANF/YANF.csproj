@@ -50,6 +50,13 @@
     <Compile Include="Control\YANBtn.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Control\YANCmb.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Control\YANDp.cs" />
+    <Compile Include="Control\YANPic.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="MainFrm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -62,6 +69,9 @@
     <Compile Include="Script\YANCommon.cs" />
     <Compile Include="Script\YANConstant.cs" />
     <Compile Include="Script\YANEllipseFrm.cs" />
+    <EmbeddedResource Include="MainFrm.resx">
+      <DependentUpon>MainFrm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -70,6 +80,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -86,6 +97,30 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Form\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\gCounter.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\gLoading.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\gUpdating.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\gWaiting.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\iLoader.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\iUpdater.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pCalendarBlack.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pCalendarWhite.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
