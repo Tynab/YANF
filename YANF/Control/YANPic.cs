@@ -31,8 +31,10 @@ namespace YANF.Control
         #region Constructors
         public YANPic()
         {
+            // property
             Size = new Size(100, 100);
             SizeMode = StretchImage;
+            // event
             Resize += Ctrl_Resize;
         }
         #endregion

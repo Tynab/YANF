@@ -53,8 +53,13 @@
     <Compile Include="Control\YANCmb.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Control\YANDp.cs" />
+    <Compile Include="Control\YANDp.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Control\YANPic.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Control\YANPnl.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="MainFrm.cs">
