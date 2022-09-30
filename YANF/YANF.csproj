@@ -50,11 +50,14 @@
     <Compile Include="Control\YANBtn.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Control\YANCmb.cs">
+    <Compile Include="Control\YANDdl.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Control\YANDp.cs">
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Control\YANNb.cs">
+      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Control\YANPic.cs">
       <SubType>Component</SubType>

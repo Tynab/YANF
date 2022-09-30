@@ -30,8 +30,16 @@ namespace YANF
         private void InitializeComponent()
         {
             this.panel1 = new System.Windows.Forms.Panel();
+            this.yanNb2 = new YANF.Control.YANNb();
+            this.yanBtn4 = new YANF.Control.YANBtn();
+            this.yanPnl1 = new YANF.Control.YANPnl();
+            this.yanDp1 = new YANF.Control.YANDp();
+            this.yanBtn3 = new YANF.Control.YANBtn();
+            this.yanNb3 = new YANF.Control.YANNb();
+            this.yanNb1 = new YANF.Control.YANNb();
+            this.yanDp2 = new YANF.Control.YANDp();
             this.yanBtn2 = new YANF.Control.YANBtn();
-            this.yanCmb2 = new YANF.Control.YANCmb();
+            this.yanDdl2 = new YANF.Control.YANDdl();
             this.yanPic1 = new YANF.Control.YANPic();
             this.yanPic16 = new YANF.Control.YANPic();
             this.yanPic13 = new YANF.Control.YANPic();
@@ -48,11 +56,8 @@ namespace YANF
             this.yanPic10 = new YANF.Control.YANPic();
             this.yanPic9 = new YANF.Control.YANPic();
             this.yanPic2 = new YANF.Control.YANPic();
-            this.yanCmb1 = new YANF.Control.YANCmb();
+            this.yanDdl1 = new YANF.Control.YANDdl();
             this.yanBtn1 = new YANF.Control.YANBtn();
-            this.yanDp1 = new YANF.Control.YANDp();
-            this.yanDp2 = new YANF.Control.YANDp();
-            this.yanPnl1 = new YANF.Control.YANPnl();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic16)).BeginInit();
@@ -75,15 +80,212 @@ namespace YANF
             // panel1
             // 
             this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
+            this.panel1.Controls.Add(this.yanBtn3);
+            this.panel1.Controls.Add(this.yanNb3);
+            this.panel1.Controls.Add(this.yanNb1);
             this.panel1.Controls.Add(this.yanDp2);
             this.panel1.Controls.Add(this.yanBtn2);
-            this.panel1.Controls.Add(this.yanCmb2);
+            this.panel1.Controls.Add(this.yanDdl2);
             this.panel1.Controls.Add(this.yanPic1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Left;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(500, 761);
-            this.panel1.TabIndex = 5;
+            this.panel1.TabIndex = 2;
+            // 
+            // yanNb2
+            // 
+            this.yanNb2.BackColor = System.Drawing.Color.White;
+            this.yanNb2.BorderColor = System.Drawing.Color.MediumSlateBlue;
+            this.yanNb2.BorderFocusColor = System.Drawing.Color.Orange;
+            this.yanNb2.BorderRadius = 0;
+            this.yanNb2.BorderSize = 2;
+            this.yanNb2.DecimalPlaces = 0;
+            this.yanNb2.Font = new System.Drawing.Font("Microsoft Sans Serif", 11F);
+            this.yanNb2.ForeColor = System.Drawing.Color.DimGray;
+            this.yanNb2.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.yanNb2.Location = new System.Drawing.Point(507, 140);
+            this.yanNb2.Maximum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.yanNb2.Minimum = new decimal(new int[] {
+            0,
+            0,
+            0,
+            0});
+            this.yanNb2.Name = "yanNb2";
+            this.yanNb2.Padding = new System.Windows.Forms.Padding(10, 7, 10, 7);
+            this.yanNb2.Size = new System.Drawing.Size(200, 34);
+            this.yanNb2.TabIndex = 3;
+            this.yanNb2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.yanNb2.ThousandsSeparator = true;
+            this.yanNb2.UnderlinedStyle = true;
+            this.yanNb2.Value = new decimal(new int[] {
+            0,
+            0,
+            0,
+            0});
+            // 
+            // yanBtn4
+            // 
+            this.yanBtn4.BackColor = System.Drawing.Color.Red;
+            this.yanBtn4.BorderColor = System.Drawing.Color.PaleVioletRed;
+            this.yanBtn4.BorderRadius = 20;
+            this.yanBtn4.BorderSize = 0;
+            this.yanBtn4.FlatAppearance.BorderSize = 0;
+            this.yanBtn4.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.yanBtn4.Font = new System.Drawing.Font("Microsoft Sans Serif", 20F, System.Drawing.FontStyle.Bold);
+            this.yanBtn4.ForeColor = System.Drawing.Color.White;
+            this.yanBtn4.Location = new System.Drawing.Point(507, 180);
+            this.yanBtn4.Name = "yanBtn4";
+            this.yanBtn4.Size = new System.Drawing.Size(40, 40);
+            this.yanBtn4.TabIndex = 0;
+            this.yanBtn4.TabStop = false;
+            this.yanBtn4.Text = "✕";
+            this.yanBtn4.UseVisualStyleBackColor = false;
+            // 
+            // yanPnl1
+            // 
+            this.yanPnl1.Angle = 45F;
+            this.yanPnl1.BottomColor = System.Drawing.Color.HotPink;
+            this.yanPnl1.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.yanPnl1.Location = new System.Drawing.Point(500, 692);
+            this.yanPnl1.Name = "yanPnl1";
+            this.yanPnl1.Size = new System.Drawing.Size(764, 69);
+            this.yanPnl1.TabIndex = 0;
+            this.yanPnl1.TopColor = System.Drawing.Color.RoyalBlue;
+            // 
+            // yanDp1
+            // 
+            this.yanDp1.BorderColor = System.Drawing.Color.SlateBlue;
+            this.yanDp1.BorderSize = 1;
+            this.yanDp1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.5F);
+            this.yanDp1.Location = new System.Drawing.Point(507, 99);
+            this.yanDp1.MinimumSize = new System.Drawing.Size(0, 35);
+            this.yanDp1.Name = "yanDp1";
+            this.yanDp1.Size = new System.Drawing.Size(200, 35);
+            this.yanDp1.SkinColor = System.Drawing.Color.White;
+            this.yanDp1.TabIndex = 0;
+            this.yanDp1.TabStop = false;
+            this.yanDp1.TextColor = System.Drawing.Color.DimGray;
+            // 
+            // yanBtn3
+            // 
+            this.yanBtn3.BackColor = System.Drawing.Color.MediumSlateBlue;
+            this.yanBtn3.BorderColor = System.Drawing.Color.White;
+            this.yanBtn3.BorderRadius = 5;
+            this.yanBtn3.BorderSize = 2;
+            this.yanBtn3.FlatAppearance.BorderSize = 0;
+            this.yanBtn3.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.yanBtn3.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.yanBtn3.ForeColor = System.Drawing.Color.White;
+            this.yanBtn3.Location = new System.Drawing.Point(12, 220);
+            this.yanBtn3.Name = "yanBtn3";
+            this.yanBtn3.Size = new System.Drawing.Size(150, 40);
+            this.yanBtn3.TabIndex = 0;
+            this.yanBtn3.TabStop = false;
+            this.yanBtn3.Text = "yanBtn3";
+            this.yanBtn3.UseVisualStyleBackColor = false;
+            // 
+            // yanNb3
+            // 
+            this.yanNb3.BackColor = System.Drawing.Color.SeaGreen;
+            this.yanNb3.BorderColor = System.Drawing.Color.White;
+            this.yanNb3.BorderFocusColor = System.Drawing.Color.LightYellow;
+            this.yanNb3.BorderRadius = 0;
+            this.yanNb3.BorderSize = 2;
+            this.yanNb3.DecimalPlaces = 0;
+            this.yanNb3.Font = new System.Drawing.Font("Microsoft Sans Serif", 11F);
+            this.yanNb3.ForeColor = System.Drawing.Color.White;
+            this.yanNb3.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.yanNb3.Location = new System.Drawing.Point(12, 180);
+            this.yanNb3.Maximum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.yanNb3.Minimum = new decimal(new int[] {
+            0,
+            0,
+            0,
+            0});
+            this.yanNb3.Name = "yanNb3";
+            this.yanNb3.Padding = new System.Windows.Forms.Padding(10, 7, 10, 7);
+            this.yanNb3.Size = new System.Drawing.Size(200, 34);
+            this.yanNb3.TabIndex = 3;
+            this.yanNb3.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.yanNb3.ThousandsSeparator = true;
+            this.yanNb3.UnderlinedStyle = false;
+            this.yanNb3.Value = new decimal(new int[] {
+            0,
+            0,
+            0,
+            0});
+            // 
+            // yanNb1
+            // 
+            this.yanNb1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
+            this.yanNb1.BorderColor = System.Drawing.Color.DodgerBlue;
+            this.yanNb1.BorderFocusColor = System.Drawing.Color.LightYellow;
+            this.yanNb1.BorderRadius = 10;
+            this.yanNb1.BorderSize = 1;
+            this.yanNb1.DecimalPlaces = 0;
+            this.yanNb1.Font = new System.Drawing.Font("Microsoft Sans Serif", 11F);
+            this.yanNb1.ForeColor = System.Drawing.Color.White;
+            this.yanNb1.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.yanNb1.Location = new System.Drawing.Point(12, 140);
+            this.yanNb1.Maximum = new decimal(new int[] {
+            9999,
+            0,
+            0,
+            0});
+            this.yanNb1.Minimum = new decimal(new int[] {
+            1234,
+            0,
+            0,
+            0});
+            this.yanNb1.Name = "yanNb1";
+            this.yanNb1.Padding = new System.Windows.Forms.Padding(10, 7, 10, 7);
+            this.yanNb1.Size = new System.Drawing.Size(200, 34);
+            this.yanNb1.TabIndex = 1;
+            this.yanNb1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.yanNb1.ThousandsSeparator = true;
+            this.yanNb1.UnderlinedStyle = false;
+            this.yanNb1.Value = new decimal(new int[] {
+            1234,
+            0,
+            0,
+            0});
+            // 
+            // yanDp2
+            // 
+            this.yanDp2.BorderColor = System.Drawing.Color.PaleVioletRed;
+            this.yanDp2.BorderSize = 0;
+            this.yanDp2.CustomFormat = "dd/MM/yyyy";
+            this.yanDp2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.5F);
+            this.yanDp2.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this.yanDp2.Location = new System.Drawing.Point(12, 99);
+            this.yanDp2.MinimumSize = new System.Drawing.Size(0, 35);
+            this.yanDp2.Name = "yanDp2";
+            this.yanDp2.Size = new System.Drawing.Size(200, 35);
+            this.yanDp2.SkinColor = System.Drawing.Color.FromArgb(((int)(((byte)(68)))), ((int)(((byte)(114)))), ((int)(((byte)(196)))));
+            this.yanDp2.TabIndex = 0;
+            this.yanDp2.TabStop = false;
+            this.yanDp2.TextColor = System.Drawing.Color.White;
             // 
             // yanBtn2
             // 
@@ -95,7 +297,7 @@ namespace YANF
             this.yanBtn2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(66)))), ((int)(((byte)(71)))), ((int)(((byte)(93)))));
             this.yanBtn2.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(56)))), ((int)(((byte)(61)))), ((int)(((byte)(83)))));
             this.yanBtn2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.yanBtn2.Font = new System.Drawing.Font("Tahoma", 9F, System.Drawing.FontStyle.Bold);
+            this.yanBtn2.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
             this.yanBtn2.ForeColor = System.Drawing.Color.White;
             this.yanBtn2.Location = new System.Drawing.Point(12, 12);
             this.yanBtn2.Name = "yanBtn2";
@@ -105,27 +307,30 @@ namespace YANF
             this.yanBtn2.Text = "yanBtn2";
             this.yanBtn2.UseVisualStyleBackColor = false;
             // 
-            // yanCmb2
+            // yanDdl2
             // 
-            this.yanCmb2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
-            this.yanCmb2.BorderColor = System.Drawing.Color.MediumSlateBlue;
-            this.yanCmb2.BorderSize = 1;
-            this.yanCmb2.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown;
-            this.yanCmb2.ForeColor = System.Drawing.Color.White;
-            this.yanCmb2.IconColor = System.Drawing.Color.Cyan;
-            this.yanCmb2.Items.AddRange(new object[] {
+            this.yanDdl2.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.yanDdl2.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
+            this.yanDdl2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
+            this.yanDdl2.BorderColor = System.Drawing.Color.MediumSlateBlue;
+            this.yanDdl2.BorderSize = 1;
+            this.yanDdl2.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown;
+            this.yanDdl2.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.yanDdl2.ForeColor = System.Drawing.Color.White;
+            this.yanDdl2.IconColor = System.Drawing.Color.Cyan;
+            this.yanDdl2.Items.AddRange(new object[] {
             "yanCmb",
             "yanCmb2"});
-            this.yanCmb2.ListBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(52)))), ((int)(((byte)(74)))));
-            this.yanCmb2.ListTextColor = System.Drawing.Color.WhiteSmoke;
-            this.yanCmb2.Location = new System.Drawing.Point(12, 58);
-            this.yanCmb2.MinimumSize = new System.Drawing.Size(200, 30);
-            this.yanCmb2.Name = "yanCmb2";
-            this.yanCmb2.Padding = new System.Windows.Forms.Padding(1);
-            this.yanCmb2.Size = new System.Drawing.Size(200, 35);
-            this.yanCmb2.TabIndex = 3;
-            this.yanCmb2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.yanCmb2.Txt = "Nhập hoặc chọn...";
+            this.yanDdl2.ListBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(47)))), ((int)(((byte)(52)))), ((int)(((byte)(74)))));
+            this.yanDdl2.ListTextColor = System.Drawing.Color.WhiteSmoke;
+            this.yanDdl2.Location = new System.Drawing.Point(12, 58);
+            this.yanDdl2.MinimumSize = new System.Drawing.Size(200, 30);
+            this.yanDdl2.Name = "yanDdl2";
+            this.yanDdl2.Padding = new System.Windows.Forms.Padding(1);
+            this.yanDdl2.Size = new System.Drawing.Size(200, 35);
+            this.yanDdl2.String = "Nhập hoặc chọn...";
+            this.yanDdl2.TabIndex = 2;
+            this.yanDdl2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // yanPic1
             // 
@@ -431,26 +636,30 @@ namespace YANF
             this.yanPic2.TabStop = false;
             this.yanPic2.TopColor = System.Drawing.Color.Transparent;
             // 
-            // yanCmb1
+            // yanDdl1
             // 
-            this.yanCmb1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(38)))), ((int)(((byte)(126)))), ((int)(((byte)(86)))));
-            this.yanCmb1.BorderColor = System.Drawing.Color.MediumSlateBlue;
-            this.yanCmb1.BorderSize = 0;
-            this.yanCmb1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.yanCmb1.ForeColor = System.Drawing.Color.White;
-            this.yanCmb1.IconColor = System.Drawing.Color.White;
-            this.yanCmb1.Items.AddRange(new object[] {
+            this.yanDdl1.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.yanDdl1.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
+            this.yanDdl1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(38)))), ((int)(((byte)(126)))), ((int)(((byte)(86)))));
+            this.yanDdl1.BorderColor = System.Drawing.Color.MediumSlateBlue;
+            this.yanDdl1.BorderSize = 0;
+            this.yanDdl1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.yanDdl1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.yanDdl1.ForeColor = System.Drawing.Color.White;
+            this.yanDdl1.IconColor = System.Drawing.Color.White;
+            this.yanDdl1.Items.AddRange(new object[] {
             "yanCmb0",
             "yanCmb1"});
-            this.yanCmb1.ListBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(68)))), ((int)(((byte)(156)))), ((int)(((byte)(116)))));
-            this.yanCmb1.ListTextColor = System.Drawing.Color.WhiteSmoke;
-            this.yanCmb1.Location = new System.Drawing.Point(507, 58);
-            this.yanCmb1.MinimumSize = new System.Drawing.Size(200, 30);
-            this.yanCmb1.Name = "yanCmb1";
-            this.yanCmb1.Size = new System.Drawing.Size(200, 35);
-            this.yanCmb1.TabIndex = 2;
-            this.yanCmb1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.yanCmb1.Txt = "Chọn...";
+            this.yanDdl1.ListBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(68)))), ((int)(((byte)(156)))), ((int)(((byte)(116)))));
+            this.yanDdl1.ListTextColor = System.Drawing.Color.WhiteSmoke;
+            this.yanDdl1.Location = new System.Drawing.Point(507, 58);
+            this.yanDdl1.MinimumSize = new System.Drawing.Size(200, 30);
+            this.yanDdl1.Name = "yanDdl1";
+            this.yanDdl1.Size = new System.Drawing.Size(200, 35);
+            this.yanDdl1.String = "Chọn...";
+            this.yanDdl1.TabIndex = 0;
+            this.yanDdl1.TabStop = false;
+            this.yanDdl1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // yanBtn1
             // 
@@ -460,7 +669,7 @@ namespace YANF
             this.yanBtn1.BorderSize = 0;
             this.yanBtn1.FlatAppearance.BorderSize = 0;
             this.yanBtn1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.yanBtn1.Font = new System.Drawing.Font("Tahoma", 9F, System.Drawing.FontStyle.Bold);
+            this.yanBtn1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
             this.yanBtn1.ForeColor = System.Drawing.Color.White;
             this.yanBtn1.Location = new System.Drawing.Point(507, 12);
             this.yanBtn1.Name = "yanBtn1";
@@ -470,50 +679,13 @@ namespace YANF
             this.yanBtn1.Text = "yanBtn1";
             this.yanBtn1.UseVisualStyleBackColor = false;
             // 
-            // yanDp1
-            // 
-            this.yanDp1.BorderColor = System.Drawing.Color.SlateBlue;
-            this.yanDp1.BorderSize = 1;
-            this.yanDp1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.5F);
-            this.yanDp1.Location = new System.Drawing.Point(507, 99);
-            this.yanDp1.MinimumSize = new System.Drawing.Size(0, 35);
-            this.yanDp1.Name = "yanDp1";
-            this.yanDp1.Size = new System.Drawing.Size(200, 35);
-            this.yanDp1.SkinColor = System.Drawing.Color.White;
-            this.yanDp1.TabIndex = 4;
-            this.yanDp1.TextColor = System.Drawing.Color.DimGray;
-            // 
-            // yanDp2
-            // 
-            this.yanDp2.BorderColor = System.Drawing.Color.PaleVioletRed;
-            this.yanDp2.BorderSize = 0;
-            this.yanDp2.CustomFormat = "dd/MM/yyyy";
-            this.yanDp2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.5F);
-            this.yanDp2.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-            this.yanDp2.Location = new System.Drawing.Point(12, 99);
-            this.yanDp2.MinimumSize = new System.Drawing.Size(0, 35);
-            this.yanDp2.Name = "yanDp2";
-            this.yanDp2.Size = new System.Drawing.Size(200, 35);
-            this.yanDp2.SkinColor = System.Drawing.Color.FromArgb(((int)(((byte)(68)))), ((int)(((byte)(114)))), ((int)(((byte)(196)))));
-            this.yanDp2.TabIndex = 6;
-            this.yanDp2.TextColor = System.Drawing.Color.White;
-            // 
-            // yanPnl1
-            // 
-            this.yanPnl1.Angle = 45F;
-            this.yanPnl1.BottomColor = System.Drawing.Color.HotPink;
-            this.yanPnl1.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.yanPnl1.Location = new System.Drawing.Point(500, 692);
-            this.yanPnl1.Name = "yanPnl1";
-            this.yanPnl1.Size = new System.Drawing.Size(764, 69);
-            this.yanPnl1.TabIndex = 7;
-            this.yanPnl1.TopColor = System.Drawing.Color.RoyalBlue;
-            // 
             // MainFrm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.White;
             this.ClientSize = new System.Drawing.Size(1264, 761);
+            this.Controls.Add(this.yanNb2);
+            this.Controls.Add(this.yanBtn4);
             this.Controls.Add(this.yanPnl1);
             this.Controls.Add(this.yanDp1);
             this.Controls.Add(this.panel1);
@@ -532,7 +704,7 @@ namespace YANF
             this.Controls.Add(this.yanPic10);
             this.Controls.Add(this.yanPic9);
             this.Controls.Add(this.yanPic2);
-            this.Controls.Add(this.yanCmb1);
+            this.Controls.Add(this.yanDdl1);
             this.Controls.Add(this.yanBtn1);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
@@ -567,8 +739,8 @@ namespace YANF
         private Control.YANBtn yanBtn1;
         private Control.YANBtn yanBtn2;
         private Control.YANPic yanPic1;
-        private Control.YANCmb yanCmb1;
-        private Control.YANCmb yanCmb2;
+        private Control.YANDdl yanDdl1;
+        private Control.YANDdl yanDdl2;
         private Control.YANPic yanPic2;
         private Control.YANPic yanPic3;
         private Control.YANPic yanPic4;
@@ -588,6 +760,11 @@ namespace YANF
         private Control.YANDp yanDp1;
         private Control.YANDp yanDp2;
         private Control.YANPnl yanPnl1;
+        private Control.YANNb yanNb1;
+        private Control.YANNb yanNb2;
+        private Control.YANBtn yanBtn4;
+        private Control.YANNb yanNb3;
+        private Control.YANBtn yanBtn3;
     }
 }
 
