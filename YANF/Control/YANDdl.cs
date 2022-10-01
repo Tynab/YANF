@@ -383,9 +383,7 @@ public class YANDdl : UserControl
             _lblText.Text = _string;
         }
     }
-    #endregion
 
-    #region Event Handles
     // Check border size and radius when resize the control
     private void Ctrl_Resize(object sender, EventArgs e)
     {

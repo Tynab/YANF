@@ -127,7 +127,7 @@ public class YANBtn : Button
     }
     #endregion
 
-    #region Event Handles
+    #region Events
     // Background color changed
     private void Container_BackColorChanged(object sender, EventArgs e) => Invalidate();
 

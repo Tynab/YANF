@@ -143,9 +143,9 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap pPA {
+        internal static System.Drawing.Bitmap pUserSolid1 {
             get {
-                object obj = ResourceManager.GetObject("pPA", resourceCulture);
+                object obj = ResourceManager.GetObject("pUserSolid1", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

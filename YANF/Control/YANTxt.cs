@@ -12,43 +12,48 @@ using static YANF.Script.YANCommon;
 
 namespace YANF.Control;
 
-[DefaultEvent("ValueChanged")]
-public class YANNb : UserControl
+[DefaultEvent("StringChanged")]
+public class YANTxt : UserControl
 {
     #region Fields
     private Color _borderColor = MediumSlateBlue;
-    private int _borderSize = 1;
+    private Color _placeholderColor = DarkGray;
+    private string _placeholderText = null;
+    private int _borderSize = 2;
     private int _borderRadius = 0;
     private bool _is_UnderlinedStyle = false;
     private bool _is_Focus = false;
-    private readonly NumericUpDown _nudNum;
+    private bool _is_Placeholder = false;
+    private bool _is_PasswordChar = false;
+    private readonly TextBox _txtText;
     #endregion
 
     #region Constructors
-    public YANNb()
+    public YANTxt()
     {
-        _nudNum = new NumericUpDown();
+        _txtText = new TextBox();
         SuspendLayout();
-        // numeric num
-        _nudNum.BackColor = White;
-        _nudNum.BorderStyle = BorderStyle.None;
-        _nudNum.TextAlign = HorizontalAlignment.Center;
-        _nudNum.Dock = DockStyle.Fill;
-        _nudNum.Location = new Point(10, 7);
-        _nudNum.Size = new Size(180, 18);
-        _nudNum.Font = new Font(Font.Name, 11f);
-        _nudNum.Enter += Nud_Enter;
-        _nudNum.Leave += Nud_Leave;
-        _nudNum.KeyDown += Nud_KeyDown;
-        _nudNum.KeyPress += Nud_KeyPress;
-        _nudNum.ValueChanged += Nud_ValueChanged;
+        // textbox text
+        _txtText.BackColor = White;
+        _txtText.BorderStyle = BorderStyle.None;
+        _txtText.TextAlign = HorizontalAlignment.Center;
+        _txtText.Dock = DockStyle.Fill;
+        _txtText.Location = new Point(10, 7);
+        _txtText.Size = new Size(180, 18);
+        _txtText.Font = new Font(Font.Name, 11f);
+        _txtText.MouseEnter += Txt_MouseEnter;
+        _txtText.MouseLeave += Txt_MouseLeave;
+        _txtText.Enter += Txt_Enter;
+        _txtText.Leave += Txt_Leave;
+        _txtText.KeyDown += Txt_KeyDown;
+        _txtText.KeyPress += Txt_KeyPress;
+        _txtText.KeyUp += Txt_KeyUp;
+        _txtText.TextChanged += Txt_TextChanged;
         // user control
-        Controls.Add(_nudNum);
+        Controls.Add(_txtText);
         ForeColor = DimGray;
         BackColor = White;
-        ThousandsSeparator = true;
         AutoScaleMode = AutoScaleMode.None;
-        String = Value.ToString();
         Size = new Size(200, 30);
         Padding = new Padding(10, 7, 10, 7);
         Font = new Font(Font.Name, 11f);
@@ -59,15 +64,13 @@ public class YANNb : UserControl
     #endregion
 
     #region Properties
-    public string String;
-
     [Category("YAN Appearance"), Description("Indicates how the text should be aligned for edit controls.")]
     public HorizontalAlignment TextAlign
     {
-        get => _nudNum.TextAlign;
+        get => _txtText.TextAlign;
         set
         {
-            _nudNum.TextAlign = value;
+            _txtText.TextAlign = value;
             Invalidate();
         }
     }
@@ -84,56 +87,52 @@ public class YANNb : UserControl
     }
 
     [Category("YAN Appearance"), Description("This property specifies the color of the border around the control when the control have the focus.")]
-    public Color BorderFocusColor { get; set; } = LightYellow;
+    public Color BorderFocusColor { get; set; } = HotPink;
 
-    [Category("YAN Appearance"), Description("Indicates the minimum value for the numeric up-down control.")]
-    public decimal Minimum
+    [Category("YAN Appearance"), Description("The color of the placeholder text.")]
+    public Color PlaceholderColor
     {
-        get => _nudNum.Minimum;
+        get => _placeholderColor;
         set
         {
-            if (value > Value)
+            _placeholderColor = value;
+            if (_is_Placeholder)
             {
-                Value = value;
-                String = Value.ToString();
-                _nudNum.Value = value;
+                _txtText.ForeColor = value;
             }
-            _nudNum.Minimum = value;
-            Invalidate();
         }
     }
 
-    [Category("YAN Appearance"), Description("Indicates the maximum value for the numeric up-down control.")]
-    public decimal Maximum
+    [Category("YAN Appearance"), Description("The text associated with the control.")]
+    public string String
     {
-        get => _nudNum.Maximum;
+        get => _is_Placeholder ? null : _txtText.Text;
         set
         {
-            if (value < Value)
+            if (string.IsNullOrWhiteSpace(value))
             {
-                Value = value;
-                String = Value.ToString();
-                _nudNum.Value = value;
+                _txtText.Text = value;
+                SetPlaceholder();
             }
-            _nudNum.Maximum = value;
-            Invalidate();
+            else
+            {
+                RemovePlaceholder();
+                _txtText.Text = value;
+            }
         }
     }
 
-    [Category("YAN Appearance"), Description("The current value of the numeric up-down control.")]
-    public decimal Value
+    [Category("YAN Appearance"), Description("The text that is displayed when the control has no text and does not have the focus.")]
+    public string PlaceholderText
     {
-        get => _nudNum.Value;
+        get => _placeholderText;
         set
         {
-            _nudNum.Value = value < Minimum ? Minimum : value > Maximum ? Maximum : value;
-            String = value.ToString();
-            Invalidate();
+            _placeholderText = value;
+            _txtText.Text = null;
+            SetPlaceholder();
         }
     }
-
-    [Category("YAN Appearance"), Description("indicates the amount to increment or decrement on each button click.")]
-    public decimal Increment { get => _nudNum.Increment; set => _nudNum.Increment = value; }
 
     [Category("YAN Appearance"), Description("This property specifies the size, in pixels, of the border around the control.")]
     public int BorderSize
@@ -157,16 +156,8 @@ public class YANNb : UserControl
         }
     }
 
-    [Category("YAN Appearance"), Description("Indicates the number of decimal places to display.")]
-    public int DecimalPlaces
-    {
-        get => _nudNum.DecimalPlaces;
-        set
-        {
-            _nudNum.DecimalPlaces = value;
-            Invalidate();
-        }
-    }
+    [Category("YAN Appearance"), Description("Specifies the maximum number of characters that can be entered into the edit control.")]
+    public int MaxLength { get => _txtText.MaxLength; set => _txtText.MaxLength = value; }
 
     [Category("YAN Appearance"), Description("When this property is true, the underline added to text.")]
     public bool UnderlinedStyle
@@ -179,20 +170,26 @@ public class YANNb : UserControl
         }
     }
 
-    [Category("YAN Appearance"), Description("Indicates whether the thousands separator will be inserted between every three decimal digits.")]
-    public bool ThousandsSeparator
+    [Category("YAN Appearance"), Description("Indicates the character to display for password input for single-line edit controls.")]
+    public bool PasswordChar
     {
-        get => _nudNum.ThousandsSeparator;
+        get => _is_PasswordChar;
         set
         {
-            _nudNum.ThousandsSeparator = value;
-            Invalidate();
+            _is_PasswordChar = value;
+            if (!_is_Placeholder)
+            {
+                _txtText.UseSystemPasswordChar = value;
+            }
         }
     }
 
-    //event
-    [Category("YAN Event"), Description("Event raised when the value of the Val property is changed on Control.")]
-    public event EventHandler ValueChanged;
+    [Category("YAN Appearance"), Description("Control whether the text of the edit control can span more than one line.")]
+    public bool Multiline { get => _txtText.Multiline; set => _txtText.Multiline = value; }
+
+    // Event
+    [Category("YAN Event"), Description("Event raised when the value of the Txt property is changed on Control.")]
+    public event EventHandler StringChanged;
     #endregion
 
     #region Overridden
@@ -203,7 +200,7 @@ public class YANNb : UserControl
         set
         {
             base.BackColor = value;
-            _nudNum.BackColor = value;
+            _txtText.BackColor = value;
         }
     }
 
@@ -214,7 +211,7 @@ public class YANNb : UserControl
         set
         {
             base.ForeColor = value;
-            _nudNum.ForeColor = value;
+            _txtText.ForeColor = value;
         }
     }
 
@@ -225,7 +222,7 @@ public class YANNb : UserControl
         set
         {
             base.Font = value;
-            _nudNum.Font = value;
+            _txtText.Font = value;
             if (DesignMode)
             {
                 UpdateHCtrl();
@@ -233,7 +230,7 @@ public class YANNb : UserControl
         }
     }
 
-    // On paint
+    // One paint
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);
@@ -241,10 +238,9 @@ public class YANNb : UserControl
         if (_borderRadius > 1)
         {
             var rectBorderSmooth = ClientRectangle;
-            var smoothSize = _borderSize > 0 ? _borderSize : 1;
             using var pathBorderSmooth = GetFigurePath(rectBorderSmooth, _borderRadius);
             using var pathBorder = GetFigurePath(Inflate(rectBorderSmooth, -_borderSize, -_borderSize), _borderRadius - _borderSize);
-            using var penBorderSmooth = new Pen(Parent.BackColor, smoothSize);
+            using var penBorderSmooth = new Pen(Parent.BackColor, _borderSize > 0 ? _borderSize : 1);
             using var penBorder = new Pen(_borderColor, _borderSize);
             Region = new Region(pathBorderSmooth);
             if (_borderRadius > 15)
@@ -311,28 +307,35 @@ public class YANNb : UserControl
     }
     #endregion
 
-    #region Events    
+    #region Events
+    // Raises the mouse enter event
+    private void Txt_MouseEnter(object sender, EventArgs e) => OnMouseEnter(e);
+
+    // Raises the mouse leave event
+    private void Txt_MouseLeave(object sender, EventArgs e) => OnMouseLeave(e);
+
     // Raises the enter event
-    private void Nud_Enter(object sender, EventArgs e)
+    private void Txt_Enter(object sender, EventArgs e)
     {
         _is_Focus = true;
-        _nudNum.Select(0, _nudNum.Text.Length);
+        _txtText.Select(0, _txtText.Text.Length);
         Invalidate();
+        RemovePlaceholder();
     }
 
     // Raises the leave event
-    private void Nud_Leave(object sender, EventArgs e)
+    private void Txt_Leave(object sender, EventArgs e)
     {
         _is_Focus = false;
-        if (string.IsNullOrWhiteSpace(_nudNum.Text))
-        {
-            _nudNum.Text = _nudNum.Value.ToString();
-        }
         Invalidate();
+        SetPlaceholder();
     }
 
+    // Raises the key press event
+    private void Txt_KeyPress(object sender, KeyPressEventArgs e) => OnKeyPress(e);
+
     // Raises the key down event
-    private void Nud_KeyDown(object sender, KeyEventArgs e)
+    private void Txt_KeyDown(object sender, KeyEventArgs e)
     {
         OnKeyDown(e);
         if (e.KeyCode == Keys.Enter)
@@ -341,15 +344,15 @@ public class YANNb : UserControl
         }
     }
 
-    // Raises the key press event
-    private void Nud_KeyPress(object sender, KeyPressEventArgs e) => OnKeyPress(e);
+    // Raises the key up event
+    private void Txt_KeyUp(object sender, KeyEventArgs e) => OnKeyUp(e);
 
-    //raises the value changed event
-    private void Nud_ValueChanged(object sender, EventArgs e)
+    // Raises the text changed event
+    private void Txt_TextChanged(object sender, EventArgs e)
     {
-        if (ValueChanged != null)
+        if (StringChanged != null)
         {
-            ValueChanged.Invoke(sender, e);
+            StringChanged.Invoke(sender, e);
         }
     }
 
@@ -363,14 +366,60 @@ public class YANNb : UserControl
     #endregion
 
     #region Methods
+    // Add placeholder text to the control
+    private void SetPlaceholder()
+    {
+        if (string.IsNullOrWhiteSpace(_txtText.Text) && !string.IsNullOrWhiteSpace(_placeholderText))
+        {
+            _is_Placeholder = true;
+            _txtText.Text = _placeholderText;
+            _txtText.ForeColor = _placeholderColor;
+            if (_is_PasswordChar)
+            {
+                if (Created)
+                {
+                    _ = BeginInvoke(new Action(() => _txtText.UseSystemPasswordChar = false));
+                }
+                else
+                {
+                    _txtText.UseSystemPasswordChar = false;
+                }
+            }
+        }
+    }
+
+    // Remove placeholder text to the control
+    private void RemovePlaceholder()
+    {
+        if (_is_Placeholder && !string.IsNullOrWhiteSpace(_placeholderText))
+        {
+            _is_Placeholder = false;
+            _txtText.Text = null;
+            _txtText.ForeColor = ForeColor;
+            if (_is_PasswordChar)
+            {
+                _txtText.UseSystemPasswordChar = true;
+            }
+        }
+    }
+
     // Set rounded region to the control
-    private void SetTextRoundedRegion() => _nudNum.Region = new Region(GetFigurePath(_nudNum.ClientRectangle, _borderSize * 2));
+    private void SetTextRoundedRegion()
+    {
+        var client = _txtText.ClientRectangle;
+        _txtText.Region = Multiline ? new Region(GetFigurePath(client, _borderRadius - _borderSize)) : new Region(GetFigurePath(client, _borderSize * 2));
+    }
 
     // Update the height of control when changed font display
     private void UpdateHCtrl()
     {
-        _nudNum.MinimumSize = new Size(0, MeasureText("0", Font).Height + 1);
-        Height = _nudNum.Height + Padding.Top + Padding.Bottom;
+        if (!_txtText.Multiline)
+        {
+            _txtText.Multiline = true;
+            _txtText.MinimumSize = new Size(0, MeasureText("Text", Font).Height + 1);
+            _txtText.Multiline = false;
+            Height = _txtText.Height + Padding.Top + Padding.Bottom;
+        }
     }
 
     // Get path of figure

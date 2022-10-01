@@ -33,7 +33,7 @@ public class YANDp : DateTimePicker
         // property
         TabStop = false;
         MinimumSize = new Size(0, 35);
-        Font = new Font(Font.Name, 9.5f);
+        Font = new Font(Font.Name, 10f);
         // event
         Resize += Ctrl_Resize;
     }
@@ -154,7 +154,7 @@ public class YANDp : DateTimePicker
     }
     #endregion
 
-    #region Event Handles
+    #region Events
     // Check border size and radius when resize the control
     private void Ctrl_Resize(object sender, EventArgs e)
     {

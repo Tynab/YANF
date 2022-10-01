@@ -13,6 +13,21 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -65,18 +80,50 @@
     <Compile Include="Control\YANPnl.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Control\YANPrg.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Control\YANRdo.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Control\YANTg.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Control\YANTxt.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="MainFrm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="MainFrm.Designer.cs">
       <DependentUpon>MainFrm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Model\UpdateScr.cs" />
+    <Compile Include="Screen\MiddleScr.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Screen\YANAnonScr.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Screen\YANHardScr.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Screen\YANUpdateScr.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Screen\YANUpdateScr.Designer.cs">
+      <DependentUpon>YANUpdateScr.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Script\IYANSrcService.cs" />
+    <Compile Include="Script\IYANUpdateScrService.cs" />
+    <Compile Include="Script\Service\YANUpdateScrService.cs" />
     <Compile Include="Script\YANAnimation.cs" />
     <Compile Include="Script\YANCommon.cs" />
     <Compile Include="Script\YANConstant.cs" />
     <Compile Include="Script\YANEllipseFrm.cs" />
+    <Compile Include="Script\YANEvent.cs" />
     <EmbeddedResource Include="MainFrm.resx">
       <DependentUpon>MainFrm.cs</DependentUpon>
     </EmbeddedResource>
@@ -90,6 +137,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="Screen\YANUpdateScr.resx">
+      <DependentUpon>YANUpdateScr.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -103,9 +153,7 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Form\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="Resources\gCounter.gif" />
   </ItemGroup>
@@ -131,7 +179,19 @@
     <None Include="Resources\pCalendarWhite.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\pPA.png" />
+    <None Include="Resources\pUserSolid1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.8.1">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.8.1 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

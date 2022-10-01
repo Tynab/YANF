@@ -182,7 +182,7 @@ public class YANPic : PictureBox
     }
     #endregion
 
-    #region Event Handles
+    #region Events
     // Check border size and radius when resize the control
     private void Ctrl_Resize(object sender, EventArgs e)
     {
