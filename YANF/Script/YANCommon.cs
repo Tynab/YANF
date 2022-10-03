@@ -9,6 +9,7 @@ namespace YANF.Script;
 
 public static class YANCommon
 {
+    #region Picker
     /// <summary>
     /// Tìm giá trị nhỏ nhất.
     /// </summary>
@@ -45,6 +46,9 @@ public static class YANCommon
         return res;
     }
 
+    #endregion
+
+    #region Shipper
     /// <summary>
     /// Invoke text tới label khác thread.
     /// </summary>
@@ -56,4 +60,29 @@ public static class YANCommon
     /// </summary>
     /// <param name="w">Độ rộng cần invoke.</param>
     public static void InvokeW(this Panel pnl, int w) => pnl.Invoke((MethodInvoker)(() => pnl.Width = w));
+    #endregion
+
+    #region Timer
+    /// <summary>
+    /// Chạy timer.
+    /// </summary>
+    public static void StartAdv(this Timer tmr)
+    {
+        if (!tmr.Enabled)
+        {
+            tmr.Start();
+        }
+    }
+
+    /// <summary>
+    /// Dừng timer.
+    /// </summary>
+    public static void StopAdv(this Timer tmr)
+    {
+        if (tmr.Enabled)
+        {
+            tmr.Stop();
+        }
+    }
+    #endregion
 }

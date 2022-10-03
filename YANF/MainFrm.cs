@@ -24,7 +24,7 @@ public partial class MainFrm : Form
 {
     #region Fields
     private IYANUpdateScrService _updateScrService;
-    private int _percent = 0;
+    private int _percent;
     #endregion
 
     #region Constructors
@@ -38,10 +38,10 @@ public partial class MainFrm : Form
     // Show update screen
     private void YanBtnUpdateScr_Click(object sender, EventArgs e)
     {
-        var updateScrService = new YANUpdateScrService();
-        _updateScrService = updateScrService;
+        _updateScrService = new YANUpdateScrService();
+        _percent = 0;
         _updateScrService.OnLoader();
-        tmrMain.Start();
+        tmrMain.StartAdv();
     }
 
     // Timer main
@@ -50,19 +50,16 @@ public partial class MainFrm : Form
         if (_percent < 100)
         {
             _percent++;
-            var updateScr = new UpdateScr(string.Format("{0} MB / {1} MB", _percent, 100), $"{_percent}%", (int)Ceiling(_percent * W_UPDATE_SCR / 100d));
+            var updateScr = new UpdateScr(string.Format("{0} MB / {1} MB", _percent * 1.37, 100 * 1.37), $"{_percent}%", (int)Ceiling(_percent * W_UPDATE_SCR / 100d));
             _ = Invoke((MethodInvoker)delegate
             {
                 _updateScrService.PublishValue(updateScr);
             });
-            //_updateScrService.UpdateValue(updateScr);
-            //updateScrService._lbl_Capacity_.InvokeText(string.Format("{0} MB / {1} MB", _percent, 100));
-            //updateScrService._lbl_Percent_.InvokeText($"{_percent}%");
-            //updateScrService._pnl_Prg_.InvokeW((int)Ceiling(_percent * W_UPDATE_SCR / 100d));
         }
         else
         {
-            tmrMain.Stop();
+            _updateScrService.OffLoader();
+            tmrMain.StopAdv();
         }
     }
     #endregion
