@@ -29,7 +29,6 @@ namespace YANF
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             this.panel1 = new System.Windows.Forms.Panel();
             this.yanTg4 = new YANF.Control.YANTg();
             this.yanTg3 = new YANF.Control.YANTg();
@@ -42,12 +41,11 @@ namespace YANF
             this.yanNb3 = new YANF.Control.YANNb();
             this.yanNb1 = new YANF.Control.YANNb();
             this.yanDp2 = new YANF.Control.YANDp();
-            this.yanPnl1 = new YANF.Control.YANPnl();
-            this.yanBtnUpdateScr = new YANF.Control.YANBtn();
+            this.yanPnl1 = new YANF.Control.YANGradPnl();
             this.yanBtn2 = new YANF.Control.YANBtn();
             this.yanDdl2 = new YANF.Control.YANDdl();
             this.yanPic1 = new YANF.Control.YANPic();
-            this.tmrMain = new System.Windows.Forms.Timer(this.components);
+            this.yanPnl2 = new YANF.Control.YANPnl();
             this.yanTg2 = new YANF.Control.YANTg();
             this.yanPrg4 = new YANF.Control.YANPrg();
             this.yanTg1 = new YANF.Control.YANTg();
@@ -78,7 +76,6 @@ namespace YANF
             this.yanDdl1 = new YANF.Control.YANDdl();
             this.yanBtn1 = new YANF.Control.YANBtn();
             this.panel1.SuspendLayout();
-            this.yanPnl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic16)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic13)).BeginInit();
@@ -372,34 +369,12 @@ namespace YANF
             // 
             this.yanPnl1.Angle = 45F;
             this.yanPnl1.BottomColor = System.Drawing.Color.HotPink;
-            this.yanPnl1.Controls.Add(this.yanBtnUpdateScr);
             this.yanPnl1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.yanPnl1.Location = new System.Drawing.Point(0, 321);
             this.yanPnl1.Name = "yanPnl1";
             this.yanPnl1.Size = new System.Drawing.Size(430, 360);
             this.yanPnl1.TabIndex = 0;
             this.yanPnl1.TopColor = System.Drawing.Color.RoyalBlue;
-            // 
-            // yanBtnUpdateScr
-            // 
-            this.yanBtnUpdateScr.BackColor = System.Drawing.Color.Transparent;
-            this.yanBtnUpdateScr.BorderColor = System.Drawing.Color.Lime;
-            this.yanBtnUpdateScr.BorderRadius = 0;
-            this.yanBtnUpdateScr.BorderSize = 2;
-            this.yanBtnUpdateScr.FlatAppearance.BorderSize = 0;
-            this.yanBtnUpdateScr.FlatAppearance.MouseDownBackColor = System.Drawing.Color.SlateBlue;
-            this.yanBtnUpdateScr.FlatAppearance.MouseOverBackColor = System.Drawing.Color.MediumSlateBlue;
-            this.yanBtnUpdateScr.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.yanBtnUpdateScr.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.yanBtnUpdateScr.ForeColor = System.Drawing.Color.White;
-            this.yanBtnUpdateScr.Location = new System.Drawing.Point(12, 53);
-            this.yanBtnUpdateScr.Name = "yanBtnUpdateScr";
-            this.yanBtnUpdateScr.Size = new System.Drawing.Size(150, 40);
-            this.yanBtnUpdateScr.TabIndex = 0;
-            this.yanBtnUpdateScr.TabStop = false;
-            this.yanBtnUpdateScr.Text = "Update Screen";
-            this.yanBtnUpdateScr.UseVisualStyleBackColor = false;
-            this.yanBtnUpdateScr.Click += new System.EventHandler(this.YanBtnUpdateScr_Click);
             // 
             // yanBtn2
             // 
@@ -465,9 +440,16 @@ namespace YANF
             this.yanPic1.TabStop = false;
             this.yanPic1.TopColor = System.Drawing.Color.RoyalBlue;
             // 
-            // tmrMain
+            // yanPnl2
             // 
-            this.tmrMain.Tick += new System.EventHandler(this.TmrMain_Tick);
+            this.yanPnl2.BackColor = System.Drawing.Color.Transparent;
+            this.yanPnl2.BorderColor = System.Drawing.Color.RoyalBlue;
+            this.yanPnl2.BorderRadius = 20;
+            this.yanPnl2.BorderSize = 0;
+            this.yanPnl2.Location = new System.Drawing.Point(436, 321);
+            this.yanPnl2.Name = "yanPnl2";
+            this.yanPnl2.Size = new System.Drawing.Size(409, 348);
+            this.yanPnl2.TabIndex = 0;
             // 
             // yanTg2
             // 
@@ -1065,6 +1047,7 @@ namespace YANF
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.White;
             this.ClientSize = new System.Drawing.Size(1264, 681);
+            this.Controls.Add(this.yanPnl2);
             this.Controls.Add(this.yanTg2);
             this.Controls.Add(this.yanPrg4);
             this.Controls.Add(this.yanTg1);
@@ -1104,7 +1087,6 @@ namespace YANF
             this.Text = "Form Main";
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
-            this.yanPnl1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.yanPic1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic16)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic13)).EndInit();
@@ -1151,7 +1133,7 @@ namespace YANF
         private System.Windows.Forms.Panel panel1;
         private Control.YANDp yanDp1;
         private Control.YANDp yanDp2;
-        private Control.YANPnl yanPnl1;
+        private Control.YANGradPnl yanPnl1;
         private Control.YANNb yanNb1;
         private Control.YANNb yanNb2;
         private Control.YANBtn yanBtn4;
@@ -1173,8 +1155,7 @@ namespace YANF
         private Control.YANTg yanTg2;
         private Control.YANTg yanTg4;
         private Control.YANTg yanTg3;
-        private Control.YANBtn yanBtnUpdateScr;
-        private System.Windows.Forms.Timer tmrMain;
+        private Control.YANPnl yanPnl2;
     }
 }
 

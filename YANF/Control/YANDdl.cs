@@ -9,13 +9,13 @@ using static System.ComponentModel.EditorBrowsableState;
 using static System.Drawing.Color;
 using static System.Drawing.ContentAlignment;
 using static System.Drawing.Drawing2D.SmoothingMode;
+using static System.Math;
 using static System.Windows.Forms.AutoCompleteMode;
 using static System.Windows.Forms.AutoCompleteSource;
 using static System.Windows.Forms.ComboBoxStyle;
 using static System.Windows.Forms.Cursors;
 using static System.Windows.Forms.DockStyle;
 using static System.Windows.Forms.FlatStyle;
-using static YANF.Script.YANCommon;
 
 namespace YANF.Control;
 
@@ -316,7 +316,7 @@ public class YANDdl : UserControl
     // Raises the text changed event
     private void Cmb_TextChanged(object sender, EventArgs e)
     {
-        if (_cmbList.DropDownStyle != DropDownList && !string.IsNullOrWhiteSpace(_cmbList.Text))
+        if (_cmbList.DropDownStyle != DropDownList && !string.IsNullOrEmpty(_cmbList.Text))
         {
             _lblText.Text = _cmbList.Text;
         }
@@ -367,7 +367,7 @@ public class YANDdl : UserControl
     {
         if (_cmbList.DropDownStyle != DropDownList)
         {
-            if (string.IsNullOrWhiteSpace(_string))
+            if (string.IsNullOrEmpty(_string))
             {
                 _string = _lblText.Text;
             }
@@ -378,7 +378,7 @@ public class YANDdl : UserControl
     // Raises the leave event
     private void Ddl_Leave(object sender, EventArgs e)
     {
-        if (_cmbList.DropDownStyle != DropDownList && string.IsNullOrWhiteSpace(_lblText.Text))
+        if (_cmbList.DropDownStyle != DropDownList && string.IsNullOrEmpty(_lblText.Text))
         {
             _lblText.Text = _string;
         }
@@ -388,7 +388,7 @@ public class YANDdl : UserControl
     private void Ctrl_Resize(object sender, EventArgs e)
     {
         var minSize = Width > Height ? Height : Width;
-        _borderSize = Miner(_borderSize, minSize / 2);
+        _borderSize = Min(_borderSize, minSize / 2);
     }
     #endregion
 

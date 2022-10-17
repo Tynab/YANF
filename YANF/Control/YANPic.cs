@@ -8,8 +8,8 @@ using static System.Drawing.Drawing2D.DashCap;
 using static System.Drawing.Drawing2D.DashStyle;
 using static System.Drawing.Drawing2D.SmoothingMode;
 using static System.Drawing.Rectangle;
+using static System.Math;
 using static System.Windows.Forms.PictureBoxSizeMode;
-using static YANF.Script.YANCommon;
 
 namespace YANF.Control;
 
@@ -187,7 +187,7 @@ public class YANPic : PictureBox
     private void Ctrl_Resize(object sender, EventArgs e)
     {
         var minSize = Width > Height ? Height : Width;
-        _borderSize = Miner(_borderSize, minSize / 2);
+        _borderSize = Min(_borderSize, minSize / 2);
     }
     #endregion
 }

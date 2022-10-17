@@ -7,8 +7,8 @@ using static System.Drawing.Color;
 using static System.Drawing.Drawing2D.PenAlignment;
 using static System.Drawing.Drawing2D.SmoothingMode;
 using static System.Drawing.Rectangle;
+using static System.Math;
 using static System.Windows.Forms.TextRenderer;
-using static YANF.Script.YANCommon;
 
 namespace YANF.Control;
 
@@ -109,7 +109,7 @@ public class YANTxt : UserControl
         get => _is_Placeholder ? null : _txtText.Text;
         set
         {
-            if (string.IsNullOrWhiteSpace(value))
+            if (string.IsNullOrEmpty(value))
             {
                 _txtText.Text = value;
                 SetPlaceholder();
@@ -360,8 +360,8 @@ public class YANTxt : UserControl
     private void Ctrl_Resize(object sender, EventArgs e)
     {
         var minSize = Width > Height ? Height : Width;
-        _borderRadius = Miner(_borderRadius, minSize / 2);
-        _borderSize = Miner(_borderSize, minSize / 2);
+        _borderRadius = Min(_borderRadius, minSize / 2);
+        _borderSize = Min(_borderSize, minSize / 2);
     }
     #endregion
 
@@ -369,7 +369,7 @@ public class YANTxt : UserControl
     // Add placeholder text to the control
     private void SetPlaceholder()
     {
-        if (string.IsNullOrWhiteSpace(_txtText.Text) && !string.IsNullOrWhiteSpace(_placeholderText))
+        if (string.IsNullOrEmpty(_txtText.Text) && !string.IsNullOrEmpty(_placeholderText))
         {
             _is_Placeholder = true;
             _txtText.Text = _placeholderText;
@@ -391,7 +391,7 @@ public class YANTxt : UserControl
     // Remove placeholder text to the control
     private void RemovePlaceholder()
     {
-        if (_is_Placeholder && !string.IsNullOrWhiteSpace(_placeholderText))
+        if (_is_Placeholder && !string.IsNullOrEmpty(_placeholderText))
         {
             _is_Placeholder = false;
             _txtText.Text = null;
