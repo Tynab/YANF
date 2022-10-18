@@ -74,10 +74,10 @@
     <Compile Include="Control\YANNb.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Control\YANPic.cs">
+    <Compile Include="Control\YANCirPic.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Control\YANPnl.cs">
+    <Compile Include="Control\YANGradPnl.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Control\YANPrg.cs">
@@ -98,7 +98,13 @@
     <Compile Include="MainFrm.Designer.cs">
       <DependentUpon>MainFrm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Model\UpdateScr.cs" />
+    <Compile Include="Screen\Demo1.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Screen\Demo1.Designer.cs">
+      <DependentUpon>Demo1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Script\Model\UpdateScr.cs" />
     <Compile Include="Screen\MiddleScr.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -137,6 +143,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="Screen\Demo1.resx">
+      <DependentUpon>Demo1.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Screen\YANUpdateScr.resx">
       <DependentUpon>YANUpdateScr.cs</DependentUpon>
     </EmbeddedResource>
@@ -153,24 +162,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <None Include="Resources\gCounter.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\gLoading.gif" />
+    <None Include="Resources\pPTTCB.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\gUpdating.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\gWaiting.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\iLoader.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\iUpdater.ico" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\pCalendarBlack.png" />

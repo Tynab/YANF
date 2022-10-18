@@ -3,12 +3,12 @@
 public interface IYANSrcService
 {
     /// <summary>
-    /// Bật form updater.
+    /// Bật form update.
     /// </summary>
     public void OnLoader();
 
     /// <summary>
-    /// Tắt form updater.
+    /// Tắt form update.
     /// </summary>
     public void OffLoader();
 }

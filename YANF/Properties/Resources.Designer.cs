@@ -63,60 +63,10 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap gCounter {
-            get {
-                object obj = ResourceManager.GetObject("gCounter", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap gLoading {
-            get {
-                object obj = ResourceManager.GetObject("gLoading", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
         internal static System.Drawing.Bitmap gUpdating {
             get {
                 object obj = ResourceManager.GetObject("gUpdating", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap gWaiting {
-            get {
-                object obj = ResourceManager.GetObject("gWaiting", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
-        /// </summary>
-        internal static System.Drawing.Icon iLoader {
-            get {
-                object obj = ResourceManager.GetObject("iLoader", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
-        /// </summary>
-        internal static System.Drawing.Icon iUpdater {
-            get {
-                object obj = ResourceManager.GetObject("iUpdater", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
             }
         }
         
@@ -136,6 +86,16 @@ namespace YANF.Properties {
         internal static System.Drawing.Bitmap pCalendarWhite {
             get {
                 object obj = ResourceManager.GetObject("pCalendarWhite", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap pPTTCB {
+            get {
+                object obj = ResourceManager.GetObject("pPTTCB", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

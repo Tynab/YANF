@@ -7,8 +7,8 @@ using static System.Drawing.Color;
 using static System.Drawing.Drawing2D.PenAlignment;
 using static System.Drawing.Drawing2D.SmoothingMode;
 using static System.Drawing.Rectangle;
+using static System.Math;
 using static System.Windows.Forms.TextRenderer;
-using static YANF.Script.YANCommon;
 
 namespace YANF.Control;
 
@@ -360,8 +360,8 @@ public class YANTxt : UserControl
     private void Ctrl_Resize(object sender, EventArgs e)
     {
         var minSize = Width > Height ? Height : Width;
-        _borderRadius = Miner(_borderRadius, minSize / 2);
-        _borderSize = Miner(_borderSize, minSize / 2);
+        _borderRadius = Min(_borderRadius, minSize / 2);
+        _borderSize = Min(_borderSize, minSize / 2);
     }
     #endregion
 

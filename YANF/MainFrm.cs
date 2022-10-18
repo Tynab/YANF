@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using YANF.Model;
+using YANF.Script.Model;
 using YANF.Screen;
 using YANF.Script;
 using YANF.Script.Service;

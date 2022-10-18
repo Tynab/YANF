@@ -4,11 +4,11 @@ using System.Drawing;
 using System.Windows.Forms;
 using static System.Drawing.Color;
 using static System.Drawing.Drawing2D.PenAlignment;
+using static System.Math;
 using static System.Windows.Forms.ControlStyles;
 using static System.Windows.Forms.Cursors;
 using static System.Windows.Forms.TextRenderer;
 using static YANF.Properties.Resources;
-using static YANF.Script.YANCommon;
 
 namespace YANF.Control;
 
@@ -159,7 +159,7 @@ public class YANDp : DateTimePicker
     private void Ctrl_Resize(object sender, EventArgs e)
     {
         var minSize = Width > Height ? Height : Width;
-        _borderSize = Miner(_borderSize, minSize / 2);
+        _borderSize = Min(_borderSize, minSize / 2);
     }
     #endregion
 

@@ -1,4 +1,4 @@
-﻿namespace YANF.Model;
+﻿namespace YANF.Script.Model;
 
 public class UpdateScr
 {

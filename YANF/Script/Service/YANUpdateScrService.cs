@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 using System.Windows.Forms;
-using YANF.Model;
+using YANF.Script.Model;
 using YANF.Screen;
 
 namespace YANF.Script.Service;

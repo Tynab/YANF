@@ -18,9 +18,9 @@ public class YANEvent
         _updateScrService = srcService;
     }
     /// <summary>
-    /// Truyền hiển thị cho form updater.
+    /// Truyền hiển thị cho form update.
     /// </summary>
-    public void Updater_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
+    public void Update_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
     {
         _updateScrService._lbl_Capacity_.InvokeText(string.Format("{0} MB / {1} MB", (e.BytesReceived / 1024d / 1024d).ToString("0.00"), (e.TotalBytesToReceive / 1024D / 1024D).ToString("0.00")));
         _updateScrService._lbl_Percent_.InvokeText($"{e.ProgressPercentage}%");

@@ -1,4 +1,4 @@
-﻿using YANF.Model;
+﻿using YANF.Script.Model;
 
 namespace YANF.Script;
 

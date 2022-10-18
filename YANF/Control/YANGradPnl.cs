@@ -6,7 +6,7 @@ using static System.Drawing.Color;
 
 namespace YANF.Control;
 
-public class YANPnl : Panel
+public class YANGradPnl : Panel
 {
     #region Fields
     private Color _topColor = RoyalBlue;
