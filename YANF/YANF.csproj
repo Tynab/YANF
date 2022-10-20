@@ -156,7 +156,6 @@
     <EmbeddedResource Include="Screen\YANUpdateScr.resx">
       <DependentUpon>YANUpdateScr.cs</DependentUpon>
     </EmbeddedResource>
-    <None Include="nuget.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
