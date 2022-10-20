@@ -9,9 +9,19 @@
     <license type="expression">MIT</license>
     <!-- <icon>icon.png</icon> -->
     <projectUrl>https://github.com/Tynab/YANF</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/Tynab/YANF/main/pic/0.png</iconUrl>
     <description>Yami An Nephilim Framework</description>
-    <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
-    <copyright>$copyright$</copyright>
-    <tags>Tag1 Tag2</tags>
+    <releaseNotes>Add new style control:
+	- Button
+	- Circle PictureBox
+	- DropdownList
+	- Gradient Panel
+	- NumberBox
+	- ProgressBar
+	- RadioButton
+	- ToggleButton
+	- TextBox</releaseNotes>
+    <copyright>Copyright ©  2022</copyright>
+    <tags>C# .NET WindowsForms</tags>
   </metadata>
 </package>
