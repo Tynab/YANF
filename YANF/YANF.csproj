@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{40C18CF6-ADC1-4B18-804D-7E42EE7D6DB3}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>WinExe</OutputType>
     <RootNamespace>YANF</RootNamespace>
     <AssemblyName>YANF</AssemblyName>
     <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
@@ -111,32 +111,31 @@
     <Compile Include="Screen\Demo1.Designer.cs">
       <DependentUpon>Demo1.cs</DependentUpon>
     </Compile>
-    <Compile Include="Script\Model\UpdateScr.cs" />
-    <Compile Include="Screen\MiddleScr.cs">
+    <Compile Include="Script\Model\UpdScr.cs" />
+    <Compile Include="Screen\MiddleScreen.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Screen\YANAnonScr.cs">
+    <Compile Include="Screen\YANAnonScreen.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Screen\YANHardScr.cs">
+    <Compile Include="Screen\YANHardScreen.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Screen\YANUpdateScr.cs">
+    <Compile Include="Screen\YANUpdateScreen.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Screen\YANUpdateScr.Designer.cs">
-      <DependentUpon>YANUpdateScr.cs</DependentUpon>
+    <Compile Include="Screen\YANUpdateScreen.Designer.cs">
+      <DependentUpon>YANUpdateScreen.cs</DependentUpon>
     </Compile>
     <Compile Include="Script\IYANSrcService.cs" />
-    <Compile Include="Script\IYANUpdateScrService.cs" />
+    <Compile Include="Script\IYANUpdScrService.cs" />
     <Compile Include="Script\Service\YANUpdateScrService.cs" />
-    <Compile Include="Script\YANAnimation.cs" />
-    <Compile Include="Script\YANCommon.cs" />
+    <Compile Include="Script\YANDisplay.cs" />
+    <Compile Include="Script\YANTimer.cs" />
     <Compile Include="Script\YANConstant.cs" />
-    <Compile Include="Script\YANEllipseFrm.cs" />
-    <Compile Include="Script\YANEvent.cs" />
+    <Compile Include="Script\YANMath.cs" />
     <EmbeddedResource Include="MainFrm.resx">
       <DependentUpon>MainFrm.cs</DependentUpon>
     </EmbeddedResource>
@@ -153,8 +152,8 @@
     <EmbeddedResource Include="Screen\Demo1.resx">
       <DependentUpon>Demo1.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Screen\YANUpdateScr.resx">
-      <DependentUpon>YANUpdateScr.cs</DependentUpon>
+    <EmbeddedResource Include="Screen\YANUpdateScreen.resx">
+      <DependentUpon>YANUpdateScreen.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -171,9 +170,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\pPTTCB.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\gUpdating.gif" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\pCalendarBlack.png" />
@@ -198,6 +194,17 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ic.ico" />
+    <None Include="Resources\pPS.png" />
+    <None Include="Resources\pPU.png" />
+    <None Include="Resources\pPE.png" />
+    <None Include="Resources\pPF.png" />
+    <None Include="Resources\pXI.png" />
+    <None Include="Resources\gUpdate.gif" />
+    <None Include="Resources\pPTLT.png" />
+    <None Include="Resources\pPTTKN.png" />
+    <None Include="Resources\pPTTBH.png" />
+    <None Include="Resources\pPTTCV.png" />
+    <None Include="Resources\pPTTMR.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

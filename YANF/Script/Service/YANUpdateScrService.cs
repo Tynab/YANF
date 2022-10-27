@@ -1,55 +1,59 @@
-﻿using System.Threading;
+﻿using System.Net;
+using System.Threading;
 using System.Windows.Forms;
-using YANF.Script.Model;
 using YANF.Screen;
+using YANF.Script.Model;
+using static System.Math;
+using static YANF.Script.YANConstant;
 
-namespace YANF.Script.Service;
-
-public class YANUpdateScrService : IYANUpdateScrService
+namespace YANF.Script.Service
 {
-    #region Fields
-    public Panel _pnl_Prg_;
-    public Label _lbl_Capacity_;
-    public Label _lbl_Percent_;
-    private YANUpdateScr _scr_Update;
-    private Thread _thread;
-    #endregion
-
-    #region Methods
-    // Loading process
-    private void LoadingPrc(object parent)
+    public class YANUpdateScrService : IYANUpdScrService
     {
-        _scr_Update = new YANUpdateScr();
-        _pnl_Prg_ = _scr_Update.panelProgressBar;
-        _lbl_Capacity_ = _scr_Update.labelCapacity;
-        _lbl_Percent_ = _scr_Update.labelPercent;
-        _ = _scr_Update.ShowDialog();
-    }
+        #region Fields
+        private YANUpdateScreen _scrUpd;
+        private Thread _thread;
+        private Panel _pnlPrg;
+        private Label _lblCapacity;
+        private Label _lblPercent;
+        #endregion
 
-    // Implementation OnLoader
-    public void OnLoader()
-    {
-        _thread = new Thread(new ParameterizedThreadStart(LoadingPrc));
-        _thread.Start();
-    }
-
-    // Implementation OffLoader
-    public void OffLoader()
-    {
-        if (_scr_Update != null)
+        #region Methods
+        // Loading process
+        private void LoadingPrc(object parent)
         {
-            _ = _scr_Update.BeginInvoke(new ThreadStart(_scr_Update.Frm_Close));
-            _scr_Update = null;
-            _thread = null;
+            _scrUpd = new YANUpdateScreen();
+            _pnlPrg = _scrUpd.pnlProgressBar;
+            _lblCapacity = _scrUpd.lblCapacity;
+            _lblPercent = _scrUpd.lblPercent;
+            _ = _scrUpd.ShowDialog();
         }
-    }
 
-    // Implementation UpdateValue
-    public void PublishValue(UpdateScr updateScr)
-    {
-        _pnl_Prg_.Width = updateScr.Width;
-        _lbl_Capacity_.Text = updateScr.Capacity;
-        _lbl_Percent_.Text = updateScr?.Percent;
+        // Implementation OnLoader
+        public void OnLoader()
+        {
+            _thread = new Thread(new ParameterizedThreadStart(LoadingPrc));
+            _thread.Start();
+        }
+
+        // Implementation OffLoader
+        public void OffLoader()
+        {
+            if (_scrUpd != null)
+            {
+                _ = _scrUpd.BeginInvoke(new ThreadStart(_scrUpd.Frm_Close));
+                _scrUpd = null;
+                _thread = null;
+            }
+        }
+
+        // Implementation UpdateValue
+        public void PublishValue(UpdScr updateScr)
+        {
+            _pnlPrg.Width = updateScr.Width;
+            _lblCapacity.Text = updateScr.Capacity;
+            _lblPercent.Text = updateScr?.Percent;
+        }
+        #endregion
     }
-    #endregion
 }

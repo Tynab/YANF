@@ -1,14 +1,15 @@
-﻿namespace YANF.Script;
-
-public interface IYANSrcService
+﻿namespace YANF.Script
 {
-    /// <summary>
-    /// Bật form update.
-    /// </summary>
-    public void OnLoader();
+    public interface IYANSrcService
+    {
+        /// <summary>
+        /// Bật form update.
+        /// </summary>
+        public void OnLoader();
 
-    /// <summary>
-    /// Tắt form update.
-    /// </summary>
-    public void OffLoader();
+        /// <summary>
+        /// Tắt form update.
+        /// </summary>
+        public void OffLoader();
+    }
 }

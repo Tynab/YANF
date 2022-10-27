@@ -4,63 +4,63 @@ using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using static System.Drawing.Color;
 
-namespace YANF.Control;
-
-public class YANGradPnl : Panel
+namespace YANF.Control
 {
-    #region Fields
-    private Color _topColor = RoyalBlue;
-    private Color _bottomColor = HotPink;
-    private float _angle;
-    #endregion
-
-    #region Properties
-    [Category("YAN Appearance"), Description("The color of the top gradient.")]
-    public Color TopColor
+    public class YANGradPnl : Panel
     {
-        get => _topColor;
-        set
-        {
-            _topColor = value;
-            Invalidate();
-        }
-    }
+        #region Fields
+        private Color _topColor = RoyalBlue;
+        private Color _bottomColor = HotPink;
+        private float _angle;
+        #endregion
 
-    [Category("YAN Appearance"), Description("The color of the bottom gradient.")]
-    public Color BottomColor
-    {
-        get => _bottomColor;
-        set
+        #region Properties
+        [Category("YAN Appearance"), Description("The color of the top gradient.")]
+        public Color TopColor
         {
-            _bottomColor = value;
-            Invalidate();
-        }
-    }
-
-    [Category("YAN Appearance"), Description("Angle of the gradient.")]
-    public float Angle
-    {
-        get => _angle;
-        set
-        {
-            if (value is >= 0 and <= 360)
+            get => _topColor;
+            set
             {
-                _angle = value;
+                _topColor = value;
                 Invalidate();
             }
         }
-    }
-    #endregion
 
-    #region Overridden
-    // On paint
-    protected override void OnPaint(PaintEventArgs e)
-    {
-        using (var brush = new LinearGradientBrush(ClientRectangle, _topColor, _bottomColor, _angle))
+        [Category("YAN Appearance"), Description("The color of the bottom gradient.")]
+        public Color BottomColor
         {
-            e.Graphics.FillRectangle(brush, ClientRectangle);
+            get => _bottomColor;
+            set
+            {
+                _bottomColor = value;
+                Invalidate();
+            }
         }
-        base.OnPaint(e);
+
+        [Category("YAN Appearance"), Description("Angle of the gradient.")]
+        public float Angle
+        {
+            get => _angle;
+            set
+            {
+                if (value is >= 0 and <= 360)
+                {
+                    _angle = value;
+                    Invalidate();
+                }
+            }
+        }
+        #endregion
+
+        #region Overridden
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            using (var brush = new LinearGradientBrush(ClientRectangle, _topColor, _bottomColor, _angle))
+            {
+                e.Graphics.FillRectangle(brush, ClientRectangle);
+            }
+            base.OnPaint(e);
+        }
+        #endregion
     }
-    #endregion
 }

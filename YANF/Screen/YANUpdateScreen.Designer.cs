@@ -1,6 +1,6 @@
 ﻿namespace YANF.Screen;
 
-partial class YANUpdateScr
+partial class YANUpdateScreen
 {
     /// <summary>
     /// Required designer variable.
@@ -28,13 +28,13 @@ partial class YANUpdateScr
     /// </summary>
     private void InitializeComponent()
     {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(YANUpdateScr));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(YANUpdateScreen));
             this.panelMain = new System.Windows.Forms.Panel();
-            this.panelProgressBar = new System.Windows.Forms.Panel();
-            this.labelPercent = new System.Windows.Forms.Label();
+            this.pnlProgressBar = new System.Windows.Forms.Panel();
+            this.lblPercent = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.pictureBoxUpdating = new System.Windows.Forms.PictureBox();
-            this.labelCapacity = new System.Windows.Forms.Label();
+            this.lblCapacity = new System.Windows.Forms.Label();
             this.panelMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxUpdating)).BeginInit();
             this.SuspendLayout();
@@ -42,11 +42,11 @@ partial class YANUpdateScr
             // panelMain
             // 
             this.panelMain.BackColor = System.Drawing.Color.White;
-            this.panelMain.Controls.Add(this.panelProgressBar);
-            this.panelMain.Controls.Add(this.labelPercent);
+            this.panelMain.Controls.Add(this.pnlProgressBar);
+            this.panelMain.Controls.Add(this.lblPercent);
             this.panelMain.Controls.Add(this.label1);
             this.panelMain.Controls.Add(this.pictureBoxUpdating);
-            this.panelMain.Controls.Add(this.labelCapacity);
+            this.panelMain.Controls.Add(this.lblCapacity);
             this.panelMain.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelMain.Font = new System.Drawing.Font("Segoe UI Light", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.panelMain.Location = new System.Drawing.Point(0, 0);
@@ -55,29 +55,28 @@ partial class YANUpdateScr
             this.panelMain.Size = new System.Drawing.Size(360, 240);
             this.panelMain.TabIndex = 0;
             // 
-            // panelProgressBar
+            // pnlProgressBar
             // 
-            this.panelProgressBar.BackColor = System.Drawing.Color.LightSkyBlue;
-            this.panelProgressBar.Dock = System.Windows.Forms.DockStyle.Left;
-            this.panelProgressBar.Location = new System.Drawing.Point(0, 235);
-            this.panelProgressBar.Margin = new System.Windows.Forms.Padding(0);
-            this.panelProgressBar.Name = "panelProgressBar";
-            this.panelProgressBar.Size = new System.Drawing.Size(360, 5);
-            this.panelProgressBar.TabIndex = 0;
+            this.pnlProgressBar.BackColor = System.Drawing.Color.LightSkyBlue;
+            this.pnlProgressBar.Dock = System.Windows.Forms.DockStyle.Left;
+            this.pnlProgressBar.Location = new System.Drawing.Point(0, 235);
+            this.pnlProgressBar.Margin = new System.Windows.Forms.Padding(0);
+            this.pnlProgressBar.Name = "pnlProgressBar";
+            this.pnlProgressBar.Size = new System.Drawing.Size(1, 5);
+            this.pnlProgressBar.TabIndex = 0;
             // 
-            // labelPercent
+            // lblPercent
             // 
-            this.labelPercent.BackColor = System.Drawing.Color.Transparent;
-            this.labelPercent.Dock = System.Windows.Forms.DockStyle.Top;
-            this.labelPercent.Font = new System.Drawing.Font("Segoe UI Light", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPercent.ForeColor = System.Drawing.Color.Gray;
-            this.labelPercent.Location = new System.Drawing.Point(0, 215);
-            this.labelPercent.Margin = new System.Windows.Forms.Padding(0);
-            this.labelPercent.Name = "labelPercent";
-            this.labelPercent.Size = new System.Drawing.Size(360, 20);
-            this.labelPercent.TabIndex = 0;
-            this.labelPercent.Text = "0%";
-            this.labelPercent.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.lblPercent.BackColor = System.Drawing.Color.Transparent;
+            this.lblPercent.Dock = System.Windows.Forms.DockStyle.Top;
+            this.lblPercent.Font = new System.Drawing.Font("Segoe UI Light", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblPercent.ForeColor = System.Drawing.Color.Gray;
+            this.lblPercent.Location = new System.Drawing.Point(0, 215);
+            this.lblPercent.Margin = new System.Windows.Forms.Padding(0);
+            this.lblPercent.Name = "lblPercent";
+            this.lblPercent.Size = new System.Drawing.Size(360, 20);
+            this.lblPercent.TabIndex = 0;
+            this.lblPercent.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // label1
             // 
@@ -97,7 +96,7 @@ partial class YANUpdateScr
             // 
             this.pictureBoxUpdating.BackColor = System.Drawing.Color.Transparent;
             this.pictureBoxUpdating.Dock = System.Windows.Forms.DockStyle.Top;
-            this.pictureBoxUpdating.Image = global::YANF.Properties.Resources.gUpdating;
+            this.pictureBoxUpdating.Image = global::YANF.Properties.Resources.gUpdate;
             this.pictureBoxUpdating.Location = new System.Drawing.Point(0, 20);
             this.pictureBoxUpdating.Margin = new System.Windows.Forms.Padding(0);
             this.pictureBoxUpdating.Name = "pictureBoxUpdating";
@@ -106,19 +105,18 @@ partial class YANUpdateScr
             this.pictureBoxUpdating.TabIndex = 1;
             this.pictureBoxUpdating.TabStop = false;
             // 
-            // labelCapacity
+            // lblCapacity
             // 
-            this.labelCapacity.BackColor = System.Drawing.Color.Transparent;
-            this.labelCapacity.Dock = System.Windows.Forms.DockStyle.Top;
-            this.labelCapacity.Font = new System.Drawing.Font("Segoe UI Light", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelCapacity.ForeColor = System.Drawing.Color.Gray;
-            this.labelCapacity.Location = new System.Drawing.Point(0, 0);
-            this.labelCapacity.Margin = new System.Windows.Forms.Padding(0);
-            this.labelCapacity.Name = "labelCapacity";
-            this.labelCapacity.Size = new System.Drawing.Size(360, 20);
-            this.labelCapacity.TabIndex = 0;
-            this.labelCapacity.Text = "0 MB / 0 MB";
-            this.labelCapacity.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
+            this.lblCapacity.BackColor = System.Drawing.Color.Transparent;
+            this.lblCapacity.Dock = System.Windows.Forms.DockStyle.Top;
+            this.lblCapacity.Font = new System.Drawing.Font("Segoe UI Light", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblCapacity.ForeColor = System.Drawing.Color.Gray;
+            this.lblCapacity.Location = new System.Drawing.Point(0, 0);
+            this.lblCapacity.Margin = new System.Windows.Forms.Padding(0);
+            this.lblCapacity.Name = "lblCapacity";
+            this.lblCapacity.Size = new System.Drawing.Size(360, 20);
+            this.lblCapacity.TabIndex = 0;
+            this.lblCapacity.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
             // 
             // YANUpdateScreen
             // 
@@ -133,11 +131,13 @@ partial class YANUpdateScr
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "YANUpdateScreen";
+            this.Opacity = 0D;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Updating...";
             this.TopMost = true;
             this.TransparencyKey = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
+            this.Shown += new System.EventHandler(this.YANUpdateScreen_Shown);
             this.panelMain.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxUpdating)).EndInit();
             this.ResumeLayout(false);
@@ -147,9 +147,9 @@ partial class YANUpdateScr
     #endregion
 
     private System.Windows.Forms.Panel panelMain;
-    public System.Windows.Forms.Panel panelProgressBar;
-    public System.Windows.Forms.Label labelPercent;
+    public System.Windows.Forms.Panel pnlProgressBar;
+    public System.Windows.Forms.Label lblPercent;
     private System.Windows.Forms.Label label1;
     private System.Windows.Forms.PictureBox pictureBoxUpdating;
-    public System.Windows.Forms.Label labelCapacity;
+    public System.Windows.Forms.Label lblCapacity;
 }
