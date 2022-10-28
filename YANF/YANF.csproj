@@ -111,7 +111,12 @@
     <Compile Include="Screen\Demo1.Designer.cs">
       <DependentUpon>Demo1.cs</DependentUpon>
     </Compile>
-    <Compile Include="Script\Model\UpdScr.cs" />
+    <Compile Include="Screen\Demo2.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Screen\Demo2.Designer.cs">
+      <DependentUpon>Demo2.cs</DependentUpon>
+    </Compile>
     <Compile Include="Screen\MiddleScreen.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -132,7 +137,10 @@
     <Compile Include="Script\IYANSrcService.cs" />
     <Compile Include="Script\IYANUpdScrService.cs" />
     <Compile Include="Script\Service\YANUpdateScrService.cs" />
+    <Compile Include="Script\YANController.cs" />
     <Compile Include="Script\YANDisplay.cs" />
+    <Compile Include="Script\YANEvent.cs" />
+    <Compile Include="Script\YANString.cs" />
     <Compile Include="Script\YANTimer.cs" />
     <Compile Include="Script\YANConstant.cs" />
     <Compile Include="Script\YANMath.cs" />
@@ -151,6 +159,9 @@
     </Compile>
     <EmbeddedResource Include="Screen\Demo1.resx">
       <DependentUpon>Demo1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Screen\Demo2.resx">
+      <DependentUpon>Demo2.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Screen\YANUpdateScreen.resx">
       <DependentUpon>YANUpdateScreen.cs</DependentUpon>
@@ -194,6 +205,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ic.ico" />
+    <None Include="Resources\pBI.png" />
+    <None Include="Resources\pXO.png" />
+    <None Include="Resources\pQL.png" />
     <None Include="Resources\pPS.png" />
     <None Include="Resources\pPU.png" />
     <None Include="Resources\pPE.png" />

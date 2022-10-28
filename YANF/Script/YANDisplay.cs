@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Drawing;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using static System.Drawing.FontStyle;
 using static System.Runtime.InteropServices.CharSet;
 using static System.Threading.Thread;
 using static YANF.Script.YANConstant;
@@ -44,6 +47,22 @@ namespace YANF.Script
                 frm.Opacity -= 0.05;
                 frm.Update();
                 Sleep(10);
+            }
+        }
+
+        /// <summary>
+        /// Highlight label link bằng tên control (prefix tên label bắt buộc là "lbl").
+        /// </summary>
+        /// <param name="typeName">Loại control.</param>
+        /// <param name="color">Màu highlight.</param>
+        /// <param name="isBold">In đậm hoặc không.</param>
+        public static void HighLightLblLinkByCtrl(this System.Windows.Forms.Control ctrl, string typeName, Color color, bool isBold)
+        {
+            var lbl = (Label)ctrl.FindForm().Controls.Find($"lbl{ctrl.Name.Substring(typeName.Length)}", true).FirstOrDefault();
+            if (lbl != null)
+            {
+                lbl.ForeColor = color;
+                lbl.Font = isBold ? new Font(lbl.Font, Bold) : new Font(lbl.Font, Regular);
             }
         }
     }

@@ -20,7 +20,7 @@ namespace YANF.Screen
         #endregion
 
         #region Events
-        // Shown form
+        // Shown frm
         private void YANUpdateScreen_Shown(object sender, EventArgs e) => this.FadeIn();
         #endregion
     }

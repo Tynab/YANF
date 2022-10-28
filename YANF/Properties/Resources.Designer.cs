@@ -73,6 +73,16 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap pBI {
+            get {
+                object obj = ResourceManager.GetObject("pBI", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap pCalendarBlack {
             get {
                 object obj = ResourceManager.GetObject("pCalendarBlack", resourceCulture);
@@ -193,6 +203,16 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap pQL {
+            get {
+                object obj = ResourceManager.GetObject("pQL", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap pUserSolid1 {
             get {
                 object obj = ResourceManager.GetObject("pUserSolid1", resourceCulture);
@@ -206,6 +226,16 @@ namespace YANF.Properties {
         internal static System.Drawing.Bitmap pXI {
             get {
                 object obj = ResourceManager.GetObject("pXI", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap pXO {
+            get {
+                object obj = ResourceManager.GetObject("pXO", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

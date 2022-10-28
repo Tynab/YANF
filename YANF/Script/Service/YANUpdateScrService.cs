@@ -1,10 +1,6 @@
-﻿using System.Net;
-using System.Threading;
+﻿using System.Threading;
 using System.Windows.Forms;
 using YANF.Screen;
-using YANF.Script.Model;
-using static System.Math;
-using static YANF.Script.YANConstant;
 
 namespace YANF.Script.Service
 {
@@ -48,11 +44,11 @@ namespace YANF.Script.Service
         }
 
         // Implementation UpdateValue
-        public void PublishValue(UpdScr updateScr)
+        public void PublishValue(string capacity, string percent, int width)
         {
-            _pnlPrg.Width = updateScr.Width;
-            _lblCapacity.Text = updateScr.Capacity;
-            _lblPercent.Text = updateScr?.Percent;
+            _pnlPrg.Width = width;
+            _lblCapacity.Text = capacity;
+            _lblPercent.Text = percent;
         }
         #endregion
     }
