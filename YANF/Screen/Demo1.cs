@@ -5,7 +5,10 @@ using YANF.Control;
 using YANF.Script;
 using static System.DateTime;
 using static System.Drawing.Color;
+using static System.Windows.Forms.MessageBoxButtons;
+using static System.Windows.Forms.MessageBoxIcon;
 using static YANF.Properties.Resources;
+using static YANF.Script.YANConstant.MsgBoxLang;
 using static YANF.Script.YANEvent;
 using Label = System.Windows.Forms.Label;
 
@@ -78,8 +81,11 @@ namespace YANF.Screen
         #endregion
 
         #region Event
-        // Show frm
+        // Shown frm
         private void Demo1_Shown(object sender, EventArgs e) => this.FadeIn();
+
+        // Closing frm
+        private void Demo1_FormClosing(object sender, FormClosingEventArgs e) => this.FadeOut();
 
         // btn menu mouse enter
         private void ButtonMenu_MouseEnter(object sender, EventArgs e)
@@ -92,14 +98,14 @@ namespace YANF.Screen
             }
         }
 
-        // btn X mouse enter
-        private void BtnX_MouseEnter(object sender, EventArgs e) => ((Button)sender).BackgroundImage = pXO;
+        // btn Exit mouse enter
+        private void BtnExit_MouseEnter(object sender, EventArgs e) => ((Button)sender).BackgroundImage = pXO;
 
         // Button menu mouse leave
         private void BtnMenu_MouseLeave(object sender, EventArgs e) => ((Button)sender).ForeColor = DodgerBlue;
 
-        // btn X mouse leave
-        private void BtnX_MouseLeave(object sender, EventArgs e) => ((Button)sender).BackgroundImage = pXI;
+        // btn Exit mouse leave
+        private void BtnExit_MouseLeave(object sender, EventArgs e) => ((Button)sender).BackgroundImage = pXI;
 
         // btn menu click
         private void BtnMenu_Click(object sender, EventArgs e)
@@ -119,18 +125,28 @@ namespace YANF.Screen
             }
         }
         // btn Back click
-        private void BtnBack_Click(object sender, EventArgs e)
+        private void BtnBack_Click(object sender, EventArgs e) => Close();
+
+        // btn Exit click
+        private void BtnExit_Click(object sender, EventArgs e)
         {
-            this.FadeOut();
-            Close();
+            if (YANMessageBox.Show("WARNING", "If you close this window, all data will be lost!", OKCancel, Warning) == DialogResult.OK)
+            {
+                Close();
+            }
         }
 
-        // btn X click
-        private void BtnX_Click(object sender, EventArgs e)
-        {
-            this.FadeOut();
-            Close();
-        }
+        // btn Eraser click
+        private void BtnEraser_Click(object sender, EventArgs e) => YANMessageBox.Show("LỖI", "Thất bại!", AbortRetryIgnore, Error, VIE);
+
+        // btn Save click
+        private void BtnSave_Click(object sender, EventArgs e) => YANMessageBox.Show("情報", "完了！", OK, Information, JAP);
+
+        // btn Sync click
+        private void BtnSync_Click(object sender, EventArgs e) => YANMessageBox.Show("QUESTION", "Do you want to continue?", YesNoCancel, Question);
+
+        // btn Search click
+        private void BtnSearch_Click(object sender, EventArgs e) => YANMessageBox.Show("KẾT QUẢ", "Không tìm thấy kết quả!", RetryCancel);
 
         // Highlight lbl link by ddl
         private void DdlLinkLbl_Enter(object sender, EventArgs e) => ((YANDdl)sender).HighLightLblLinkByCtrl("ddl", LightYellow, false);
@@ -150,7 +166,7 @@ namespace YANF.Screen
         // Restored highlight lbl link by txt
         private void TxtLinkLbl_Leave(object sender, EventArgs e) => ((YANTxt)sender).HighLightLblLinkByCtrl("txt", WhiteSmoke, false);
 
-        // dp NgS value change
+        // dp NgS value changed
         private void DpNgS_ValueChanged(object sender, EventArgs e)
         {
             var yy = Today.Year - dpNgS.Value.Year;

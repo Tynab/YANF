@@ -21,7 +21,7 @@ namespace YANF
 
         #region Events
         // Show update screen
-        private void YanBtnUpdateScr_Click(object sender, EventArgs e)
+        private void BtnUpdScr_Click(object sender, EventArgs e)
         {
             _updateScrService = new YANUpdateScrService();
             _percent = 0;
@@ -30,7 +30,10 @@ namespace YANF
         }
 
         // Show demo 1 screen
-        private void YanBtnDemo1_Click(object sender, EventArgs e) => new Demo1().Show();
+        private void BtnDemo1_Click(object sender, EventArgs e) => new Demo1().Show();
+
+        // Show demo 2 screen
+        private void BtnDemo2_Click(object sender, EventArgs e) => new Demo2().Show();
 
         // Timer main
         private void TmrMain_Tick(object sender, EventArgs e)

@@ -79,12 +79,12 @@
             this.txtHT = new YANF.Control.YANTxt();
             this.lblHT = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
-            this.yanBtn11 = new YANF.Control.YANBtn();
-            this.yanBtn10 = new YANF.Control.YANBtn();
-            this.yanBtn9 = new YANF.Control.YANBtn();
-            this.yanBtn8 = new YANF.Control.YANBtn();
+            this.btnSync = new YANF.Control.YANBtn();
+            this.btnSave = new YANF.Control.YANBtn();
+            this.btnEraser = new YANF.Control.YANBtn();
+            this.btnSearch = new YANF.Control.YANBtn();
             this.yanTxt2 = new YANF.Control.YANTxt();
-            this.btnX = new YANF.Control.YANBtn();
+            this.btnExit = new YANF.Control.YANBtn();
             this.lblCaption = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
             this.pnlSelected = new System.Windows.Forms.Panel();
@@ -124,12 +124,12 @@
             // 
             this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(51)))), ((int)(((byte)(73)))));
             this.panel1.Controls.Add(this.panel3);
-            this.panel1.Controls.Add(this.yanBtn11);
-            this.panel1.Controls.Add(this.yanBtn10);
-            this.panel1.Controls.Add(this.yanBtn9);
-            this.panel1.Controls.Add(this.yanBtn8);
+            this.panel1.Controls.Add(this.btnSync);
+            this.panel1.Controls.Add(this.btnSave);
+            this.panel1.Controls.Add(this.btnEraser);
+            this.panel1.Controls.Add(this.btnSearch);
             this.panel1.Controls.Add(this.yanTxt2);
-            this.panel1.Controls.Add(this.btnX);
+            this.panel1.Controls.Add(this.btnExit);
             this.panel1.Controls.Add(this.lblCaption);
             this.panel1.Controls.Add(this.panel2);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -1041,93 +1041,97 @@
             this.label1.TabIndex = 0;
             this.label1.Text = "Thông Tin Cá Nhân";
             // 
-            // yanBtn11
+            // btnSync
             // 
-            this.yanBtn11.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.yanBtn11.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(40)))), ((int)(((byte)(159)))), ((int)(((byte)(93)))));
-            this.yanBtn11.BorderColor = System.Drawing.Color.PaleVioletRed;
-            this.yanBtn11.BorderRadius = 5;
-            this.yanBtn11.BorderSize = 0;
-            this.yanBtn11.FlatAppearance.BorderSize = 0;
-            this.yanBtn11.FlatAppearance.MouseDownBackColor = System.Drawing.Color.MediumSeaGreen;
-            this.yanBtn11.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(169)))), ((int)(((byte)(103)))));
-            this.yanBtn11.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.yanBtn11.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.yanBtn11.ForeColor = System.Drawing.Color.White;
-            this.yanBtn11.Image = ((System.Drawing.Image)(resources.GetObject("yanBtn11.Image")));
-            this.yanBtn11.Location = new System.Drawing.Point(820, 4);
-            this.yanBtn11.Name = "yanBtn11";
-            this.yanBtn11.Size = new System.Drawing.Size(50, 31);
-            this.yanBtn11.TabIndex = 0;
-            this.yanBtn11.TabStop = false;
-            this.toolTipMain.SetToolTip(this.yanBtn11, "Sao lưu");
-            this.yanBtn11.UseVisualStyleBackColor = false;
+            this.btnSync.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnSync.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(40)))), ((int)(((byte)(159)))), ((int)(((byte)(93)))));
+            this.btnSync.BorderColor = System.Drawing.Color.PaleVioletRed;
+            this.btnSync.BorderRadius = 5;
+            this.btnSync.BorderSize = 0;
+            this.btnSync.FlatAppearance.BorderSize = 0;
+            this.btnSync.FlatAppearance.MouseDownBackColor = System.Drawing.Color.MediumSeaGreen;
+            this.btnSync.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(169)))), ((int)(((byte)(103)))));
+            this.btnSync.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSync.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.btnSync.ForeColor = System.Drawing.Color.White;
+            this.btnSync.Image = ((System.Drawing.Image)(resources.GetObject("btnSync.Image")));
+            this.btnSync.Location = new System.Drawing.Point(820, 4);
+            this.btnSync.Name = "btnSync";
+            this.btnSync.Size = new System.Drawing.Size(50, 31);
+            this.btnSync.TabIndex = 0;
+            this.btnSync.TabStop = false;
+            this.toolTipMain.SetToolTip(this.btnSync, "Sao lưu");
+            this.btnSync.UseVisualStyleBackColor = false;
+            this.btnSync.Click += new System.EventHandler(this.BtnSync_Click);
             // 
-            // yanBtn10
+            // btnSave
             // 
-            this.yanBtn10.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.yanBtn10.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(85)))), ((int)(((byte)(205)))));
-            this.yanBtn10.BorderColor = System.Drawing.Color.PaleVioletRed;
-            this.yanBtn10.BorderRadius = 5;
-            this.yanBtn10.BorderSize = 0;
-            this.yanBtn10.FlatAppearance.BorderSize = 0;
-            this.yanBtn10.FlatAppearance.MouseDownBackColor = System.Drawing.Color.RoyalBlue;
-            this.yanBtn10.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(95)))), ((int)(((byte)(215)))));
-            this.yanBtn10.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.yanBtn10.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.yanBtn10.ForeColor = System.Drawing.Color.White;
-            this.yanBtn10.Image = ((System.Drawing.Image)(resources.GetObject("yanBtn10.Image")));
-            this.yanBtn10.Location = new System.Drawing.Point(765, 4);
-            this.yanBtn10.Name = "yanBtn10";
-            this.yanBtn10.Size = new System.Drawing.Size(50, 31);
-            this.yanBtn10.TabIndex = 0;
-            this.yanBtn10.TabStop = false;
-            this.toolTipMain.SetToolTip(this.yanBtn10, "Cập nhật");
-            this.yanBtn10.UseVisualStyleBackColor = false;
+            this.btnSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnSave.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(85)))), ((int)(((byte)(205)))));
+            this.btnSave.BorderColor = System.Drawing.Color.PaleVioletRed;
+            this.btnSave.BorderRadius = 5;
+            this.btnSave.BorderSize = 0;
+            this.btnSave.FlatAppearance.BorderSize = 0;
+            this.btnSave.FlatAppearance.MouseDownBackColor = System.Drawing.Color.RoyalBlue;
+            this.btnSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(95)))), ((int)(((byte)(215)))));
+            this.btnSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSave.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.btnSave.ForeColor = System.Drawing.Color.White;
+            this.btnSave.Image = ((System.Drawing.Image)(resources.GetObject("btnSave.Image")));
+            this.btnSave.Location = new System.Drawing.Point(765, 4);
+            this.btnSave.Name = "btnSave";
+            this.btnSave.Size = new System.Drawing.Size(50, 31);
+            this.btnSave.TabIndex = 0;
+            this.btnSave.TabStop = false;
+            this.toolTipMain.SetToolTip(this.btnSave, "Cập nhật");
+            this.btnSave.UseVisualStyleBackColor = false;
+            this.btnSave.Click += new System.EventHandler(this.BtnSave_Click);
             // 
-            // yanBtn9
+            // btnEraser
             // 
-            this.yanBtn9.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.yanBtn9.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(107)))), ((int)(((byte)(60)))));
-            this.yanBtn9.BorderColor = System.Drawing.Color.PaleVioletRed;
-            this.yanBtn9.BorderRadius = 5;
-            this.yanBtn9.BorderSize = 0;
-            this.yanBtn9.FlatAppearance.BorderSize = 0;
-            this.yanBtn9.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Coral;
-            this.yanBtn9.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(117)))), ((int)(((byte)(70)))));
-            this.yanBtn9.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.yanBtn9.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.yanBtn9.ForeColor = System.Drawing.Color.White;
-            this.yanBtn9.Image = ((System.Drawing.Image)(resources.GetObject("yanBtn9.Image")));
-            this.yanBtn9.Location = new System.Drawing.Point(710, 4);
-            this.yanBtn9.Name = "yanBtn9";
-            this.yanBtn9.Size = new System.Drawing.Size(50, 31);
-            this.yanBtn9.TabIndex = 0;
-            this.yanBtn9.TabStop = false;
-            this.toolTipMain.SetToolTip(this.yanBtn9, "Làm mới");
-            this.yanBtn9.UseVisualStyleBackColor = false;
+            this.btnEraser.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnEraser.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(107)))), ((int)(((byte)(60)))));
+            this.btnEraser.BorderColor = System.Drawing.Color.PaleVioletRed;
+            this.btnEraser.BorderRadius = 5;
+            this.btnEraser.BorderSize = 0;
+            this.btnEraser.FlatAppearance.BorderSize = 0;
+            this.btnEraser.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Coral;
+            this.btnEraser.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(117)))), ((int)(((byte)(70)))));
+            this.btnEraser.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnEraser.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.btnEraser.ForeColor = System.Drawing.Color.White;
+            this.btnEraser.Image = ((System.Drawing.Image)(resources.GetObject("btnEraser.Image")));
+            this.btnEraser.Location = new System.Drawing.Point(710, 4);
+            this.btnEraser.Name = "btnEraser";
+            this.btnEraser.Size = new System.Drawing.Size(50, 31);
+            this.btnEraser.TabIndex = 0;
+            this.btnEraser.TabStop = false;
+            this.toolTipMain.SetToolTip(this.btnEraser, "Làm mới");
+            this.btnEraser.UseVisualStyleBackColor = false;
+            this.btnEraser.Click += new System.EventHandler(this.BtnEraser_Click);
             // 
-            // yanBtn8
+            // btnSearch
             // 
-            this.yanBtn8.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(74)))), ((int)(((byte)(79)))), ((int)(((byte)(99)))));
-            this.yanBtn8.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("yanBtn8.BackgroundImage")));
-            this.yanBtn8.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
-            this.yanBtn8.BorderColor = System.Drawing.Color.PaleVioletRed;
-            this.yanBtn8.BorderRadius = 0;
-            this.yanBtn8.BorderSize = 0;
-            this.yanBtn8.FlatAppearance.BorderSize = 0;
-            this.yanBtn8.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(74)))), ((int)(((byte)(79)))), ((int)(((byte)(99)))));
-            this.yanBtn8.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(74)))), ((int)(((byte)(79)))), ((int)(((byte)(99)))));
-            this.yanBtn8.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.yanBtn8.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.yanBtn8.ForeColor = System.Drawing.Color.White;
-            this.yanBtn8.Location = new System.Drawing.Point(900, 10);
-            this.yanBtn8.Name = "yanBtn8";
-            this.yanBtn8.Size = new System.Drawing.Size(20, 20);
-            this.yanBtn8.TabIndex = 0;
-            this.yanBtn8.TabStop = false;
-            this.toolTipMain.SetToolTip(this.yanBtn8, "Tìm");
-            this.yanBtn8.UseVisualStyleBackColor = false;
+            this.btnSearch.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(74)))), ((int)(((byte)(79)))), ((int)(((byte)(99)))));
+            this.btnSearch.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnSearch.BackgroundImage")));
+            this.btnSearch.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
+            this.btnSearch.BorderColor = System.Drawing.Color.PaleVioletRed;
+            this.btnSearch.BorderRadius = 0;
+            this.btnSearch.BorderSize = 0;
+            this.btnSearch.FlatAppearance.BorderSize = 0;
+            this.btnSearch.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(74)))), ((int)(((byte)(79)))), ((int)(((byte)(99)))));
+            this.btnSearch.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(74)))), ((int)(((byte)(79)))), ((int)(((byte)(99)))));
+            this.btnSearch.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSearch.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.btnSearch.ForeColor = System.Drawing.Color.White;
+            this.btnSearch.Location = new System.Drawing.Point(900, 10);
+            this.btnSearch.Name = "btnSearch";
+            this.btnSearch.Size = new System.Drawing.Size(20, 20);
+            this.btnSearch.TabIndex = 0;
+            this.btnSearch.TabStop = false;
+            this.toolTipMain.SetToolTip(this.btnSearch, "Tìm");
+            this.btnSearch.UseVisualStyleBackColor = false;
+            this.btnSearch.Click += new System.EventHandler(this.BtnSearch_Click);
             // 
             // yanTxt2
             // 
@@ -1152,31 +1156,31 @@
             this.yanTxt2.TextAlign = System.Windows.Forms.HorizontalAlignment.Left;
             this.yanTxt2.UnderlinedStyle = false;
             // 
-            // btnX
+            // btnExit
             // 
-            this.btnX.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnX.BackColor = System.Drawing.Color.Transparent;
-            this.btnX.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnX.BackgroundImage")));
-            this.btnX.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
-            this.btnX.BorderColor = System.Drawing.Color.PaleVioletRed;
-            this.btnX.BorderRadius = 0;
-            this.btnX.BorderSize = 0;
-            this.btnX.FlatAppearance.BorderSize = 0;
-            this.btnX.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent;
-            this.btnX.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Transparent;
-            this.btnX.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnX.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.btnX.ForeColor = System.Drawing.Color.White;
-            this.btnX.Location = new System.Drawing.Point(1170, 10);
-            this.btnX.Name = "btnX";
-            this.btnX.Size = new System.Drawing.Size(20, 20);
-            this.btnX.TabIndex = 0;
-            this.btnX.TabStop = false;
-            this.toolTipMain.SetToolTip(this.btnX, "Thoát");
-            this.btnX.UseVisualStyleBackColor = false;
-            this.btnX.Click += new System.EventHandler(this.BtnX_Click);
-            this.btnX.MouseEnter += new System.EventHandler(this.BtnX_MouseEnter);
-            this.btnX.MouseLeave += new System.EventHandler(this.BtnX_MouseLeave);
+            this.btnExit.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnExit.BackColor = System.Drawing.Color.Transparent;
+            this.btnExit.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnExit.BackgroundImage")));
+            this.btnExit.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
+            this.btnExit.BorderColor = System.Drawing.Color.PaleVioletRed;
+            this.btnExit.BorderRadius = 0;
+            this.btnExit.BorderSize = 0;
+            this.btnExit.FlatAppearance.BorderSize = 0;
+            this.btnExit.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Transparent;
+            this.btnExit.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Transparent;
+            this.btnExit.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnExit.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.btnExit.ForeColor = System.Drawing.Color.White;
+            this.btnExit.Location = new System.Drawing.Point(1170, 10);
+            this.btnExit.Name = "btnExit";
+            this.btnExit.Size = new System.Drawing.Size(20, 20);
+            this.btnExit.TabIndex = 0;
+            this.btnExit.TabStop = false;
+            this.toolTipMain.SetToolTip(this.btnExit, "Thoát");
+            this.btnExit.UseVisualStyleBackColor = false;
+            this.btnExit.Click += new System.EventHandler(this.BtnExit_Click);
+            this.btnExit.MouseEnter += new System.EventHandler(this.BtnExit_MouseEnter);
+            this.btnExit.MouseLeave += new System.EventHandler(this.BtnExit_MouseLeave);
             // 
             // lblCaption
             // 
@@ -1491,6 +1495,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "HRM";
             this.TransparencyKey = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Demo1_FormClosing);
             this.Shown += new System.EventHandler(this.Demo1_Shown);
             this.panel1.ResumeLayout(false);
             this.panel3.ResumeLayout(false);
@@ -1531,13 +1536,13 @@
         private Control.YANBtn btnMenu6;
         private Control.YANBtn btnBack;
         private System.Windows.Forms.Label lblCaption;
-        private Control.YANBtn btnX;
+        private Control.YANBtn btnExit;
         private Control.YANTxt yanTxt2;
-        private Control.YANBtn yanBtn8;
-        private Control.YANBtn yanBtn9;
-        private Control.YANBtn yanBtn10;
+        private Control.YANBtn btnSearch;
+        private Control.YANBtn btnEraser;
+        private Control.YANBtn btnSave;
         private System.Windows.Forms.ToolTip toolTipMain;
-        private Control.YANBtn yanBtn11;
+        private Control.YANBtn btnSync;
         private System.Windows.Forms.Panel panel3;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Panel panel4;

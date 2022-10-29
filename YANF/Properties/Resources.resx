@@ -118,58 +118,103 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="pPTTKN" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pPTTKN.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="pQL" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pQL.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="pPTTBH" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pPTTBH.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="pCalendarWhite" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pCalendarWhite.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="pCalendarBlack" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pCalendarBlack.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="pPTTMR" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pPTTMR.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="pPTTCB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPTTCB.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="pXI" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\pXI.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="pPTTCV" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pPTTCV.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="pBI" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pBI.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="pPS" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pPS.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="pCalendarWhite" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pCalendarWhite.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="pPTLT" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pPTLT.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="pXO" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pXO.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="pPF" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pPF.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="pPU" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pPU.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="pPTTCB" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pPTTCB.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="pPT" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPT.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="pUserSolid1" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\pUserSolid1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="pPL" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPL.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPF" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPF.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pQO" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pQO.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPU" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPU.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pQL" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pQL.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPTLT" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPTLT.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pCalendarBlack" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pCalendarBlack.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPTTBH" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPTTBH.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPTTKN" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPTTKN.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pXO" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pXO.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="pPE" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\pPE.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pBO" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pBO.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPTTCV" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPTTCV.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="gUpdate" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\gUpdate.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="pBI" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pBI.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="pUserSolid2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pUserSolid2.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPTTMR" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPTTMR.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pQI" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pQI.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPG" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPG.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPB.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPS" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPS.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pPM" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pPM.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pMessChat" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pMessChat.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pMessError" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pMessError.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pMessInfomation" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pMessInfomation.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pMessQuestion" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pMessQuestion.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pMessWarning" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pMessWarning.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

@@ -25,5 +25,11 @@
             Sliding,
             None
         }
+
+        public enum MsgBoxLang
+        {
+            VIE,
+            JAP
+        }
     }
 }

@@ -2,9 +2,8 @@
 
 namespace YANF.Screen
 {
-    public abstract class YANAnonScreen : YANHardScreen
+    public class SoftScreen : HardScreen
     {
-        #region Overridden
         protected override CreateParams CreateParams
         {
             get
@@ -14,13 +13,5 @@ namespace YANF.Screen
                 return cp;
             }
         }
-        #endregion
-
-        #region Methods
-        /// <summary>
-        /// Form close event.
-        /// </summary>
-        public abstract void Frm_Close();
-        #endregion
     }
 }

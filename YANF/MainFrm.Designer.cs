@@ -44,8 +44,9 @@ namespace YANF
             this.yanNb1 = new YANF.Control.YANNb();
             this.yanDp2 = new YANF.Control.YANDp();
             this.yanPnl1 = new YANF.Control.YANGradPnl();
-            this.yanBtnDemo1 = new YANF.Control.YANBtn();
-            this.yanBtnUpdScr = new YANF.Control.YANBtn();
+            this.btnDemo2 = new YANF.Control.YANBtn();
+            this.btnDemo1 = new YANF.Control.YANBtn();
+            this.btnUpdScr = new YANF.Control.YANBtn();
             this.yanBtn2 = new YANF.Control.YANBtn();
             this.yanDdl2 = new YANF.Control.YANDdl();
             this.yanPic1 = new YANF.Control.YANCirPic();
@@ -374,8 +375,9 @@ namespace YANF
             // 
             this.yanPnl1.Angle = 45F;
             this.yanPnl1.BottomColor = System.Drawing.Color.HotPink;
-            this.yanPnl1.Controls.Add(this.yanBtnDemo1);
-            this.yanPnl1.Controls.Add(this.yanBtnUpdScr);
+            this.yanPnl1.Controls.Add(this.btnDemo2);
+            this.yanPnl1.Controls.Add(this.btnDemo1);
+            this.yanPnl1.Controls.Add(this.btnUpdScr);
             this.yanPnl1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.yanPnl1.Location = new System.Drawing.Point(0, 321);
             this.yanPnl1.Name = "yanPnl1";
@@ -383,47 +385,68 @@ namespace YANF
             this.yanPnl1.TabIndex = 0;
             this.yanPnl1.TopColor = System.Drawing.Color.RoyalBlue;
             // 
-            // yanBtnDemo1
+            // btnDemo2
             // 
-            this.yanBtnDemo1.BackColor = System.Drawing.Color.Transparent;
-            this.yanBtnDemo1.BorderColor = System.Drawing.Color.Lime;
-            this.yanBtnDemo1.BorderRadius = 0;
-            this.yanBtnDemo1.BorderSize = 2;
-            this.yanBtnDemo1.FlatAppearance.BorderSize = 0;
-            this.yanBtnDemo1.FlatAppearance.MouseDownBackColor = System.Drawing.Color.SlateBlue;
-            this.yanBtnDemo1.FlatAppearance.MouseOverBackColor = System.Drawing.Color.MediumSlateBlue;
-            this.yanBtnDemo1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.yanBtnDemo1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.yanBtnDemo1.ForeColor = System.Drawing.Color.White;
-            this.yanBtnDemo1.Location = new System.Drawing.Point(6, 308);
-            this.yanBtnDemo1.Name = "yanBtnDemo1";
-            this.yanBtnDemo1.Size = new System.Drawing.Size(150, 40);
-            this.yanBtnDemo1.TabIndex = 0;
-            this.yanBtnDemo1.TabStop = false;
-            this.yanBtnDemo1.Text = "Demo 1 Screen";
-            this.yanBtnDemo1.UseVisualStyleBackColor = false;
-            this.yanBtnDemo1.Click += new System.EventHandler(this.YanBtnDemo1_Click);
+            this.btnDemo2.BackColor = System.Drawing.Color.Transparent;
+            this.btnDemo2.BorderColor = System.Drawing.Color.Lime;
+            this.btnDemo2.BorderRadius = 0;
+            this.btnDemo2.BorderSize = 2;
+            this.btnDemo2.FlatAppearance.BorderSize = 0;
+            this.btnDemo2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(203)))), ((int)(((byte)(105)))), ((int)(((byte)(192)))));
+            this.btnDemo2.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(249)))), ((int)(((byte)(105)))), ((int)(((byte)(181)))));
+            this.btnDemo2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnDemo2.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.btnDemo2.ForeColor = System.Drawing.Color.White;
+            this.btnDemo2.Location = new System.Drawing.Point(268, 308);
+            this.btnDemo2.Name = "btnDemo2";
+            this.btnDemo2.Size = new System.Drawing.Size(150, 40);
+            this.btnDemo2.TabIndex = 0;
+            this.btnDemo2.TabStop = false;
+            this.btnDemo2.Text = "Demo 2 Screen";
+            this.btnDemo2.UseVisualStyleBackColor = false;
+            this.btnDemo2.Click += new System.EventHandler(this.BtnDemo2_Click);
             // 
-            // yanBtnUpdScr
+            // btnDemo1
             // 
-            this.yanBtnUpdScr.BackColor = System.Drawing.Color.Transparent;
-            this.yanBtnUpdScr.BorderColor = System.Drawing.Color.Lime;
-            this.yanBtnUpdScr.BorderRadius = 0;
-            this.yanBtnUpdScr.BorderSize = 2;
-            this.yanBtnUpdScr.FlatAppearance.BorderSize = 0;
-            this.yanBtnUpdScr.FlatAppearance.MouseDownBackColor = System.Drawing.Color.SlateBlue;
-            this.yanBtnUpdScr.FlatAppearance.MouseOverBackColor = System.Drawing.Color.MediumSlateBlue;
-            this.yanBtnUpdScr.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.yanBtnUpdScr.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.yanBtnUpdScr.ForeColor = System.Drawing.Color.White;
-            this.yanBtnUpdScr.Location = new System.Drawing.Point(6, 3);
-            this.yanBtnUpdScr.Name = "yanBtnUpdScr";
-            this.yanBtnUpdScr.Size = new System.Drawing.Size(150, 40);
-            this.yanBtnUpdScr.TabIndex = 0;
-            this.yanBtnUpdScr.TabStop = false;
-            this.yanBtnUpdScr.Text = "Update Screen";
-            this.yanBtnUpdScr.UseVisualStyleBackColor = false;
-            this.yanBtnUpdScr.Click += new System.EventHandler(this.YanBtnUpdateScr_Click);
+            this.btnDemo1.BackColor = System.Drawing.Color.Transparent;
+            this.btnDemo1.BorderColor = System.Drawing.Color.Lime;
+            this.btnDemo1.BorderRadius = 0;
+            this.btnDemo1.BorderSize = 2;
+            this.btnDemo1.FlatAppearance.BorderSize = 0;
+            this.btnDemo1.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(141)))), ((int)(((byte)(105)))), ((int)(((byte)(207)))));
+            this.btnDemo1.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(189)))), ((int)(((byte)(105)))), ((int)(((byte)(196)))));
+            this.btnDemo1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnDemo1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.btnDemo1.ForeColor = System.Drawing.Color.White;
+            this.btnDemo1.Location = new System.Drawing.Point(12, 308);
+            this.btnDemo1.Name = "btnDemo1";
+            this.btnDemo1.Size = new System.Drawing.Size(150, 40);
+            this.btnDemo1.TabIndex = 0;
+            this.btnDemo1.TabStop = false;
+            this.btnDemo1.Text = "Demo 1 Screen";
+            this.btnDemo1.UseVisualStyleBackColor = false;
+            this.btnDemo1.Click += new System.EventHandler(this.BtnDemo1_Click);
+            // 
+            // btnUpdScr
+            // 
+            this.btnUpdScr.BackColor = System.Drawing.Color.Transparent;
+            this.btnUpdScr.BorderColor = System.Drawing.Color.Lime;
+            this.btnUpdScr.BorderRadius = 0;
+            this.btnUpdScr.BorderSize = 2;
+            this.btnUpdScr.FlatAppearance.BorderSize = 0;
+            this.btnUpdScr.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(70)))), ((int)(((byte)(105)))), ((int)(((byte)(224)))));
+            this.btnUpdScr.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(117)))), ((int)(((byte)(105)))), ((int)(((byte)(213)))));
+            this.btnUpdScr.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnUpdScr.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.btnUpdScr.ForeColor = System.Drawing.Color.White;
+            this.btnUpdScr.Location = new System.Drawing.Point(12, 12);
+            this.btnUpdScr.Name = "btnUpdScr";
+            this.btnUpdScr.Size = new System.Drawing.Size(150, 40);
+            this.btnUpdScr.TabIndex = 0;
+            this.btnUpdScr.TabStop = false;
+            this.btnUpdScr.Text = "Update Screen";
+            this.btnUpdScr.UseVisualStyleBackColor = false;
+            this.btnUpdScr.Click += new System.EventHandler(this.BtnUpdScr_Click);
             // 
             // yanBtn2
             // 
@@ -1198,9 +1221,10 @@ namespace YANF
         private Control.YANTg yanTg2;
         private Control.YANTg yanTg4;
         private Control.YANTg yanTg3;
-        private Control.YANBtn yanBtnUpdScr;
+        private Control.YANBtn btnUpdScr;
         private System.Windows.Forms.Timer tmrMain;
-        private Control.YANBtn yanBtnDemo1;
+        private Control.YANBtn btnDemo1;
+        private Control.YANBtn btnDemo2;
     }
 }
 
