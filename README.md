@@ -53,6 +53,7 @@ private void Btn_Click(object sender, EventArgs e)
     _dlvScrService = new YANLoadScrService();
     _dlvScrService.OnLoader(this);
     this.FadeOut();
+    ...
 }
 
 // Method
@@ -63,8 +64,13 @@ private void Func()
     {
         _dlvScrService.PublishValue(_percent, null, 0);
     });
+    ...
 }
 ```
+<p align="center">
+<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/8.jpg"></img>
+</p>
+
 ```c#
 /* Call test screen */
 using YANF.Script;
@@ -74,6 +80,7 @@ private void Func()
 {
     ...
     new MainFrm().Show();
+    ...
 }
 ```
 <p align="center">
