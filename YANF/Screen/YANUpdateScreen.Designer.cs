@@ -136,7 +136,6 @@ partial class YANUpdateScreen
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Updating...";
             this.TopMost = true;
-            this.TransparencyKey = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
             this.Shown += new System.EventHandler(this.YANUpdateScreen_Shown);
             this.panelMain.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxUpdating)).EndInit();

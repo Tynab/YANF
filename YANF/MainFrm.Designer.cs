@@ -44,6 +44,7 @@ namespace YANF
             this.yanNb1 = new YANF.Control.YANNb();
             this.yanDp2 = new YANF.Control.YANDp();
             this.yanPnl1 = new YANF.Control.YANGradPnl();
+            this.btnWaitScr = new YANF.Control.YANBtn();
             this.btnDemo2 = new YANF.Control.YANBtn();
             this.btnDemo1 = new YANF.Control.YANBtn();
             this.btnUpdScr = new YANF.Control.YANBtn();
@@ -80,6 +81,7 @@ namespace YANF
             this.yanPic2 = new YANF.Control.YANCirPic();
             this.yanDdl1 = new YANF.Control.YANDdl();
             this.yanBtn1 = new YANF.Control.YANBtn();
+            this.btnLoadScr = new YANF.Control.YANBtn();
             this.panel1.SuspendLayout();
             this.yanPnl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic1)).BeginInit();
@@ -375,6 +377,8 @@ namespace YANF
             // 
             this.yanPnl1.Angle = 45F;
             this.yanPnl1.BottomColor = System.Drawing.Color.HotPink;
+            this.yanPnl1.Controls.Add(this.btnLoadScr);
+            this.yanPnl1.Controls.Add(this.btnWaitScr);
             this.yanPnl1.Controls.Add(this.btnDemo2);
             this.yanPnl1.Controls.Add(this.btnDemo1);
             this.yanPnl1.Controls.Add(this.btnUpdScr);
@@ -384,6 +388,27 @@ namespace YANF
             this.yanPnl1.Size = new System.Drawing.Size(430, 360);
             this.yanPnl1.TabIndex = 0;
             this.yanPnl1.TopColor = System.Drawing.Color.RoyalBlue;
+            // 
+            // btnWaitScr
+            // 
+            this.btnWaitScr.BackColor = System.Drawing.Color.Transparent;
+            this.btnWaitScr.BorderColor = System.Drawing.Color.Lime;
+            this.btnWaitScr.BorderRadius = 0;
+            this.btnWaitScr.BorderSize = 2;
+            this.btnWaitScr.FlatAppearance.BorderSize = 0;
+            this.btnWaitScr.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(131)))), ((int)(((byte)(105)))), ((int)(((byte)(209)))));
+            this.btnWaitScr.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(178)))), ((int)(((byte)(105)))), ((int)(((byte)(198)))));
+            this.btnWaitScr.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnWaitScr.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.btnWaitScr.ForeColor = System.Drawing.Color.White;
+            this.btnWaitScr.Location = new System.Drawing.Point(268, 12);
+            this.btnWaitScr.Name = "btnWaitScr";
+            this.btnWaitScr.Size = new System.Drawing.Size(150, 40);
+            this.btnWaitScr.TabIndex = 0;
+            this.btnWaitScr.TabStop = false;
+            this.btnWaitScr.Text = "Wait Screen";
+            this.btnWaitScr.UseVisualStyleBackColor = false;
+            this.btnWaitScr.Click += new System.EventHandler(this.BtnWaitScr_Click);
             // 
             // btnDemo2
             // 
@@ -1107,6 +1132,27 @@ namespace YANF
             this.yanBtn1.Text = "yanBtn1";
             this.yanBtn1.UseVisualStyleBackColor = false;
             // 
+            // btnLoadScr
+            // 
+            this.btnLoadScr.BackColor = System.Drawing.Color.Transparent;
+            this.btnLoadScr.BorderColor = System.Drawing.Color.Lime;
+            this.btnLoadScr.BorderRadius = 0;
+            this.btnLoadScr.BorderSize = 2;
+            this.btnLoadScr.FlatAppearance.BorderSize = 0;
+            this.btnLoadScr.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(136)))), ((int)(((byte)(105)))), ((int)(((byte)(208)))));
+            this.btnLoadScr.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(183)))), ((int)(((byte)(105)))), ((int)(((byte)(197)))));
+            this.btnLoadScr.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnLoadScr.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.btnLoadScr.ForeColor = System.Drawing.Color.White;
+            this.btnLoadScr.Location = new System.Drawing.Point(140, 160);
+            this.btnLoadScr.Name = "btnLoadScr";
+            this.btnLoadScr.Size = new System.Drawing.Size(150, 40);
+            this.btnLoadScr.TabIndex = 0;
+            this.btnLoadScr.TabStop = false;
+            this.btnLoadScr.Text = "Load Screen";
+            this.btnLoadScr.UseVisualStyleBackColor = false;
+            this.btnLoadScr.Click += new System.EventHandler(this.BtnLoadScr_Click);
+            // 
             // MainFrm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -1225,6 +1271,8 @@ namespace YANF
         private System.Windows.Forms.Timer tmrMain;
         private Control.YANBtn btnDemo1;
         private Control.YANBtn btnDemo2;
+        private Control.YANBtn btnWaitScr;
+        private Control.YANBtn btnLoadScr;
     }
 }
 

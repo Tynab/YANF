@@ -1775,7 +1775,6 @@
             this.Opacity = 0D;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Profile";
-            this.TransparencyKey = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Demo2_FormClosing);
             this.Shown += new System.EventHandler(this.Demo2_Shown);
             this.yanGradPnl1.ResumeLayout(false);

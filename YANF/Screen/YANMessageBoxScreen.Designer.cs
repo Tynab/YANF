@@ -60,6 +60,7 @@
             // 
             // btnClose
             // 
+            this.btnClose.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnClose.Dock = System.Windows.Forms.DockStyle.Right;
             this.btnClose.FlatAppearance.BorderSize = 0;
             this.btnClose.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(234)))), ((int)(((byte)(89)))), ((int)(((byte)(105)))));
@@ -104,6 +105,7 @@
             // 
             this.btn3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btn3.BackColor = System.Drawing.Color.SeaGreen;
+            this.btn3.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btn3.FlatAppearance.BorderSize = 0;
             this.btn3.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btn3.ForeColor = System.Drawing.Color.White;
@@ -118,6 +120,7 @@
             // 
             this.btn2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btn2.BackColor = System.Drawing.Color.SeaGreen;
+            this.btn2.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btn2.FlatAppearance.BorderSize = 0;
             this.btn2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btn2.ForeColor = System.Drawing.Color.White;
@@ -132,6 +135,7 @@
             // 
             this.btn1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btn1.BackColor = System.Drawing.Color.SeaGreen;
+            this.btn1.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btn1.FlatAppearance.BorderSize = 0;
             this.btn1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btn1.ForeColor = System.Drawing.Color.White;
@@ -187,7 +191,7 @@
             this.Controls.Add(this.pnlBody);
             this.Controls.Add(this.pnlFooter);
             this.Controls.Add(this.pnlHeader);
-            this.Enabled = false;
+            this.DoubleBuffered = true;
             this.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(254)));
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));

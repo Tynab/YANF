@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{40C18CF6-ADC1-4B18-804D-7E42EE7D6DB3}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Library</OutputType>
     <RootNamespace>YANF</RootNamespace>
     <AssemblyName>YANF</AssemblyName>
     <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
@@ -131,6 +131,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Screen\YANLoadScreen.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Screen\YANLoadScreen.Designer.cs">
+      <DependentUpon>YANLoadScreen.cs</DependentUpon>
+    </Compile>
     <Compile Include="Screen\YANMessageBoxScreen.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -143,9 +149,17 @@
     <Compile Include="Screen\YANUpdateScreen.Designer.cs">
       <DependentUpon>YANUpdateScreen.cs</DependentUpon>
     </Compile>
+    <Compile Include="Screen\YANWaitScreen.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Screen\YANWaitScreen.Designer.cs">
+      <DependentUpon>YANWaitScreen.cs</DependentUpon>
+    </Compile>
     <Compile Include="Script\IYANSrcService.cs" />
-    <Compile Include="Script\IYANUpdScrService.cs" />
-    <Compile Include="Script\Service\YANUpdateScrService.cs" />
+    <Compile Include="Script\IYANDlvScrService.cs" />
+    <Compile Include="Script\Service\YANLoadScrService.cs" />
+    <Compile Include="Script\Service\YANUpdScrService.cs" />
+    <Compile Include="Script\Service\YANWaitScrService.cs" />
     <Compile Include="Script\YANController.cs" />
     <Compile Include="Script\YANDisplay.cs" />
     <Compile Include="Script\YANEvent.cs" />
@@ -173,11 +187,17 @@
     <EmbeddedResource Include="Screen\Demo2.resx">
       <DependentUpon>Demo2.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Screen\YANLoadScreen.resx">
+      <DependentUpon>YANLoadScreen.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Screen\YANMessageBoxScreen.resx">
       <DependentUpon>YANMessageBoxScreen.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Screen\YANUpdateScreen.resx">
       <DependentUpon>YANUpdateScreen.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Screen\YANWaitScreen.resx">
+      <DependentUpon>YANWaitScreen.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -218,6 +238,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ic.ico" />
+    <None Include="Resources\gLoad.gif" />
+    <None Include="Resources\gWait.gif" />
     <None Include="Resources\pMessWarning.png" />
     <None Include="Resources\pMessQuestion.png" />
     <None Include="Resources\pMessInfomation.png" />

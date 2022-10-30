@@ -63,9 +63,29 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap gLoad {
+            get {
+                object obj = ResourceManager.GetObject("gLoad", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap gUpdate {
             get {
                 object obj = ResourceManager.GetObject("gUpdate", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap gWait {
+            get {
+                object obj = ResourceManager.GetObject("gWait", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using YANF.Script;
 using static System.Drawing.Color;
 using static System.Drawing.FontStyle;
 using static System.Windows.Forms.DialogResult;
@@ -16,7 +15,7 @@ using static YANF.Script.YANMath;
 
 namespace YANF.Screen
 {
-    public partial class YANMessageBoxScreen : Form
+    public partial class YANMessageBoxScreen : SoftScreen
     {
         #region Fields
         private readonly Font _fntTitVn = new("Tahoma", 10);
@@ -265,19 +264,13 @@ namespace YANF.Screen
         private void InitializeItems()
         {
             // move frm by pnl
-            foreach (var pnl in this.GetAllObjs(typeof(Panel)))
-            {
-                pnl.MouseDown += MoveFrm_MouseDown;
-                pnl.MouseMove += MoveFrm_MouseMove;
-                pnl.MouseUp += MoveFrm_MouseUp;
-            }
+            pnlHeader.MouseDown += MoveFrm_MouseDown;
+            pnlHeader.MouseMove += MoveFrm_MouseMove;
+            pnlHeader.MouseUp += MoveFrm_MouseUp;
             // move frm by lbl
-            foreach (var lbl in this.GetAllObjs(typeof(Label)))
-            {
-                lbl.MouseDown += MoveFrm_MouseDown;
-                lbl.MouseMove += MoveFrm_MouseMove;
-                lbl.MouseUp += MoveFrm_MouseUp;
-            }
+            lblCaption.MouseDown += MoveFrm_MouseDown;
+            lblCaption.MouseMove += MoveFrm_MouseMove;
+            lblCaption.MouseUp += MoveFrm_MouseUp;
             // option
             btnClose.DialogResult = Cancel;
             btn1.DialogResult = DialogResult.OK;

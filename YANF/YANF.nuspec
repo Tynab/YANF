@@ -2,26 +2,21 @@
 <package >
   <metadata>
     <id>Tynab.YANF</id>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <title>YANF</title>
     <authors>Yami An</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <!-- <icon>icon.png</icon> -->
     <projectUrl>https://github.com/Tynab/YANF</projectUrl>
-    <iconUrl>https://raw.githubusercontent.com/Tynab/YANF/main/pic/0.png</iconUrl>
+	<iconUrl>https://raw.githubusercontent.com/Tynab/YANF/main/pic/0.png</iconUrl>
     <description>Yami An Nephilim Framework</description>
-    <releaseNotes>Add new style control:
-	- Button
-	- Circle PictureBox
-	- DropdownList
-	- Gradient Panel
-	- NumberBox
-	- ProgressBar
-	- RadioButton
-	- ToggleButton
-	- TextBox</releaseNotes>
+    <releaseNotes>Add new screen:
+	- MessageBox (support English, Japanese, Vietnamese)
+	- Wait
+	- Load
+	- Update</releaseNotes>
     <copyright>Copyright ©  2022</copyright>
-    <tags>C# .NET WindowsForms</tags>
+    <tags>C# VB .NET WindowsFormsApp</tags>
   </metadata>
 </package>

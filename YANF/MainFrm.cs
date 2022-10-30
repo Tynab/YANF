@@ -11,7 +11,9 @@ namespace YANF
     public partial class MainFrm : Form
     {
         #region Fields
-        private IYANUpdScrService _updateScrService;
+        private IYANSrcService _srcService;
+        private IYANDlvScrService _dlvScrService;
+        private string _choosenOne;
         private int _percent;
         #endregion
 
@@ -23,10 +25,42 @@ namespace YANF
         // Show update screen
         private void BtnUpdScr_Click(object sender, EventArgs e)
         {
-            _updateScrService = new YANUpdateScrService();
-            _percent = 0;
-            _updateScrService.OnLoader();
-            tmrMain.StartAdv();
+            if (!tmrMain.Enabled)
+            {
+                _choosenOne = "Update";
+                _percent = 0;
+                _dlvScrService = new YANUpdScrService();
+                _dlvScrService.OnLoader(this);
+                tmrMain.StartAdv();
+            }
+        }
+
+        // Show wait screen
+        private void BtnWaitScr_Click(object sender, EventArgs e)
+        {
+            if (!tmrMain.Enabled)
+            {
+                _choosenOne = "Wait";
+                _percent = 0;
+                _srcService = new YANWaitScrService();
+                _srcService.OnLoader(this);
+                this.FadeOut();
+                tmrMain.StartAdv();
+            }
+        }
+
+        // Show load screen
+        private void BtnLoadScr_Click(object sender, EventArgs e)
+        {
+            if (!tmrMain.Enabled)
+            {
+                _choosenOne = "Load";
+                _percent = 0;
+                _dlvScrService = new YANLoadScrService();
+                _dlvScrService.OnLoader(this);
+                this.FadeOut();
+                tmrMain.StartAdv();
+            }
         }
 
         // Show demo 1 screen
@@ -38,18 +72,57 @@ namespace YANF
         // Timer main
         private void TmrMain_Tick(object sender, EventArgs e)
         {
-            if (_percent < 100)
+            switch (_choosenOne)
             {
-                _percent++;
-                _ = Invoke((MethodInvoker)delegate
+                case "Update":
                 {
-                    _updateScrService.PublishValue(string.Format("{0} MB / {1} MB", _percent * 1.37, 100 * 1.37), $"{_percent}%", (int)Ceiling(_percent * W_UPDATE_SCR / 100d));
-                });
-            }
-            else
-            {
-                _updateScrService.OffLoader();
-                tmrMain.StopAdv();
+                    if (_percent < 100)
+                    {
+                        _percent++;
+                        _ = Invoke((MethodInvoker)delegate
+                        {
+                            _dlvScrService.PublishValue(_percent, string.Format("{0} MB / {1} MB", _percent * 1.37, 100 * 1.37), (int)Ceiling(_percent * W_UPDATE_SCR / 100d));
+                        });
+                    }
+                    else
+                    {
+                        _dlvScrService.OffLoader();
+                        tmrMain.StopAdv();
+                    }
+                    break;
+                }
+                case "Wait":
+                {
+                    if (_percent < 100)
+                    {
+                        _percent++;
+                    }
+                    else
+                    {
+                        _srcService.OffLoader();
+                        tmrMain.StopAdv();
+                        this.FadeIn();
+                    }
+                    break;
+                }
+                case "Load":
+                {
+                    if (_percent < 100)
+                    {
+                        _percent++;
+                        _ = Invoke((MethodInvoker)delegate
+                        {
+                            _dlvScrService.PublishValue(_percent, null, 0);
+                        });
+                    }
+                    else
+                    {
+                        _dlvScrService.OffLoader();
+                        tmrMain.StopAdv();
+                        this.FadeIn();
+                    }
+                    break;
+                }
             }
         }
         #endregion

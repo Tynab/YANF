@@ -30,7 +30,7 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Demo1));
-            this.panel1 = new System.Windows.Forms.Panel();
+            this.pnlMain = new System.Windows.Forms.Panel();
             this.panel3 = new System.Windows.Forms.Panel();
             this.panel5 = new System.Windows.Forms.Panel();
             this.txtFRGN = new YANF.Control.YANTxt();
@@ -99,7 +99,7 @@
             this.yanTxt1 = new YANF.Control.YANTxt();
             this.yanCirPic1 = new YANF.Control.YANCirPic();
             this.toolTipMain = new System.Windows.Forms.ToolTip(this.components);
-            this.panel1.SuspendLayout();
+            this.pnlMain.SuspendLayout();
             this.panel3.SuspendLayout();
             this.panel5.SuspendLayout();
             this.panel7.SuspendLayout();
@@ -120,23 +120,23 @@
             ((System.ComponentModel.ISupportInitialize)(this.yanCirPic1)).BeginInit();
             this.SuspendLayout();
             // 
-            // panel1
+            // pnlMain
             // 
-            this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(51)))), ((int)(((byte)(73)))));
-            this.panel1.Controls.Add(this.panel3);
-            this.panel1.Controls.Add(this.btnSync);
-            this.panel1.Controls.Add(this.btnSave);
-            this.panel1.Controls.Add(this.btnEraser);
-            this.panel1.Controls.Add(this.btnSearch);
-            this.panel1.Controls.Add(this.yanTxt2);
-            this.panel1.Controls.Add(this.btnExit);
-            this.panel1.Controls.Add(this.lblCaption);
-            this.panel1.Controls.Add(this.panel2);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(0, 0);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(1200, 600);
-            this.panel1.TabIndex = 0;
+            this.pnlMain.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(51)))), ((int)(((byte)(73)))));
+            this.pnlMain.Controls.Add(this.panel3);
+            this.pnlMain.Controls.Add(this.btnSync);
+            this.pnlMain.Controls.Add(this.btnSave);
+            this.pnlMain.Controls.Add(this.btnEraser);
+            this.pnlMain.Controls.Add(this.btnSearch);
+            this.pnlMain.Controls.Add(this.yanTxt2);
+            this.pnlMain.Controls.Add(this.btnExit);
+            this.pnlMain.Controls.Add(this.lblCaption);
+            this.pnlMain.Controls.Add(this.panel2);
+            this.pnlMain.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pnlMain.Location = new System.Drawing.Point(0, 0);
+            this.pnlMain.Name = "pnlMain";
+            this.pnlMain.Size = new System.Drawing.Size(1200, 600);
+            this.pnlMain.TabIndex = 0;
             // 
             // panel3
             // 
@@ -1484,7 +1484,7 @@
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(1200, 600);
             this.ControlBox = false;
-            this.Controls.Add(this.panel1);
+            this.Controls.Add(this.pnlMain);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -1494,10 +1494,9 @@
             this.Opacity = 0D;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "HRM";
-            this.TransparencyKey = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Demo1_FormClosing);
             this.Shown += new System.EventHandler(this.Demo1_Shown);
-            this.panel1.ResumeLayout(false);
+            this.pnlMain.ResumeLayout(false);
             this.panel3.ResumeLayout(false);
             this.panel5.ResumeLayout(false);
             this.panel7.ResumeLayout(false);
@@ -1522,7 +1521,7 @@
 
         #endregion
 
-        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.Panel pnlMain;
         private System.Windows.Forms.Panel panel2;
         private Control.YANCirPic yanCirPic1;
         private Control.YANTxt yanTxt1;

@@ -77,6 +77,8 @@ namespace YANF.Screen
                 btn.MouseLeave += BtnMenu_MouseLeave;
                 btn.Click += BtnMenu_Click;
             }
+            // set
+            pnlMain.Select();
         }
         #endregion
 
