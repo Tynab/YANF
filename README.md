@@ -1,8 +1,5 @@
 # YAMI AN NEPHILIM FRAMEWORK
 YANF is based on .NET Framework, YANF use for Windows Forms App project with C# or Visual Basic programming languages.
-<p align="center">
-<img src="https://raw.githubusercontent.com/Tynab/Loginside-FYAN-Bot/main/pic/0.gif"></img>
-</p>
 
 ### INSTALL
 https://www.nuget.org/packages/Tynab.YANF
@@ -12,7 +9,7 @@ PM> NuGet\Install-Package Tynab.YANF
 
 ## IMAGE DEMO
 <p align="center">
-<img src="https://raw.githubusercontent.com/Tynab/Loginside-FYAN-Bot/main/pic/0.gif"></img>
+<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/1.jpg"></img>
 </p>
 
 ## CODE DEMO
@@ -31,6 +28,14 @@ private void Func()
     YANMessageBox.Show("情報", "完了！", OK, Information, JAP);
 }
 ```
+<p align="center">
+<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/3.jpg"></img>
+<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/4.jpg"></img>
+<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/5.jpg"></img>
+<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/6.jpg"></img>
+<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/7.jpg"></img>
+</p>
+
 ### SCREEN
 ```c#
 /* Show Load screen */
@@ -71,6 +76,9 @@ private void Func()
     new MainFrm().Show();
 }
 ```
+<p align="center">
+<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/2.jpg"></img>
+</p>
 
 ### FORM
 - MessageBox new style (support for 3 languages)

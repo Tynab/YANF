@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{40C18CF6-ADC1-4B18-804D-7E42EE7D6DB3}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>WinExe</OutputType>
     <RootNamespace>YANF</RootNamespace>
     <AssemblyName>YANF</AssemblyName>
     <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
