@@ -148,7 +148,7 @@ namespace YANF.Screen
         private void BtnSync_Click(object sender, EventArgs e) => YANMessageBox.Show("QUESTION", "Do you want to continue?", YesNoCancel, Question);
 
         // btn Search click
-        private void BtnSearch_Click(object sender, EventArgs e) => YANMessageBox.Show("KẾT QUẢ", "Không tìm thấy kết quả!", RetryCancel);
+        private void BtnSearch_Click(object sender, EventArgs e) => YANMessageBox.Show("KẾT QUẢ", "Không tìm thấy kết quả!", RetryCancel, VIE);
 
         // Highlight lbl link by ddl
         private void DdlLinkLbl_Enter(object sender, EventArgs e) => ((YANDdl)sender).HighLightLblLinkByCtrl("ddl", LightYellow, false);

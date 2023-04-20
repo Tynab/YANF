@@ -52,8 +52,7 @@
     <ApplicationIcon>ic.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>
-    </StartupObject>
+    <StartupObject>YANF.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -72,7 +71,16 @@
     <Compile Include="Control\YANBtn.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Control\YANBtn.EventHandler.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Control\YANCirPic.EventHandler.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Control\YANDdl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Control\YANDdl.EventHandler.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Control\YANDp.cs">
@@ -199,6 +207,7 @@
     <EmbeddedResource Include="Screen\YANWaitScreen.resx">
       <DependentUpon>YANWaitScreen.cs</DependentUpon>
     </EmbeddedResource>
+    <None Include="nuget.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

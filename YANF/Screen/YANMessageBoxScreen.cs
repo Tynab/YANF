@@ -490,7 +490,7 @@ namespace YANF.Screen
                     // ok btn
                     btn1.Visible = true;
                     btn1.Location = new Point(xCtr, yCtr);
-                    btn1.Text = "Xong";
+                    btn1.Text = "Đóng";
                     btn1.DialogResult = DialogResult.OK; //set dialogResult
                     // set default btn
                     SetDefaultBtn(btnDflt);

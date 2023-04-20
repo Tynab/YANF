@@ -1,5 +1,5 @@
 # YAMI AN NEPHILIM FRAMEWORK
-YANF is based on .NET Framework, YANF use for Windows Forms App project with C# or Visual Basic programming languages.
+YANF is based on .NET Framework 4.8.1, YANF use for Windows Forms App project with C# or Visual Basic programming languages.
 
 ### INSTALL
 https://www.nuget.org/packages/Tynab.YANF
@@ -26,6 +26,7 @@ private void Func()
 {
     ...
     YANMessageBox.Show("情報", "完了！", OK, Information, JAP);
+	...
 }
 ```
 <p align="center">
@@ -89,41 +90,33 @@ private void Func()
 
 ### FORM
 - MessageBox new style (support for 3 languages)
-    - English
-    - 日本語
-    - Tiếng Việt
 - Wait screen
 - Load screen
 - Update screen
 
 ### CONTROL
 - Button new style
+- ProgressBar new style
+- RadioButton new style
+- TextBox new style
 - CirclePictureBox
 - DropdownList
 - GradientPanel
 - NumBox
-- ProgressBar new style
-- RadioButton new style
 - ToggleButton
-- TextBox new style
 
-### UTILITIES
+### EXTENSION
+- Numeric
+- Text
+- List
+- Random
+- Process
+- Task
 - Display
-    - CreateRoundRectRgn
-    - AnimateWindow
-    - FadeIn
-    - FadeOut
-    - HighLightLblLinkByCtrl
-- Math
-    - Min
-    - Max
-- String
-    - ParseDouble
-    - ParseInt
 - Timer
-    - StartAdv
-    - StopAdv
 - Event
-    - MoveFrm_MouseDown
-    - MoveFrm_MouseMove
-    - MoveFrm_MouseUp
+
+### OTHER
+- Password
+
+[See wiki for more details](https://github.com/Tynab/YANF/wiki)
