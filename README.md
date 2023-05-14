@@ -8,8 +8,8 @@ PM> NuGet\Install-Package Tynab.YANF
 ```
 
 ## IMAGE DEMO
-<p align="center">
-<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/1.jpg"></img>
+<p align='center'>
+<img src='pic/1.jpg'></img>
 </p>
 
 ## CODE DEMO
@@ -29,12 +29,12 @@ private void Func()
 	...
 }
 ```
-<p align="center">
-<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/3.jpg"></img>
-<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/4.jpg"></img>
-<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/5.jpg"></img>
-<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/6.jpg"></img>
-<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/7.jpg"></img>
+<p align='center'>
+<img src='pic/3.jpg'></img>
+<img src='pic/4.jpg'></img>
+<img src='pic/5.jpg'></img>
+<img src='pic/6.jpg'></img>
+<img src='pic/7.jpg'></img>
 </p>
 
 ### SCREEN
@@ -68,8 +68,8 @@ private void Func()
     ...
 }
 ```
-<p align="center">
-<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/8.jpg"></img>
+<p align='center'>
+<img src='pic/8.jpg'></img>
 </p>
 
 ```c#
@@ -84,8 +84,8 @@ private void Func()
     ...
 }
 ```
-<p align="center">
-<img src="https://raw.githubusercontent.com/Tynab/YANF/main/pic/2.jpg"></img>
+<p align='center'>
+<img src='pic/2.jpg'></img>
 </p>
 
 ### FORM
