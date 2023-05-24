@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Tynab.YANF</id>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <title>YANF</title>
     <authors>Yami An</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -11,11 +11,9 @@
     <projectUrl>https://github.com/Tynab/YANF</projectUrl>
 	<iconUrl>https://raw.githubusercontent.com/Tynab/YANF/main/pic/0.png</iconUrl>
     <description>Yami An Nephilim Framework</description>
-    <releaseNotes>Add new screen:
-	- MessageBox (support English, Japanese, Vietnamese)
-	- Wait
-	- Load
-	- Update</releaseNotes>
+    <releaseNotes>Update all:
+	- Control
+	- Screen</releaseNotes>
     <copyright>Copyright ©  2022</copyright>
     <tags>C# VB .NET WindowsFormsApp</tags>
   </metadata>
