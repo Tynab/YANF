@@ -59,6 +59,7 @@ namespace YANF.Script
         /// <summary>
         /// Highlight label link bằng tên control (prefix tên label bắt buộc là "lbl").
         /// </summary>
+        /// <param name="ctrl">Control liên kết với label.</param>
         /// <param name="typeName">Loại control.</param>
         /// <param name="color">Màu highlight.</param>
         /// <param name="isBold">In đậm hoặc không.</param>

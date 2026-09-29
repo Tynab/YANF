@@ -12,6 +12,7 @@ namespace YANF.Script
         /// <summary>
         /// Get tất cả control con theo loại.
         /// </summary>
+        /// <param name="ctrl">Control cha.</param>
         /// <param name="type">Loại control cần get.</param>
         /// <returns>Control list.</returns>
         public static IEnumerable<System.Windows.Forms.Control> GetAllObjs(this System.Windows.Forms.Control ctrl, Type type)
@@ -23,6 +24,7 @@ namespace YANF.Script
         /// <summary>
         /// Tạo list item cho dropdownlist từ các file trong folder.
         /// </summary>
+        /// <param name="ddl">Dropdownlist.</param>
         /// <param name="path">Folder path.</param>
         public static void GetItemListFromFilesInFolderAdv(this YANDdl ddl, string path)
         {

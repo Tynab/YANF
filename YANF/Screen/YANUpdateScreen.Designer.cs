@@ -28,7 +28,6 @@ partial class YANUpdateScreen
     /// </summary>
     private void InitializeComponent()
     {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(YANUpdateScreen));
             this.panelMain = new System.Windows.Forms.Panel();
             this.pnlProgressBar = new System.Windows.Forms.Panel();
             this.lblPercent = new System.Windows.Forms.Label();
@@ -127,7 +126,6 @@ partial class YANUpdateScreen
             this.Controls.Add(this.panelMain);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "YANUpdateScreen";
