@@ -14,7 +14,9 @@
 
   <!-- Assembly and package metadata (formerly Properties/AssemblyInfo.cs and YANF.nuspec) -->
   <PropertyGroup>
-    <Version>1.0.3</Version>
+    <!-- 2.0: MainFrm, Demo1 and Demo2 moved out of the package to samples/YANF.Demo (breaking, see CHANGELOG.md;
+         the accepted differences from the 1.0.1 baseline are listed in CompatibilitySuppressions.xml) -->
+    <Version>2.0.0-alpha.1</Version>
     <Title>YANF</Title>
     <Product>YANF</Product>
     <Company>YAN</Company>

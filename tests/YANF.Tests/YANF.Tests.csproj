@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net481</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>12</LangVersion>
+    <RootNamespace>YANF.Tests</RootNamespace>
+    <AssemblyName>YANF.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!-- Lets the .NET SDK build net481 without a targeting pack installed; build-time only -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- YANF grants InternalsVisibleTo("YANF.Tests") -->
+    <ProjectReference Include="..\..\YANF\YANF.csproj" />
+    <!-- The sample application's own fixes are covered as well (Samples/DemoTests.cs) -->
+    <ProjectReference Include="..\..\samples\YANF.Demo\YANF.Demo.csproj" />
+  </ItemGroup>
+
+</Project>

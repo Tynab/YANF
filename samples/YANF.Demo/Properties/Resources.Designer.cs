@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace YANF.Properties {
+namespace YANF.Demo.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace YANF.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("YANF.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("YANF.Demo.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -63,9 +63,9 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap gLoad {
+        internal static System.Drawing.Bitmap pBI {
             get {
-                object obj = ResourceManager.GetObject("gLoad", resourceCulture);
+                object obj = ResourceManager.GetObject("pBI", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -73,9 +73,9 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap gUpdate {
+        internal static System.Drawing.Bitmap pBO {
             get {
-                object obj = ResourceManager.GetObject("gUpdate", resourceCulture);
+                object obj = ResourceManager.GetObject("pBO", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -83,9 +83,9 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap gWait {
+        internal static System.Drawing.Bitmap pPA {
             get {
-                object obj = ResourceManager.GetObject("gWait", resourceCulture);
+                object obj = ResourceManager.GetObject("pPA", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -93,9 +93,9 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap pCalendarBlack {
+        internal static System.Drawing.Bitmap pPB {
             get {
-                object obj = ResourceManager.GetObject("pCalendarBlack", resourceCulture);
+                object obj = ResourceManager.GetObject("pPB", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -103,9 +103,9 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap pCalendarWhite {
+        internal static System.Drawing.Bitmap pPG {
             get {
-                object obj = ResourceManager.GetObject("pCalendarWhite", resourceCulture);
+                object obj = ResourceManager.GetObject("pPG", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -113,9 +113,9 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap pMessChat {
+        internal static System.Drawing.Bitmap pPL {
             get {
-                object obj = ResourceManager.GetObject("pMessChat", resourceCulture);
+                object obj = ResourceManager.GetObject("pPL", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -123,9 +123,9 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap pMessError {
+        internal static System.Drawing.Bitmap pPM {
             get {
-                object obj = ResourceManager.GetObject("pMessError", resourceCulture);
+                object obj = ResourceManager.GetObject("pPM", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -133,9 +133,9 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap pMessInfomation {
+        internal static System.Drawing.Bitmap pPT {
             get {
-                object obj = ResourceManager.GetObject("pMessInfomation", resourceCulture);
+                object obj = ResourceManager.GetObject("pPT", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -143,9 +143,9 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap pMessQuestion {
+        internal static System.Drawing.Bitmap pQI {
             get {
-                object obj = ResourceManager.GetObject("pMessQuestion", resourceCulture);
+                object obj = ResourceManager.GetObject("pQI", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -153,9 +153,39 @@ namespace YANF.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap pMessWarning {
+        internal static System.Drawing.Bitmap pQO {
             get {
-                object obj = ResourceManager.GetObject("pMessWarning", resourceCulture);
+                object obj = ResourceManager.GetObject("pQO", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap pUserSolid2 {
+            get {
+                object obj = ResourceManager.GetObject("pUserSolid2", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap pXI {
+            get {
+                object obj = ResourceManager.GetObject("pXI", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap pXO {
+            get {
+                object obj = ResourceManager.GetObject("pXO", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
