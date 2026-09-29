@@ -14,7 +14,8 @@ namespace YANF.Control
         #region Fields
         private Color _checkedColor = MediumSlateBlue;
         private Color _unCheckedColor = Gray;
-        private Color _foreColorTemp;
+        private Color _highlightText = DarkGoldenrod;
+        private bool _is_Hover = false;
         #endregion
 
         #region Constructors
@@ -34,8 +35,11 @@ namespace YANF.Control
             get => _checkedColor;
             set
             {
-                _checkedColor = value;
-                Invalidate();
+                if (_checkedColor != value)
+                {
+                    _checkedColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -45,13 +49,30 @@ namespace YANF.Control
             get => _unCheckedColor;
             set
             {
-                _unCheckedColor = value;
-                Invalidate();
+                if (_unCheckedColor != value)
+                {
+                    _unCheckedColor = value;
+                    Invalidate();
+                }
             }
         }
 
-        [Category("YAN Appearance"), Description("The color of the text when the control have the focus.")]
-        public Color HighlightText { get; set; } = DarkGoldenrod;
+        [Category("YAN Appearance"), Description("The color of the text when the mouse pointer is over the control.")]
+        public Color HighlightText
+        {
+            get => _highlightText;
+            set
+            {
+                if (_highlightText != value)
+                {
+                    _highlightText = value;
+                    if (_is_Hover)
+                    {
+                        Invalidate();
+                    }
+                }
+            }
+        }
         #endregion
 
         #region Overridden
@@ -78,7 +99,7 @@ namespace YANF.Control
             // drawing
             using var penBorder = new Pen(_checkedColor, 1.6f);
             using var brushRbCheck = new SolidBrush(_checkedColor);
-            using var brushText = new SolidBrush(ForeColor);
+            using var brushText = new SolidBrush(_is_Hover ? _highlightText : ForeColor);
             // draw surface
             graphics.Clear(BackColor);
             // draw radio button
@@ -96,23 +117,21 @@ namespace YANF.Control
             graphics.DrawString(Text, Font, brushText, rbBorderSize + 8, (Height - MeasureText(Text, Font).Height) / 2);
         }
 
-        protected override void OnMouseMove(MouseEventArgs e)
-        {
-            base.OnMouseMove(e);
-            Cursor = Hand;
-        }
+        protected override Cursor DefaultCursor => Hand;
 
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
-            _foreColorTemp = ForeColor;
-            ForeColor = HighlightText;
+            // hover only changes the painted text color, never the ForeColor property
+            _is_Hover = true;
+            Invalidate();
         }
 
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
-            ForeColor = _foreColorTemp;
+            _is_Hover = false;
+            Invalidate();
         }
         #endregion
     }

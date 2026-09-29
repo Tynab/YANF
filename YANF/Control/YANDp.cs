@@ -29,13 +29,12 @@ namespace YANF.Control
         #region Constructors
         public YANDp()
         {
-            SetStyle(UserPaint, true);
+            // paint everything in WM_PAINT through a back buffer
+            SetStyle(UserPaint | AllPaintingInWmPaint | OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             // property
             TabStop = false;
             MinimumSize = new Size(0, 35);
             Font = new Font(Font.Name, 10f);
-            // event
-            Resize += Ctrl_Resize;
         }
         #endregion
 
@@ -46,9 +45,12 @@ namespace YANF.Control
             get => _skinColor;
             set
             {
-                _skinColor = value;
-                _calIc = _skinColor.GetBrightness() >= 0.8f ? pCalendarBlack : pCalendarWhite;
-                Invalidate();
+                if (_skinColor != value)
+                {
+                    _skinColor = value;
+                    _calIc = _skinColor.GetBrightness() >= 0.8f ? pCalendarBlack : pCalendarWhite;
+                    Invalidate();
+                }
             }
         }
 
@@ -58,8 +60,11 @@ namespace YANF.Control
             get => _textColor;
             set
             {
-                _textColor = value;
-                Invalidate();
+                if (_textColor != value)
+                {
+                    _textColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -69,8 +74,11 @@ namespace YANF.Control
             get => _borderColor;
             set
             {
-                _borderColor = value;
-                Invalidate();
+                if (_borderColor != value)
+                {
+                    _borderColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -80,8 +88,12 @@ namespace YANF.Control
             get => _borderSize;
             set
             {
-                _borderSize = value;
-                Invalidate();
+                value = Max(0, value);
+                if (_borderSize != value)
+                {
+                    _borderSize = value;
+                    Invalidate();
+                }
             }
         }
         #endregion
@@ -91,12 +103,14 @@ namespace YANF.Control
         {
             base.OnDropDown(e);
             _is_DroppedDown = true;
+            Invalidate();
         }
 
         protected override void OnCloseUp(EventArgs e)
         {
             base.OnCloseUp(e);
             _is_DroppedDown = false;
+            Invalidate();
         }
 
         protected override void OnKeyPress(KeyPressEventArgs e)
@@ -107,8 +121,13 @@ namespace YANF.Control
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            using var graphics = CreateGraphics();
-            using var penBorder = new Pen(_borderColor, _borderSize);
+            if (Width <= 0 || Height <= 0)
+            {
+                return;
+            }
+            var graphics = e.Graphics;
+            var borderSize = GetBorderSize();
+            using var penBorder = new Pen(_borderColor, borderSize);
             using var skinBrush = new SolidBrush(_skinColor);
             using var openIcBrush = new SolidBrush(FromArgb(50, 64, 64, 64));
             using var textBrush = new SolidBrush(_textColor);
@@ -126,7 +145,7 @@ namespace YANF.Control
                 graphics.FillRectangle(openIcBrush, new RectangleF(clientArea.Width - _wCalIc, 0, _wCalIc, clientArea.Height));
             }
             // draw border
-            if (_borderSize >= 1)
+            if (borderSize >= 1)
             {
                 graphics.DrawRectangle(penBorder, clientArea.X, clientArea.Y, clientArea.Width, clientArea.Height);
             }
@@ -137,29 +156,62 @@ namespace YANF.Control
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            var wIc = GetWIcBtn();
-            _icBtnArea = new RectangleF(Width - wIc, 0, wIc, Height);
+            UpdateIcBtnArea();
+        }
+
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            base.OnSizeChanged(e);
+            UpdateIcBtnArea();
+        }
+
+        protected override void OnFontChanged(EventArgs e)
+        {
+            base.OnFontChanged(e);
+            UpdateIcBtnArea();
+        }
+
+        protected override void OnFormatChanged(EventArgs e)
+        {
+            base.OnFormatChanged(e);
+            UpdateIcBtnArea();
+            // the displayed text depends on the format
+            Invalidate();
+        }
+
+        protected override void OnValueChanged(EventArgs eventargs)
+        {
+            base.OnValueChanged(eventargs);
+            UpdateIcBtnArea();
+            // the text is painted as a whole, so repaint all of it
+            Invalidate();
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-            Cursor = _icBtnArea.Contains(e.Location) ? Hand : DefaultCursor;
-        }
-        #endregion
-
-        #region Events
-        // Check border size and radius when resize the control
-        private void Ctrl_Resize(object sender, EventArgs e)
-        {
-            var minSize = Width > Height ? Height : Width;
-            _borderSize = Min(_borderSize, minSize / 2);
+            // change the cursor only when the pointer crosses the icon border, not on every mouse move
+            var cursor = _icBtnArea.Contains(e.Location) ? Hand : DefaultCursor;
+            if (Cursor != cursor)
+            {
+                Cursor = cursor;
+            }
         }
         #endregion
 
         #region Methods
         // Get width of icon of button
         private int GetWIcBtn() => MeasureText(Text, Font).Width <= Width - _wCalIc - 20 ? _wCalIc : _wArrowIc;
+
+        // Update the area of icon of button when the size, font, format or text changes
+        private void UpdateIcBtnArea()
+        {
+            var wIc = GetWIcBtn();
+            _icBtnArea = new RectangleF(Width - wIc, 0, wIc, Height);
+        }
+
+        // Get the border size that fits the current size (the configured value is never changed)
+        private int GetBorderSize() => Max(0, Min(_borderSize, Min(Width, Height) / 2));
         #endregion
     }
 }

@@ -23,14 +23,13 @@ namespace YANF.Control
         private int _channelHeight = 6;
         private int _sliderHeight = 6;
         private bool _is_ShowMaximum = false;
-        private bool _is_PaintedBlack = false;
-        private bool _is_StopPainting = false;
         #endregion
 
         #region Constructors
         public YANPrg()
         {
-            SetStyle(UserPaint, true);
+            // paint everything on every paint, through a back buffer, so the bar never shows a blank or stale surface
+            SetStyle(UserPaint | AllPaintingInWmPaint | OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             // property
             ForeColor = White;
         }
@@ -43,8 +42,11 @@ namespace YANF.Control
             get => _channelColor;
             set
             {
-                _channelColor = value;
-                Invalidate();
+                if (_channelColor != value)
+                {
+                    _channelColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -54,8 +56,11 @@ namespace YANF.Control
             get => _sliderColor;
             set
             {
-                _sliderColor = value;
-                Invalidate();
+                if (_sliderColor != value)
+                {
+                    _sliderColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -65,8 +70,11 @@ namespace YANF.Control
             get => _valueBackColor;
             set
             {
-                _valueBackColor = value;
-                Invalidate();
+                if (_valueBackColor != value)
+                {
+                    _valueBackColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -76,8 +84,11 @@ namespace YANF.Control
             get => _textAlign;
             set
             {
-                _textAlign = value;
-                Invalidate();
+                if (_textAlign != value)
+                {
+                    _textAlign = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -87,8 +98,11 @@ namespace YANF.Control
             get => _symbolBefore;
             set
             {
-                _symbolBefore = value;
-                Invalidate();
+                if (_symbolBefore != value)
+                {
+                    _symbolBefore = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -98,8 +112,11 @@ namespace YANF.Control
             get => _symbolAfter;
             set
             {
-                _symbolAfter = value;
-                Invalidate();
+                if (_symbolAfter != value)
+                {
+                    _symbolAfter = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -109,7 +126,7 @@ namespace YANF.Control
             get => _channelHeight;
             set
             {
-                if (value >= 0)
+                if (value >= 0 && _channelHeight != value)
                 {
                     _channelHeight = value;
                     Invalidate();
@@ -123,7 +140,7 @@ namespace YANF.Control
             get => _sliderHeight;
             set
             {
-                if (value >= 0)
+                if (value >= 0 && _sliderHeight != value)
                 {
                     _sliderHeight = value;
                     Invalidate();
@@ -137,8 +154,11 @@ namespace YANF.Control
             get => _is_ShowMaximum;
             set
             {
-                _is_ShowMaximum = value;
-                Invalidate();
+                if (_is_ShowMaximum != value)
+                {
+                    _is_ShowMaximum = value;
+                    Invalidate();
+                }
             }
         }
         #endregion
@@ -152,53 +172,34 @@ namespace YANF.Control
 
         protected override void OnPaintBackground(PaintEventArgs e)
         {
-            if (!_is_StopPainting)
-            {
-                if (!_is_PaintedBlack)
-                {
-                    var graphics = e.Graphics;
-                    var rectChannel = new Rectangle(0, 0, Width, ChannelHeight);
-                    using var brushChannel = new SolidBrush(_channelColor);
-                    rectChannel.Y = _channelHeight >= _sliderHeight ? Height - _channelHeight : Height - (_channelHeight + _sliderHeight) / 2;
-                    // painting surface
-                    graphics.Clear(Parent.BackColor);
-                    //channel
-                    graphics.FillRectangle(brushChannel, rectChannel);
-                    // painting stop painting
-                    if (!DesignMode)
-                    {
-                        _is_PaintedBlack = true;
-                    }
-                }
-                // reset painting
-                if (Value == Maximum || Value == Minimum)
-                {
-                    _is_PaintedBlack = false;
-                }
-            }
+            var graphics = e.Graphics;
+            var rectChannel = new Rectangle(0, 0, Width, ChannelHeight);
+            using var brushChannel = new SolidBrush(_channelColor);
+            rectChannel.Y = _channelHeight >= _sliderHeight ? Height - _channelHeight : Height - (_channelHeight + _sliderHeight) / 2;
+            // painting surface
+            graphics.Clear(Parent?.BackColor ?? BackColor);
+            //channel
+            graphics.FillRectangle(brushChannel, rectChannel);
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (!_is_StopPainting)
+            var graphics = e.Graphics;
+            // an empty range (Minimum == Maximum) has no progress to show
+            var wSlider = Maximum > Minimum ? (int)(Width * ((double)Value - Minimum) / ((double)Maximum - Minimum)) : 0;
+            var rectSlider = new Rectangle(0, 0, wSlider, SliderHeight);
+            using var brushSlider = new SolidBrush(_sliderColor);
+            rectSlider.Y = _sliderHeight >= _channelHeight ? Height - _sliderHeight : Height - (_sliderHeight + _channelHeight) / 2;
+            // painting slider
+            if (wSlider > 1)
             {
-                var graphics = e.Graphics;
-                var wSlider = (int)(Width * ((double)Value - Minimum) / ((double)Maximum - Minimum));
-                var rectSlider = new Rectangle(0, 0, wSlider, SliderHeight);
-                using var brushSlider = new SolidBrush(_sliderColor);
-                rectSlider.Y = _sliderHeight >= _channelHeight ? Height - _sliderHeight : Height - (_sliderHeight + _channelHeight) / 2;
-                // painting slider
-                if (wSlider > 1)
-                {
-                    graphics.FillRectangle(brushSlider, rectSlider);
-                }
-                // painting text
-                if (_textAlign != None)
-                {
-                    DrawValueText(graphics, wSlider, rectSlider);
-                }
+                graphics.FillRectangle(brushSlider, rectSlider);
             }
-            _is_StopPainting = Value == Maximum;
+            // painting text
+            if (_textAlign != None)
+            {
+                DrawValueText(graphics, wSlider, rectSlider);
+            }
         }
 
         private void DrawValueText(Graphics graphics, int wSlider, Rectangle rectSlider)
@@ -238,7 +239,7 @@ namespace YANF.Control
                     rectText.X = wSlider - textSize.Width;
                     textFormat.Alignment = StringAlignment.Center;
                     // clean previous surface
-                    using var brushClear = new SolidBrush(Parent.BackColor);
+                    using var brushClear = new SolidBrush(Parent?.BackColor ?? BackColor);
                     var rect = rectSlider;
                     rect.Y = rectText.Y;
                     rect.Height = rectText.Height;

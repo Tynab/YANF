@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using static System.Drawing.Color;
 using static System.Drawing.Drawing2D.PenAlignment;
@@ -9,6 +8,7 @@ using static System.Drawing.Drawing2D.SmoothingMode;
 using static System.Drawing.Rectangle;
 using static System.Math;
 using static System.Windows.Forms.TextRenderer;
+using static YANF.Script.YANShape;
 
 namespace YANF.Control
 {
@@ -42,8 +42,11 @@ namespace YANF.Control
             _nudNum.KeyDown += Nud_KeyDown;
             _nudNum.KeyPress += Nud_KeyPress;
             _nudNum.ValueChanged += Nud_ValueChanged;
+            _nudNum.SizeChanged += Nud_SizeChanged;
             // user control
             Controls.Add(_nudNum);
+            DoubleBuffered = true;
+            ResizeRedraw = true;
             ForeColor = DimGray;
             BackColor = White;
             ThousandsSeparator = true;
@@ -52,7 +55,6 @@ namespace YANF.Control
             Size = new Size(200, 30);
             Padding = new Padding(10, 7, 10, 7);
             Font = new Font(Font.Name, 11f);
-            Resize += Ctrl_Resize;
             // base
             ResumeLayout();
         }
@@ -67,8 +69,11 @@ namespace YANF.Control
             get => _nudNum.TextAlign;
             set
             {
-                _nudNum.TextAlign = value;
-                Invalidate();
+                if (_nudNum.TextAlign != value)
+                {
+                    _nudNum.TextAlign = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -78,8 +83,11 @@ namespace YANF.Control
             get => _borderColor;
             set
             {
-                _borderColor = value;
-                Invalidate();
+                if (_borderColor != value)
+                {
+                    _borderColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -92,14 +100,11 @@ namespace YANF.Control
             get => _nudNum.Minimum;
             set
             {
-                if (value > Value)
+                // NumericUpDown raises Maximum and constrains Value itself, so Maximum and Minimum can be set in any order
+                if (_nudNum.Minimum != value)
                 {
-                    Value = value;
-                    String = Value.ToString();
-                    _nudNum.Value = value;
+                    _nudNum.Minimum = value;
                 }
-                _nudNum.Minimum = value;
-                Invalidate();
             }
         }
 
@@ -109,14 +114,11 @@ namespace YANF.Control
             get => _nudNum.Maximum;
             set
             {
-                if (value < Value)
+                // NumericUpDown lowers Minimum and constrains Value itself, so Maximum and Minimum can be set in any order
+                if (_nudNum.Maximum != value)
                 {
-                    Value = value;
-                    String = Value.ToString();
-                    _nudNum.Value = value;
+                    _nudNum.Maximum = value;
                 }
-                _nudNum.Maximum = value;
-                Invalidate();
             }
         }
 
@@ -126,9 +128,8 @@ namespace YANF.Control
             get => _nudNum.Value;
             set
             {
-                _nudNum.Value = value < Minimum ? Minimum : value > Maximum ? Maximum : value;
-                String = value.ToString();
-                Invalidate();
+                _nudNum.Value = Max(Minimum, Min(Maximum, value));
+                String = _nudNum.Value.ToString();
             }
         }
 
@@ -141,8 +142,13 @@ namespace YANF.Control
             get => _borderSize;
             set
             {
-                _borderSize = value;
-                Invalidate();
+                value = Max(0, value);
+                if (_borderSize != value)
+                {
+                    _borderSize = value;
+                    UpdateNudRegion();
+                    Invalidate();
+                }
             }
         }
 
@@ -152,8 +158,13 @@ namespace YANF.Control
             get => _borderRadius;
             set
             {
-                _borderRadius = value;
-                Invalidate();
+                value = Max(0, value);
+                if (_borderRadius != value)
+                {
+                    _borderRadius = value;
+                    UpdateRegion();
+                    Invalidate();
+                }
             }
         }
 
@@ -163,8 +174,11 @@ namespace YANF.Control
             get => _nudNum.DecimalPlaces;
             set
             {
-                _nudNum.DecimalPlaces = value;
-                Invalidate();
+                if (_nudNum.DecimalPlaces != value)
+                {
+                    _nudNum.DecimalPlaces = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -174,8 +188,11 @@ namespace YANF.Control
             get => _is_UnderlinedStyle;
             set
             {
-                _is_UnderlinedStyle = value;
-                Invalidate();
+                if (_is_UnderlinedStyle != value)
+                {
+                    _is_UnderlinedStyle = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -185,8 +202,11 @@ namespace YANF.Control
             get => _nudNum.ThousandsSeparator;
             set
             {
-                _nudNum.ThousandsSeparator = value;
-                Invalidate();
+                if (_nudNum.ThousandsSeparator != value)
+                {
+                    _nudNum.ThousandsSeparator = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -234,58 +254,43 @@ namespace YANF.Control
         {
             base.OnPaint(e);
             var graphics = e.Graphics;
-            if (_borderRadius > 1)
+            var borderRadius = GetBorderRadius();
+            var borderSize = GetBorderSize();
+            using var penBorder = new Pen(_is_Focus ? BorderFocusColor : _borderColor, borderSize);
+            if (borderRadius > 1)
             {
                 var rectBorderSmooth = ClientRectangle;
-                var smoothSize = _borderSize > 0 ? _borderSize : 1;
-                using var pathBorderSmooth = GetFigurePath(rectBorderSmooth, _borderRadius);
-                using var pathBorder = GetFigurePath(Inflate(rectBorderSmooth, -_borderSize, -_borderSize), _borderRadius - _borderSize);
-                using var penBorderSmooth = new Pen(Parent.BackColor, smoothSize);
-                using var penBorder = new Pen(_borderColor, _borderSize);
-                Region = new Region(pathBorderSmooth);
-                if (_borderRadius > 15)
-                {
-                    SetTextRoundedRegion();
-                }
+                var smoothSize = borderSize > 0 ? borderSize : 1;
+                using var pathBorderSmooth = RoundedRect(rectBorderSmooth, borderRadius);
+                using var pathBorder = RoundedRect(Inflate(rectBorderSmooth, -borderSize, -borderSize), borderRadius - borderSize);
+                using var penBorderSmooth = new Pen(Parent?.BackColor ?? BackColor, smoothSize);
                 graphics.SmoothingMode = AntiAlias;
                 penBorder.Alignment = Center;
-                if (_is_Focus)
-                {
-                    penBorder.Color = BorderFocusColor;
-                }
+                // draw border smoothing
+                graphics.DrawPath(penBorderSmooth, pathBorderSmooth);
                 if (_is_UnderlinedStyle)
                 {
-                    // draw border smoothing
-                    graphics.DrawPath(penBorderSmooth, pathBorderSmooth);
                     // draw border
                     graphics.SmoothingMode = None;
-                    if (_borderSize >= 1)
+                    if (borderSize >= 1)
                     {
                         graphics.DrawLine(penBorder, 0, Height - 1, Width, Height - 1);
                     }
                 }
-                else
+                else if (pathBorder != null)
                 {
-                    // draw border smoothing
-                    graphics.DrawPath(penBorderSmooth, pathBorderSmooth);
                     // draw border
                     graphics.DrawPath(penBorder, pathBorder);
                 }
             }
             else
             {
-                using var penBorder = new Pen(_borderColor, _borderSize);
-                Region = new Region(ClientRectangle);
                 penBorder.Alignment = Inset;
-                if (_is_Focus)
-                {
-                    penBorder.Color = BorderFocusColor;
-                }
                 if (_is_UnderlinedStyle)
                 {
                     graphics.DrawLine(penBorder, 0, Height - 1, Width, Height - 1);
                 }
-                else if (_borderSize >= 1)
+                else if (borderSize >= 1)
                 {
                     graphics.DrawRectangle(penBorder, 0, 0, Width - 0.5f, Height - 0.5f);
                 }
@@ -295,6 +300,7 @@ namespace YANF.Control
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
+            UpdateRegion();
             if (DesignMode)
             {
                 UpdateHCtrl();
@@ -306,9 +312,16 @@ namespace YANF.Control
             base.OnLoad(e);
             UpdateHCtrl();
         }
+
+        protected override void OnParentBackColorChanged(EventArgs e)
+        {
+            base.OnParentBackColorChanged(e);
+            // the border smoothing is drawn with the parent back color
+            Invalidate();
+        }
         #endregion
 
-        #region Events    
+        #region Events
         // Raises the enter event
         private void Nud_Enter(object sender, EventArgs e)
         {
@@ -341,47 +354,63 @@ namespace YANF.Control
         // Raises the key press event
         private void Nud_KeyPress(object sender, KeyPressEventArgs e) => OnKeyPress(e);
 
-        //raises the value changed event
+        // Raises the value changed event and keeps the String field in sync with the value
         private void Nud_ValueChanged(object sender, EventArgs e)
         {
-            if (ValueChanged != null)
-            {
-                ValueChanged.Invoke(sender, e);
-            }
+            String = _nudNum.Value.ToString();
+            ValueChanged?.Invoke(sender, e);
         }
 
-        // Check border size and radius when resize the control
-        private void Ctrl_Resize(object sender, EventArgs e)
-        {
-            var minSize = Width > Height ? Height : Width;
-            _borderRadius = Min(_borderRadius, minSize / 2);
-            _borderSize = Min(_borderSize, minSize / 2);
-        }
+        // Update the rounded region of the numeric up-down when its size changes
+        private void Nud_SizeChanged(object sender, EventArgs e) => UpdateNudRegion();
         #endregion
 
         #region Methods
-        // Set rounded region to the control
-        private void SetTextRoundedRegion() => _nudNum.Region = new Region(GetFigurePath(_nudNum.ClientRectangle, _borderSize * 2));
+        // Get the border radius that fits the current size (the configured value is never changed)
+        private int GetBorderRadius() => (int)EffectiveRadius(ClientRectangle, _borderRadius);
+
+        // Get the border size that fits the current size (the configured value is never changed)
+        private int GetBorderSize() => Max(0, Min(_borderSize, Min(Width, Height) / 2));
+
+        // Update the region of the control when its size or radius changes, never while painting
+        private void UpdateRegion()
+        {
+            var borderRadius = GetBorderRadius();
+            if (borderRadius > 1)
+            {
+                using var pathRegion = RoundedRect(ClientRectangle, borderRadius);
+                SetRegion(this, pathRegion);
+            }
+            else
+            {
+                SetRegion(this, (Region)null);
+            }
+            UpdateNudRegion();
+        }
+
+        // Update the rounded region of the numeric up-down, only needed when the corners of the control are big enough to cut it
+        private void UpdateNudRegion()
+        {
+            if (_nudNum == null)
+            {
+                return;
+            }
+            if (GetBorderRadius() > 15)
+            {
+                using var pathNum = RoundedRect(_nudNum.ClientRectangle, GetBorderSize() * 2);
+                SetRegion(_nudNum, pathNum);
+            }
+            else
+            {
+                SetRegion(_nudNum, (Region)null);
+            }
+        }
 
         // Update the height of control when changed font display
         private void UpdateHCtrl()
         {
             _nudNum.MinimumSize = new Size(0, MeasureText("0", Font).Height + 1);
             Height = _nudNum.Height + Padding.Top + Padding.Bottom;
-        }
-
-        // Get path of figure
-        private GraphicsPath GetFigurePath(RectangleF rectF, float rad)
-        {
-            var path = new GraphicsPath();
-            var curveSize = rad * 2f;
-            path.StartFigure();
-            path.AddArc(rectF.X, rectF.Y, curveSize, curveSize, 180, 90);
-            path.AddArc(rectF.Right - curveSize, rectF.Y, curveSize, curveSize, 270, 90);
-            path.AddArc(rectF.Right - curveSize, rectF.Bottom - curveSize, curveSize, curveSize, 0, 90);
-            path.AddArc(rectF.X, rectF.Bottom - curveSize, curveSize, curveSize, 90, 90);
-            path.CloseFigure();
-            return path;
         }
         #endregion
     }

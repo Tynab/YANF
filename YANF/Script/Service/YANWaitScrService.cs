@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Windows.Forms;
 using YANF.Screen;
 
@@ -7,8 +8,7 @@ namespace YANF.Script.Service
     public class YANWaitScrService : IYANSrcService
     {
         #region Fields
-        private YANWaitScreen _waitScr;
-        private Thread _thread;
+        private YANOverlayHost<YANWaitScreen> _host;
         #endregion
 
         #region Properties
@@ -17,30 +17,24 @@ namespace YANF.Script.Service
         #endregion
 
         #region Methods
-        // Loading process
-        private void LoadingPrc(object parent)
-        {
-            _waitScr = new YANWaitScreen((Form)parent, Corner, IsTop);
-            _ = _waitScr.ShowDialog();
-        }
-
         // Implementation OnLoader
         public void OnLoader(Form pFrm)
         {
-            _thread = new Thread(new ParameterizedThreadStart(LoadingPrc));
-            _thread.Start(pFrm);
+            if (pFrm == null)
+            {
+                throw new ArgumentNullException(nameof(pFrm));
+            }
+            // Snapshot on the calling thread: the screen is built on its own thread
+            var bounds = pFrm.Bounds;
+            var corner = Corner;
+            var isTop = IsTop;
+            var host = new YANOverlayHost<YANWaitScreen>(() => new YANWaitScreen(bounds, corner, isTop));
+            Interlocked.Exchange(ref _host, host)?.Close();
+            host.Start();
         }
 
         // Implementation OffLoader
-        public void OffLoader()
-        {
-            if (_waitScr != null)
-            {
-                _ = _waitScr.BeginInvoke(new ThreadStart(_waitScr.Frm_Close));
-                _waitScr = null;
-                _thread = null;
-            }
-        }
+        public void OffLoader() => Interlocked.Exchange(ref _host, null)?.Close();
         #endregion
     }
 }

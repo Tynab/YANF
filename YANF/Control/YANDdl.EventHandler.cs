@@ -3,7 +3,6 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using static System.Drawing.Drawing2D.SmoothingMode;
-using static System.Math;
 using static System.Windows.Forms.ComboBoxStyle;
 
 namespace YANF.Control;
@@ -13,13 +12,6 @@ public partial class YANDdl
     #region Ctrl
     // Raises the key up event
     private void Ctrl_KeyUp(object sender, KeyEventArgs e) => OnKeyUp(e);
-
-    // Check border size and radius when resize the control
-    private void Ctrl_Resize(object sender, EventArgs e)
-    {
-        var minSize = Width > Height ? Height : Width;
-        _borderSize = Min(_borderSize, minSize / 2);
-    }
     #endregion
 
     #region Cmb

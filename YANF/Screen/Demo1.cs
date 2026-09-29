@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using YANF.Control;
@@ -19,12 +20,17 @@ namespace YANF.Screen
         #region Fields
         private const int _maxMenu = 6;
         private int _activeMenu = 1;
+        // btn Exit images, loaded once (every Resources getter call allocates a new Bitmap)
+        private readonly Bitmap _pXI = pXI;
+        private readonly Bitmap _pXO = pXO;
         #endregion
 
         #region Constructors
         public Demo1()
         {
             InitializeComponent();
+            // dispose cached images with frm
+            Disposed += Demo1_Disposed;
             // move frm by pnl
             foreach (var pnl in this.GetAllObjs(typeof(Panel)))
             {
@@ -89,6 +95,13 @@ namespace YANF.Screen
         // Closing frm
         private void Demo1_FormClosing(object sender, FormClosingEventArgs e) => this.FadeOut();
 
+        // Disposed frm (after its controls, so no button still paints the images)
+        private void Demo1_Disposed(object sender, EventArgs e)
+        {
+            _pXI.Dispose();
+            _pXO.Dispose();
+        }
+
         // btn menu mouse enter
         private void ButtonMenu_MouseEnter(object sender, EventArgs e)
         {
@@ -101,13 +114,13 @@ namespace YANF.Screen
         }
 
         // btn Exit mouse enter
-        private void BtnExit_MouseEnter(object sender, EventArgs e) => ((Button)sender).BackgroundImage = pXO;
+        private void BtnExit_MouseEnter(object sender, EventArgs e) => ((Button)sender).BackgroundImage = _pXO;
 
         // Button menu mouse leave
         private void BtnMenu_MouseLeave(object sender, EventArgs e) => ((Button)sender).ForeColor = DodgerBlue;
 
         // btn Exit mouse leave
-        private void BtnExit_MouseLeave(object sender, EventArgs e) => ((Button)sender).BackgroundImage = pXI;
+        private void BtnExit_MouseLeave(object sender, EventArgs e) => ((Button)sender).BackgroundImage = _pXI;
 
         // btn menu click
         private void BtnMenu_Click(object sender, EventArgs e)
@@ -171,7 +184,13 @@ namespace YANF.Screen
         // dp NgS value changed
         private void DpNgS_ValueChanged(object sender, EventArgs e)
         {
-            var yy = Today.Year - dpNgS.Value.Year;
+            var dob = dpNgS.Value.Date;
+            var yy = Today.Year - dob.Year;
+            // birthday not reached yet this year
+            if (yy > 0 && dob > Today.AddYears(-yy))
+            {
+                yy--;
+            }
             lblT.Text = yy > 0 ? $"{yy} tuổi" : null;
         }
         #endregion

@@ -2,31 +2,40 @@
 using System.Drawing;
 using System.Windows.Forms;
 using YANF.Script;
-using static System.Drawing.Region;
 using static System.Windows.Forms.DialogResult;
 using static System.Windows.Forms.FormStartPosition;
 using static YANF.Script.YANDisplay;
+using static YANF.Script.YANShape;
 
 namespace YANF.Screen
 {
     public partial class YANWaitScreen : MiddleScreen
     {
         #region Constructors
-        public YANWaitScreen(Form pFrm, int corner, bool isTop)
+        public YANWaitScreen(Form pFrm, int corner, bool isTop) : this(pFrm.Bounds, corner, isTop)
+        {
+        }
+
+        // Bounds are passed as a snapshot so the screen can be built on its own thread without touching pFrm
+        internal YANWaitScreen(Rectangle bounds, int corner, bool isTop)
         {
             InitializeComponent();
             StartPosition = Manual;
-            Location = new Point(pFrm.Location.X, pFrm.Location.Y);
-            Width = pFrm.Width;
-            Height = pFrm.Height;
+            Location = bounds.Location;
+            Width = bounds.Width;
+            Height = bounds.Height;
             TopMost = isTop;
-            Region = FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, corner, corner));
+            SetRoundRegion(this, corner);
         }
         #endregion
 
         #region Overridden
         public override void Frm_Close()
         {
+            if (IsDisposed)
+            {
+                return;
+            }
             DialogResult = OK;
             this.FadeOut();
             Dispose();

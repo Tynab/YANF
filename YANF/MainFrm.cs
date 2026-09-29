@@ -79,10 +79,7 @@ namespace YANF
                     if (_percent < 100)
                     {
                         _percent++;
-                        _ = Invoke((MethodInvoker)delegate
-                        {
-                            _dlvScrService.PublishValue(_percent, string.Format("{0} MB / {1} MB", _percent * 1.37, 100 * 1.37), (int)Ceiling(_percent * W_UPDATE_SCR / 100d));
-                        });
+                        _dlvScrService.PublishValue(_percent, string.Format("{0} MB / {1} MB", _percent * 1.37, 100 * 1.37), (int)Ceiling(_percent * W_UPDATE_SCR / 100d));
                     }
                     else
                     {
@@ -110,10 +107,7 @@ namespace YANF
                     if (_percent < 100)
                     {
                         _percent++;
-                        _ = Invoke((MethodInvoker)delegate
-                        {
-                            _dlvScrService.PublishValue(_percent, null, 0);
-                        });
+                        _dlvScrService.PublishValue(_percent, null, 0);
                     }
                     else
                     {

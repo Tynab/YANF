@@ -60,7 +60,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
@@ -70,12 +69,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Control\YANBtn.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Control\YANBtn.EventHandler.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Control\YANCirPic.EventHandler.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Control\YANDdl.cs">
@@ -167,6 +160,7 @@
     <Compile Include="Script\IYANSrcService.cs" />
     <Compile Include="Script\IYANDlvScrService.cs" />
     <Compile Include="Script\Service\YANLoadScrService.cs" />
+    <Compile Include="Script\Service\YANOverlayHost.cs" />
     <Compile Include="Script\Service\YANUpdScrService.cs" />
     <Compile Include="Script\Service\YANWaitScrService.cs" />
     <Compile Include="Script\YANController.cs" />

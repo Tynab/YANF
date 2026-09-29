@@ -14,6 +14,14 @@ namespace YANF.Control
         private float _angle;
         #endregion
 
+        #region Constructors
+        public YANGradPnl()
+        {
+            // the gradient depends on the whole client size: repaint all of it on resize, through a back buffer
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+        }
+        #endregion
+
         #region Properties
         [Category("YAN Appearance"), Description("The color of the top gradient.")]
         public Color TopColor
@@ -21,8 +29,11 @@ namespace YANF.Control
             get => _topColor;
             set
             {
-                _topColor = value;
-                Invalidate();
+                if (_topColor != value)
+                {
+                    _topColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -32,8 +43,11 @@ namespace YANF.Control
             get => _bottomColor;
             set
             {
-                _bottomColor = value;
-                Invalidate();
+                if (_bottomColor != value)
+                {
+                    _bottomColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -43,7 +57,7 @@ namespace YANF.Control
             get => _angle;
             set
             {
-                if (value is >= 0 and <= 360)
+                if (value is >= 0 and <= 360 && _angle != value)
                 {
                     _angle = value;
                     Invalidate();
@@ -53,13 +67,15 @@ namespace YANF.Control
         #endregion
 
         #region Overridden
-        protected override void OnPaint(PaintEventArgs e)
+        protected override void OnPaintBackground(PaintEventArgs e)
         {
-            using (var brush = new LinearGradientBrush(ClientRectangle, _topColor, _bottomColor, _angle))
+            base.OnPaintBackground(e);
+            var rectSurface = ClientRectangle;
+            if (rectSurface.Width > 0 && rectSurface.Height > 0)
             {
-                e.Graphics.FillRectangle(brush, ClientRectangle);
+                using var brush = new LinearGradientBrush(rectSurface, _topColor, _bottomColor, _angle);
+                e.Graphics.FillRectangle(brush, rectSurface);
             }
-            base.OnPaint(e);
         }
         #endregion
     }

@@ -8,7 +8,9 @@ using static System.Drawing.Drawing2D.DashCap;
 using static System.Drawing.Drawing2D.DashStyle;
 using static System.Drawing.Drawing2D.SmoothingMode;
 using static System.Drawing.Rectangle;
+using static System.Math;
 using static System.Windows.Forms.PictureBoxSizeMode;
+using static YANF.Script.YANShape;
 
 namespace YANF.Control;
 
@@ -24,12 +26,12 @@ public partial class YANCirPic : PictureBox
     private float _borderAngle = 50f;
     private float _angle;
     private int _borderSize = 2;
+    private bool _is_Squaring = false;
     #endregion
 
     #region Constructors
     public YANCirPic()
     {
-        OptionEvent();
         OptionDisplay();
     }
     #endregion
@@ -41,8 +43,11 @@ public partial class YANCirPic : PictureBox
         get => _borderTopColor;
         set
         {
-            _borderTopColor = value;
-            Invalidate();
+            if (_borderTopColor != value)
+            {
+                _borderTopColor = value;
+                Invalidate();
+            }
         }
     }
 
@@ -52,8 +57,11 @@ public partial class YANCirPic : PictureBox
         get => _borderBottomColor;
         set
         {
-            _borderBottomColor = value;
-            Invalidate();
+            if (_borderBottomColor != value)
+            {
+                _borderBottomColor = value;
+                Invalidate();
+            }
         }
     }
 
@@ -63,8 +71,11 @@ public partial class YANCirPic : PictureBox
         get => _topColor;
         set
         {
-            _topColor = value;
-            Invalidate();
+            if (_topColor != value)
+            {
+                _topColor = value;
+                Invalidate();
+            }
         }
     }
 
@@ -74,8 +85,11 @@ public partial class YANCirPic : PictureBox
         get => _bottomColor;
         set
         {
-            _bottomColor = value;
-            Invalidate();
+            if (_bottomColor != value)
+            {
+                _bottomColor = value;
+                Invalidate();
+            }
         }
     }
 
@@ -85,8 +99,11 @@ public partial class YANCirPic : PictureBox
         get => _borderLineStyle;
         set
         {
-            _borderLineStyle = value;
-            Invalidate();
+            if (_borderLineStyle != value)
+            {
+                _borderLineStyle = value;
+                Invalidate();
+            }
         }
     }
 
@@ -96,8 +113,11 @@ public partial class YANCirPic : PictureBox
         get => _borderCapStyle;
         set
         {
-            _borderCapStyle = value;
-            Invalidate();
+            if (_borderCapStyle != value)
+            {
+                _borderCapStyle = value;
+                Invalidate();
+            }
         }
     }
 
@@ -107,7 +127,7 @@ public partial class YANCirPic : PictureBox
         get => _borderAngle;
         set
         {
-            if (value is >= 0 and <= 360)
+            if (value is >= 0 and <= 360 && _borderAngle != value)
             {
                 _borderAngle = value;
                 Invalidate();
@@ -121,7 +141,7 @@ public partial class YANCirPic : PictureBox
         get => _angle;
         set
         {
-            if (value is >= 0 and <= 360)
+            if (value is >= 0 and <= 360 && _angle != value)
             {
                 _angle = value;
                 Invalidate();
@@ -135,8 +155,12 @@ public partial class YANCirPic : PictureBox
         get => _borderSize;
         set
         {
-            _borderSize = value;
-            Invalidate();
+            value = Max(0, value);
+            if (_borderSize != value)
+            {
+                _borderSize = value;
+                Invalidate();
+            }
         }
     }
     #endregion
@@ -145,31 +169,48 @@ public partial class YANCirPic : PictureBox
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        Size = new Size(Width, Width);
+        // keep the control square, unless a dock layout owns its size
+        if (!_is_Squaring && Dock == DockStyle.None && Height != Width)
+        {
+            _is_Squaring = true;
+            try
+            {
+                Size = new Size(Width, Width);
+            }
+            finally
+            {
+                _is_Squaring = false;
+            }
+        }
+        UpdateRegion();
     }
 
     protected override void OnPaint(PaintEventArgs e)
     {
         var graphics = e.Graphics;
-        using (var brush = new LinearGradientBrush(ClientRectangle, _topColor, _bottomColor, _angle))
+        var rectSurface = GetSquare();
+        if (rectSurface.Width > 0)
         {
-            graphics.FillRectangle(brush, ClientRectangle);
+            using var brush = new LinearGradientBrush(rectSurface, _topColor, _bottomColor, _angle);
+            graphics.FillRectangle(brush, rectSurface);
         }
         base.OnPaint(e);
-        var rectContourSmooth = Inflate(ClientRectangle, -1, -1);
-        var rectBorder = Inflate(rectContourSmooth, -_borderSize, -_borderSize);
+        var rectContourSmooth = Inflate(rectSurface, -1, -1);
+        if (rectContourSmooth.Width <= 0)
+        {
+            return;
+        }
+        var borderSize = GetBorderSize(rectContourSmooth);
+        var rectBorder = Inflate(rectContourSmooth, -borderSize, -borderSize);
         using var borderGColor = new LinearGradientBrush(rectBorder, _borderTopColor, _borderBottomColor, _borderAngle);
-        using var pathRegion = new GraphicsPath();
-        using var penSmooth = new Pen(Parent.BackColor, _borderSize > 0 ? _borderSize * 3 : 1);
-        using var penBorder = new Pen(borderGColor, _borderSize);
+        using var penSmooth = new Pen(Parent?.BackColor ?? BackColor, borderSize > 0 ? borderSize * 3 : 1);
+        using var penBorder = new Pen(borderGColor, borderSize);
         graphics.SmoothingMode = AntiAlias;
         penBorder.DashStyle = _borderLineStyle;
         penBorder.DashCap = _borderCapStyle;
-        pathRegion.AddEllipse(rectContourSmooth);
-        Region = new Region(pathRegion);
         // drawing
         graphics.DrawEllipse(penSmooth, rectContourSmooth);
-        if (_borderSize > 0)
+        if (borderSize > 0)
         {
             graphics.DrawEllipse(penBorder, rectBorder);
         }
@@ -180,11 +221,34 @@ public partial class YANCirPic : PictureBox
     // Option display
     private void OptionDisplay()
     {
+        ResizeRedraw = true;
         Size = new Size(100, 100);
         SizeMode = StretchImage;
     }
 
-    // Option event
-    private void OptionEvent() => Resize += Ctrl_Resize;
+    // Get the largest square centred in the client area, the circle is always painted inside it
+    private Rectangle GetSquare()
+    {
+        var rectClient = ClientRectangle;
+        var side = Min(rectClient.Width, rectClient.Height);
+        return new Rectangle(rectClient.X + (rectClient.Width - side) / 2, rectClient.Y + (rectClient.Height - side) / 2, side, side);
+    }
+
+    // Get the border size that keeps the border ellipse non-empty (the configured value is never changed)
+    private int GetBorderSize(Rectangle rectContour) => Max(0, Min(_borderSize, (rectContour.Width - 1) / 2));
+
+    // Update the circular region of the control when its size changes, never while painting
+    private void UpdateRegion()
+    {
+        var rectContourSmooth = Inflate(GetSquare(), -1, -1);
+        if (rectContourSmooth.Width <= 0)
+        {
+            SetRegion(this, (Region)null);
+            return;
+        }
+        using var pathRegion = new GraphicsPath();
+        pathRegion.AddEllipse(rectContourSmooth);
+        SetRegion(this, pathRegion);
+    }
     #endregion
 }

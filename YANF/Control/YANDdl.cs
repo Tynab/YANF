@@ -7,6 +7,7 @@ using static System.ComponentModel.DesignerSerializationVisibility;
 using static System.ComponentModel.EditorBrowsableState;
 using static System.Drawing.Color;
 using static System.Drawing.ContentAlignment;
+using static System.Math;
 using static System.Windows.Forms.AutoCompleteMode;
 using static System.Windows.Forms.AutoCompleteSource;
 using static System.Windows.Forms.ComboBoxStyle;
@@ -83,7 +84,6 @@ public partial class YANDdl : UserControl
         Font = new Font(Font.Name, 10f);
         Enter += Ddl_Enter;
         Leave += Ddl_Leave;
-        Resize += Ctrl_Resize;
         // base
         base.BackColor = _borderColor;
         ResumeLayout();
@@ -165,7 +165,7 @@ public partial class YANDdl : UserControl
         get => _borderSize;
         set
         {
-            _borderSize = value;
+            _borderSize = Max(0, value);
             Padding = new Padding(_borderSize);
             AdjustCmbDimension();
         }
@@ -175,12 +175,14 @@ public partial class YANDdl : UserControl
     public string String { get => _lblText.Text; set => _lblText.Text = value; }
 
     [Category("YAN Appearance"), Description("Controls the appearance and functionality of the combo box.")]
+    [DefaultValue(ComboBoxStyle.DropDown)]
     public ComboBoxStyle DropDownStyle
     {
         get => _cmbList.DropDownStyle;
         set
         {
-            if (_cmbList.DropDownStyle != Simple)
+            // Simple (list always visible) does not fit the layout of this control, so it is ignored
+            if (value != Simple)
             {
                 _cmbList.DropDownStyle = value;
             }
@@ -210,13 +212,13 @@ public partial class YANDdl : UserControl
 
     [Category("YAN Data"), Description("The source of complete strings used for automatic completion.")]
     [Browsable(true)]
-    [DefaultValue(AutoCompleteSource.None)]
+    [DefaultValue(AutoCompleteSource.ListItems)]
     [EditorBrowsable(Always)]
     public AutoCompleteSource AutoCompleteSource { get => _cmbList.AutoCompleteSource; set => _cmbList.AutoCompleteSource = value; }
 
     [Category("YAN Data"), Description("Indicates the text completion behavior of the combo box.")]
     [Browsable(true)]
-    [DefaultValue(AutoCompleteMode.None)]
+    [DefaultValue(AutoCompleteMode.SuggestAppend)]
     [EditorBrowsable(Always)]
     public AutoCompleteMode AutoCompleteMode { get => _cmbList.AutoCompleteMode; set => _cmbList.AutoCompleteMode = value; }
 

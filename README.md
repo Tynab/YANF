@@ -61,10 +61,8 @@ private void Btn_Click(object sender, EventArgs e)
 private void Func()
 {
     ...
-    _ = Invoke((MethodInvoker)delegate
-    {
-        _dlvScrService.PublishValue(_percent, null, 0);
-    });
+    // Thread-safe: call it from the UI thread or from a worker thread
+    _dlvScrService.PublishValue(_percent, null, 0);
     ...
 }
 ```

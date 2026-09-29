@@ -1,55 +1,38 @@
-﻿using System.Threading;
+﻿using System.Drawing;
+using System.Threading;
 using System.Windows.Forms;
 using YANF.Screen;
+using static System.Windows.Forms.FormWindowState;
 
 namespace YANF.Script.Service
 {
     public class YANUpdScrService : IYANDlvScrService
     {
         #region Fields
-        private YANUpdateScreen _updScr;
-        private Thread _thread;
-        private Panel _pnlPrg;
-        private Label _lblCapacity;
-        private Label _lblPercent;
+        private YANOverlayHost<YANUpdateScreen> _host;
         #endregion
 
         #region Methods
-        // Loading process
-        private void LoadingPrc(object parent)
-        {
-            _updScr = new YANUpdateScreen();
-            _pnlPrg = _updScr.pnlProgressBar;
-            _lblCapacity = _updScr.lblCapacity;
-            _lblPercent = _updScr.lblPercent;
-            _ = _updScr.ShowDialog();
-        }
-
         // Implementation OnLoader
         public void OnLoader(Form pFrm)
         {
-            _thread = new Thread(new ParameterizedThreadStart(LoadingPrc));
-            _thread.Start();
+            // Snapshot on the calling thread: the box is centred on pFrm (on the screen, as before, when there is no usable pFrm)
+            Rectangle? bounds = pFrm != null && pFrm.WindowState != Minimized ? pFrm.Bounds : null;
+            var host = new YANOverlayHost<YANUpdateScreen>(() => bounds.HasValue ? new YANUpdateScreen(bounds.Value) : new YANUpdateScreen());
+            Interlocked.Exchange(ref _host, host)?.Close();
+            host.Start();
         }
 
         // Implementation OffLoader
-        public void OffLoader()
-        {
-            if (_updScr != null)
-            {
-                _ = _updScr.BeginInvoke(new ThreadStart(_updScr.Frm_Close));
-                _updScr = null;
-                _thread = null;
-            }
-        }
+        public void OffLoader() => Interlocked.Exchange(ref _host, null)?.Close();
 
         // Implementation UpdateValue
-        public void PublishValue(int percent, string capacity, int width)
+        public void PublishValue(int percent, string capacity, int width) => Volatile.Read(ref _host)?.Publish(s =>
         {
-            _lblPercent.Text = $"{percent}%";
-            _pnlPrg.Width = width;
-            _lblCapacity.Text = capacity;
-        }
+            s.lblPercent.Text = $"{percent}%";
+            s.pnlProgressBar.Width = width;
+            s.lblCapacity.Text = capacity;
+        });
         #endregion
     }
 }

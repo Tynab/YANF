@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using static System.Drawing.Color;
 using static System.Drawing.Drawing2D.PenAlignment;
@@ -9,6 +8,7 @@ using static System.Drawing.Drawing2D.SmoothingMode;
 using static System.Drawing.Rectangle;
 using static System.Math;
 using static System.Windows.Forms.TextRenderer;
+using static YANF.Script.YANShape;
 
 namespace YANF.Control
 {
@@ -23,15 +23,13 @@ namespace YANF.Control
         private int _borderRadius = 0;
         private bool _is_UnderlinedStyle = false;
         private bool _is_Focus = false;
-        private bool _is_Placeholder = false;
-        private bool _is_PasswordChar = false;
-        private readonly TextBox _txtText;
+        private readonly CueTextBox _txtText;
         #endregion
 
         #region Constructors
         public YANTxt()
         {
-            _txtText = new TextBox();
+            _txtText = new CueTextBox();
             SuspendLayout();
             // textbox text
             _txtText.BackColor = White;
@@ -41,6 +39,7 @@ namespace YANF.Control
             _txtText.Location = new Point(10, 7);
             _txtText.Size = new Size(180, 18);
             _txtText.Font = new Font(Font.Name, 11f);
+            _txtText.CueColor = _placeholderColor;
             _txtText.MouseEnter += Txt_MouseEnter;
             _txtText.MouseLeave += Txt_MouseLeave;
             _txtText.Enter += Txt_Enter;
@@ -49,15 +48,17 @@ namespace YANF.Control
             _txtText.KeyPress += Txt_KeyPress;
             _txtText.KeyUp += Txt_KeyUp;
             _txtText.TextChanged += Txt_TextChanged;
+            _txtText.SizeChanged += Txt_SizeChanged;
             // user control
             Controls.Add(_txtText);
+            DoubleBuffered = true;
+            ResizeRedraw = true;
             ForeColor = DimGray;
             BackColor = White;
             AutoScaleMode = AutoScaleMode.None;
             Size = new Size(200, 30);
             Padding = new Padding(10, 7, 10, 7);
             Font = new Font(Font.Name, 11f);
-            Resize += Ctrl_Resize;
             // base
             ResumeLayout();
         }
@@ -70,8 +71,11 @@ namespace YANF.Control
             get => _txtText.TextAlign;
             set
             {
-                _txtText.TextAlign = value;
-                Invalidate();
+                if (_txtText.TextAlign != value)
+                {
+                    _txtText.TextAlign = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -81,8 +85,11 @@ namespace YANF.Control
             get => _borderColor;
             set
             {
-                _borderColor = value;
-                Invalidate();
+                if (_borderColor != value)
+                {
+                    _borderColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -95,10 +102,10 @@ namespace YANF.Control
             get => _placeholderColor;
             set
             {
-                _placeholderColor = value;
-                if (_is_Placeholder)
+                if (_placeholderColor != value)
                 {
-                    _txtText.ForeColor = value;
+                    _placeholderColor = value;
+                    _txtText.CueColor = value;
                 }
             }
         }
@@ -106,20 +113,10 @@ namespace YANF.Control
         [Category("YAN Appearance"), Description("The text associated with the control.")]
         public string String
         {
-            get => _is_Placeholder ? null : _txtText.Text;
-            set
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    _txtText.Text = value;
-                    SetPlaceholder();
-                }
-                else
-                {
-                    RemovePlaceholder();
-                    _txtText.Text = value;
-                }
-            }
+            // null while the box is unfocused, empty (or whitespace only) and a placeholder is set; the raw text while focused, as in 1.0.2
+            get => HasPlaceholder() && !_is_Focus && string.IsNullOrWhiteSpace(_txtText.Text) ? null : _txtText.Text;
+            // null or whitespace clears the box when a placeholder is set, as in 1.0.2
+            set => _txtText.Text = HasPlaceholder() && string.IsNullOrWhiteSpace(value) ? null : value;
         }
 
         [Category("YAN Appearance"), Description("The text that is displayed when the control has no text and does not have the focus.")]
@@ -128,9 +125,11 @@ namespace YANF.Control
             get => _placeholderText;
             set
             {
-                _placeholderText = value;
-                _txtText.Text = null;
-                SetPlaceholder();
+                if (_placeholderText != value)
+                {
+                    _placeholderText = value;
+                    _txtText.Cue = value;
+                }
             }
         }
 
@@ -140,8 +139,13 @@ namespace YANF.Control
             get => _borderSize;
             set
             {
-                _borderSize = value;
-                Invalidate();
+                value = Max(0, value);
+                if (_borderSize != value)
+                {
+                    _borderSize = value;
+                    UpdateTextRegion();
+                    Invalidate();
+                }
             }
         }
 
@@ -151,8 +155,13 @@ namespace YANF.Control
             get => _borderRadius;
             set
             {
-                _borderRadius = value;
-                Invalidate();
+                value = Max(0, value);
+                if (_borderRadius != value)
+                {
+                    _borderRadius = value;
+                    UpdateRegion();
+                    Invalidate();
+                }
             }
         }
 
@@ -165,27 +174,30 @@ namespace YANF.Control
             get => _is_UnderlinedStyle;
             set
             {
-                _is_UnderlinedStyle = value;
-                Invalidate();
-            }
-        }
-
-        [Category("YAN Appearance"), Description("Indicates the character to display for password input for single-line edit controls.")]
-        public bool PasswordChar
-        {
-            get => _is_PasswordChar;
-            set
-            {
-                _is_PasswordChar = value;
-                if (!_is_Placeholder)
+                if (_is_UnderlinedStyle != value)
                 {
-                    _txtText.UseSystemPasswordChar = value;
+                    _is_UnderlinedStyle = value;
+                    Invalidate();
                 }
             }
         }
 
+        [Category("YAN Appearance"), Description("Indicates the character to display for password input for single-line edit controls.")]
+        public bool PasswordChar { get => _txtText.UseSystemPasswordChar; set => _txtText.UseSystemPasswordChar = value; }
+
         [Category("YAN Appearance"), Description("Control whether the text of the edit control can span more than one line.")]
-        public bool Multiline { get => _txtText.Multiline; set => _txtText.Multiline = value; }
+        public bool Multiline
+        {
+            get => _txtText.Multiline;
+            set
+            {
+                if (_txtText.Multiline != value)
+                {
+                    _txtText.Multiline = value;
+                    UpdateTextRegion();
+                }
+            }
+        }
 
         // Event
         [Category("YAN Event"), Description("Event raised when the value of the Txt property is changed on Control.")]
@@ -231,57 +243,39 @@ namespace YANF.Control
         {
             base.OnPaint(e);
             var graphics = e.Graphics;
-            if (_borderRadius > 1)
+            var borderRadius = GetBorderRadius();
+            var borderSize = GetBorderSize();
+            using var penBorder = new Pen(_is_Focus ? BorderFocusColor : _borderColor, borderSize);
+            if (borderRadius > 1)
             {
                 var rectBorderSmooth = ClientRectangle;
-                using var pathBorderSmooth = GetFigurePath(rectBorderSmooth, _borderRadius);
-                using var pathBorder = GetFigurePath(Inflate(rectBorderSmooth, -_borderSize, -_borderSize), _borderRadius - _borderSize);
-                using var penBorderSmooth = new Pen(Parent.BackColor, _borderSize > 0 ? _borderSize : 1);
-                using var penBorder = new Pen(_borderColor, _borderSize);
-                Region = new Region(pathBorderSmooth);
-                if (_borderRadius > 15)
-                {
-                    SetTextRoundedRegion();
-                }
+                using var pathBorderSmooth = RoundedRect(rectBorderSmooth, borderRadius);
+                using var pathBorder = RoundedRect(Inflate(rectBorderSmooth, -borderSize, -borderSize), borderRadius - borderSize);
+                using var penBorderSmooth = new Pen(Parent?.BackColor ?? BackColor, borderSize > 0 ? borderSize : 1);
                 graphics.SmoothingMode = AntiAlias;
                 penBorder.Alignment = Center;
-                if (_is_Focus)
-                {
-                    penBorder.Color = BorderFocusColor;
-                }
+                // draw border smoothing
+                graphics.DrawPath(penBorderSmooth, pathBorderSmooth);
                 if (_is_UnderlinedStyle)
                 {
-                    // draw border smoothing
-                    graphics.DrawPath(penBorderSmooth, pathBorderSmooth);
                     // draw border
                     graphics.SmoothingMode = None;
                     graphics.DrawLine(penBorder, 0, Height - 1, Width, Height - 1);
                 }
-                else
+                else if (borderSize >= 1 && pathBorder != null)
                 {
-                    // draw border smoothing
-                    graphics.DrawPath(penBorderSmooth, pathBorderSmooth);
                     // draw border
-                    if (_borderSize >= 1)
-                    {
-                        graphics.DrawPath(penBorder, pathBorder);
-                    }
+                    graphics.DrawPath(penBorder, pathBorder);
                 }
             }
             else
             {
-                using var penBorder = new Pen(_borderColor, _borderSize);
-                Region = new Region(ClientRectangle);
                 penBorder.Alignment = Inset;
-                if (_is_Focus)
-                {
-                    penBorder.Color = BorderFocusColor;
-                }
                 if (_is_UnderlinedStyle)
                 {
                     graphics.DrawLine(penBorder, 0, Height - 1, Width, Height - 1);
                 }
-                else if (_borderSize >= 1)
+                else if (borderSize >= 1)
                 {
                     graphics.DrawRectangle(penBorder, 0, 0, Width - 0.5f, Height - 0.5f);
                 }
@@ -291,6 +285,7 @@ namespace YANF.Control
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
+            UpdateRegion();
             if (DesignMode)
             {
                 UpdateHCtrl();
@@ -301,6 +296,13 @@ namespace YANF.Control
         {
             base.OnLoad(e);
             UpdateHCtrl();
+        }
+
+        protected override void OnParentBackColorChanged(EventArgs e)
+        {
+            base.OnParentBackColorChanged(e);
+            // the border smoothing is drawn with the parent back color
+            Invalidate();
         }
         #endregion
 
@@ -315,9 +317,8 @@ namespace YANF.Control
         private void Txt_Enter(object sender, EventArgs e)
         {
             _is_Focus = true;
-            _txtText.Select(0, _txtText.Text.Length);
+            _txtText.Select(0, _txtText.TextLength);
             Invalidate();
-            RemovePlaceholder();
         }
 
         // Raises the leave event
@@ -325,7 +326,6 @@ namespace YANF.Control
         {
             _is_Focus = false;
             Invalidate();
-            SetPlaceholder();
         }
 
         // Raises the key press event
@@ -335,7 +335,7 @@ namespace YANF.Control
         private void Txt_KeyDown(object sender, KeyEventArgs e)
         {
             OnKeyDown(e);
-            if (e.KeyCode == Keys.Enter)
+            if (e.KeyCode == Keys.Enter && !_txtText.Multiline)
             {
                 e.SuppressKeyPress = true;
             }
@@ -345,66 +345,56 @@ namespace YANF.Control
         private void Txt_KeyUp(object sender, KeyEventArgs e) => OnKeyUp(e);
 
         // Raises the text changed event
-        private void Txt_TextChanged(object sender, EventArgs e)
-        {
-            if (StringChanged != null)
-            {
-                StringChanged.Invoke(sender, e);
-            }
-        }
+        private void Txt_TextChanged(object sender, EventArgs e) => StringChanged?.Invoke(sender, e);
 
-        // Check border size and radius when resize the control
-        private void Ctrl_Resize(object sender, EventArgs e)
-        {
-            var minSize = Width > Height ? Height : Width;
-            _borderRadius = Min(_borderRadius, minSize / 2);
-            _borderSize = Min(_borderSize, minSize / 2);
-        }
+        // Update the rounded region of the text box when its size changes
+        private void Txt_SizeChanged(object sender, EventArgs e) => UpdateTextRegion();
         #endregion
 
         #region Methods
-        // Add placeholder text to the control
-        private void SetPlaceholder()
+        // Check whether a placeholder is set
+        private bool HasPlaceholder() => !string.IsNullOrWhiteSpace(_placeholderText);
+
+        // Get the border radius that fits the current size (the configured value is never changed)
+        private int GetBorderRadius() => (int)EffectiveRadius(ClientRectangle, _borderRadius);
+
+        // Get the border size that fits the current size (the configured value is never changed)
+        private int GetBorderSize() => Max(0, Min(_borderSize, Min(Width, Height) / 2));
+
+        // Update the region of the control when its size or radius changes, never while painting
+        private void UpdateRegion()
         {
-            if (string.IsNullOrWhiteSpace(_txtText.Text) && !string.IsNullOrWhiteSpace(_placeholderText))
+            var borderRadius = GetBorderRadius();
+            if (borderRadius > 1)
             {
-                _is_Placeholder = true;
-                _txtText.Text = _placeholderText;
-                _txtText.ForeColor = _placeholderColor;
-                if (_is_PasswordChar)
-                {
-                    if (Created)
-                    {
-                        _ = BeginInvoke(new Action(() => _txtText.UseSystemPasswordChar = false));
-                    }
-                    else
-                    {
-                        _txtText.UseSystemPasswordChar = false;
-                    }
-                }
+                using var pathRegion = RoundedRect(ClientRectangle, borderRadius);
+                SetRegion(this, pathRegion);
             }
+            else
+            {
+                SetRegion(this, (Region)null);
+            }
+            UpdateTextRegion();
         }
 
-        // Remove placeholder text to the control
-        private void RemovePlaceholder()
+        // Update the rounded region of the text box, only needed when the corners of the control are big enough to cut it
+        private void UpdateTextRegion()
         {
-            if (_is_Placeholder && !string.IsNullOrWhiteSpace(_placeholderText))
+            if (_txtText == null)
             {
-                _is_Placeholder = false;
-                _txtText.Text = null;
-                _txtText.ForeColor = ForeColor;
-                if (_is_PasswordChar)
-                {
-                    _txtText.UseSystemPasswordChar = true;
-                }
+                return;
             }
-        }
-
-        // Set rounded region to the control
-        private void SetTextRoundedRegion()
-        {
-            var client = _txtText.ClientRectangle;
-            _txtText.Region = Multiline ? new Region(GetFigurePath(client, _borderRadius - _borderSize)) : new Region(GetFigurePath(client, _borderSize * 2));
+            var borderRadius = GetBorderRadius();
+            if (borderRadius > 15)
+            {
+                var borderSize = GetBorderSize();
+                using var pathText = RoundedRect(_txtText.ClientRectangle, _txtText.Multiline ? borderRadius - borderSize : borderSize * 2);
+                SetRegion(_txtText, pathText);
+            }
+            else
+            {
+                SetRegion(_txtText, (Region)null);
+            }
         }
 
         // Update the height of control when changed font display
@@ -416,21 +406,106 @@ namespace YANF.Control
                 _txtText.MinimumSize = new Size(0, MeasureText("Text", Font).Height + 1);
                 _txtText.Multiline = false;
                 Height = _txtText.Height + Padding.Top + Padding.Bottom;
+                UpdateTextRegion();
             }
         }
+        #endregion
 
-        // Get path of figure
-        private GraphicsPath GetFigurePath(RectangleF rectF, float rad)
+        #region CueTextBox
+        // Text box that paints the placeholder over its empty edit area instead of writing the placeholder into Text
+        private sealed class CueTextBox : TextBox
         {
-            var path = new GraphicsPath();
-            var curveSize = rad * 2f;
-            path.StartFigure();
-            path.AddArc(rectF.X, rectF.Y, curveSize, curveSize, 180, 90);
-            path.AddArc(rectF.Right - curveSize, rectF.Y, curveSize, curveSize, 270, 90);
-            path.AddArc(rectF.Right - curveSize, rectF.Bottom - curveSize, curveSize, curveSize, 0, 90);
-            path.AddArc(rectF.X, rectF.Bottom - curveSize, curveSize, curveSize, 90, 90);
-            path.CloseFigure();
-            return path;
+            private const int WM_PAINT = 0x000F;
+            private string _cue;
+            private Color _cueColor;
+
+            // The placeholder text
+            internal string Cue
+            {
+                get => _cue;
+                set
+                {
+                    _cue = value;
+                    Invalidate();
+                }
+            }
+
+            // The color of the placeholder text
+            internal Color CueColor
+            {
+                get => _cueColor;
+                set
+                {
+                    _cueColor = value;
+                    Invalidate();
+                }
+            }
+
+            protected override void WndProc(ref Message m)
+            {
+                base.WndProc(ref m);
+                // blank text (whitespace only) counts as empty, like the String property and the placeholder of 1.0.2
+                if (m.Msg == WM_PAINT && !Focused && !string.IsNullOrWhiteSpace(_cue) && (TextLength == 0 || string.IsNullOrWhiteSpace(Text)))
+                {
+                    DrawCue();
+                }
+            }
+
+            protected override void OnGotFocus(EventArgs e)
+            {
+                base.OnGotFocus(e);
+                Invalidate();
+            }
+
+            protected override void OnLostFocus(EventArgs e)
+            {
+                base.OnLostFocus(e);
+                Invalidate();
+            }
+
+            protected override void OnTextChanged(EventArgs e)
+            {
+                base.OnTextChanged(e);
+                // a text set by code while unfocused must not leave the placeholder half painted
+                if (!Focused)
+                {
+                    Invalidate();
+                }
+            }
+
+            // Draw the placeholder aligned like the text (same layout as the placeholder of the .NET TextBox)
+            private void DrawCue()
+            {
+                var flags = TextFormatFlags.NoPadding | TextFormatFlags.Top | TextFormatFlags.EndEllipsis | (Multiline ? TextFormatFlags.WordBreak : TextFormatFlags.SingleLine);
+                var rect = ClientRectangle;
+                var isRtl = RightToLeft == RightToLeft.Yes;
+                if (isRtl)
+                {
+                    flags |= TextFormatFlags.RightToLeft;
+                }
+                switch (TextAlign)
+                {
+                    case HorizontalAlignment.Center:
+                        flags |= TextFormatFlags.HorizontalCenter;
+                        rect.Offset(0, 1);
+                        break;
+                    case HorizontalAlignment.Left:
+                        flags |= isRtl ? TextFormatFlags.Right : TextFormatFlags.Left;
+                        rect.Offset(1, 1);
+                        break;
+                    case HorizontalAlignment.Right:
+                        flags |= isRtl ? TextFormatFlags.Left : TextFormatFlags.Right;
+                        rect.Offset(0, 1);
+                        break;
+                }
+                using var graphics = CreateGraphics();
+                if (TextLength > 0)
+                {
+                    // cover the blank text (password dots are visible) before drawing the placeholder over it
+                    graphics.Clear(BackColor);
+                }
+                DrawText(graphics, _cue, Font, rect, _cueColor, flags);
+            }
         }
         #endregion
     }

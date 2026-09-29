@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using static System.Drawing.Color;
 using static System.Drawing.Drawing2D.SmoothingMode;
 using static System.Windows.Forms.Cursors;
+using static YANF.Script.YANShape;
 
 namespace YANF.Control
 {
@@ -33,8 +33,11 @@ namespace YANF.Control
             get => _onBackColor;
             set
             {
-                _onBackColor = value;
-                Invalidate();
+                if (_onBackColor != value)
+                {
+                    _onBackColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -44,8 +47,11 @@ namespace YANF.Control
             get => _onToggleColor;
             set
             {
-                _onToggleColor = value;
-                Invalidate();
+                if (_onToggleColor != value)
+                {
+                    _onToggleColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -55,8 +61,11 @@ namespace YANF.Control
             get => _offBackColor;
             set
             {
-                _offBackColor = value;
-                Invalidate();
+                if (_offBackColor != value)
+                {
+                    _offBackColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -66,8 +75,11 @@ namespace YANF.Control
             get => _offToggleColor;
             set
             {
-                _offToggleColor = value;
-                Invalidate();
+                if (_offToggleColor != value)
+                {
+                    _offToggleColor = value;
+                    Invalidate();
+                }
             }
         }
 
@@ -78,8 +90,11 @@ namespace YANF.Control
             get => _is_SolidStyle;
             set
             {
-                _is_SolidStyle = value;
-                Invalidate();
+                if (_is_SolidStyle != value)
+                {
+                    _is_SolidStyle = value;
+                    Invalidate();
+                }
             }
         }
         #endregion
@@ -92,60 +107,36 @@ namespace YANF.Control
             set { }
         }
 
+        protected override Cursor DefaultCursor => Hand;
+
         protected override void OnPaint(PaintEventArgs e)
         {
             var graphics = e.Graphics;
             graphics.SmoothingMode = AntiAlias;
-            graphics.Clear(Parent.BackColor);
+            graphics.Clear(Parent?.BackColor ?? BackColor);
             var tgSize = Height - 5;
-            if (Checked)
+            // the surface is a pill with half circles of diameter Height - 1 at both ends
+            using var pathSurface = RoundedRect(new RectangleF(0, 0, Width - 2, Height - 1), (Height - 1) / 2f);
+            using var brushSurface = new SolidBrush(Checked ? _onBackColor : _offBackColor);
+            using var brushToggle = new SolidBrush(Checked ? _onToggleColor : _offToggleColor);
+            // draw the control surface
+            if (pathSurface != null)
             {
-                // draw the control surface
                 if (_is_SolidStyle)
                 {
-                    graphics.FillPath(new SolidBrush(_onBackColor), GetFigurePath());
+                    graphics.FillPath(brushSurface, pathSurface);
                 }
                 else
                 {
-                    graphics.DrawPath(new Pen(_onBackColor, 2), GetFigurePath());
+                    using var penSurface = new Pen(brushSurface.Color, 2);
+                    graphics.DrawPath(penSurface, pathSurface);
                 }
-                // draw the toggle
-                graphics.FillEllipse(new SolidBrush(_onToggleColor), new Rectangle(Width - Height + 1, 2, tgSize, tgSize));
             }
-            else
+            // draw the toggle
+            if (tgSize > 0)
             {
-                //draw the control surface
-                if (_is_SolidStyle)
-                {
-                    graphics.FillPath(new SolidBrush(_offBackColor), GetFigurePath());
-                }
-                else
-                {
-                    graphics.DrawPath(new Pen(_offBackColor, 2), GetFigurePath());
-                }
-                // draw the toggle
-                graphics.FillEllipse(new SolidBrush(_offToggleColor), new Rectangle(2, 2, tgSize, tgSize));
+                graphics.FillEllipse(brushToggle, Checked ? new Rectangle(Width - Height + 1, 2, tgSize, tgSize) : new Rectangle(2, 2, tgSize, tgSize));
             }
-        }
-
-        protected override void OnMouseMove(MouseEventArgs e)
-        {
-            base.OnMouseMove(e);
-            Cursor = Hand;
-        }
-        #endregion
-
-        #region Methods
-        // Get path of figure
-        private GraphicsPath GetFigurePath()
-        {
-            var path = new GraphicsPath();
-            path.StartFigure();
-            var arcSize = Height - 1;
-            path.AddArc(new Rectangle(0, 0, arcSize, arcSize), 90, 180);
-            path.AddArc(new Rectangle(Width - arcSize - 2, 0, arcSize, arcSize), 270, 180);
-            path.CloseFigure();
-            return path;
         }
         #endregion
     }
