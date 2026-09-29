@@ -177,6 +177,7 @@
     <Compile Include="Script\YANTimer.cs" />
     <Compile Include="Script\YANConstant.cs" />
     <Compile Include="Script\YANMath.cs" />
+    <Compile Include="Script\YANShape.cs" />
     <EmbeddedResource Include="MainFrm.resx">
       <DependentUpon>MainFrm.cs</DependentUpon>
     </EmbeddedResource>
@@ -208,7 +209,6 @@
     <EmbeddedResource Include="Screen\YANWaitScreen.resx">
       <DependentUpon>YANWaitScreen.cs</DependentUpon>
     </EmbeddedResource>
-    <None Include="nuget.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
