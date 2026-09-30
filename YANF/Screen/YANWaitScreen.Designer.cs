@@ -73,7 +73,6 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Waiting...";
             this.TopMost = true;
-            this.Shown += new System.EventHandler(this.YANWaitScreen_Shown);
             this.panel1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);

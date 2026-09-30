@@ -1,7 +1,11 @@
 ﻿using System;
 using System.ComponentModel;
+using System.ComponentModel.Design;
 using System.Drawing;
+using System.Drawing.Design;
 using System.Windows.Forms;
+using static System.ComponentModel.DesignerSerializationVisibility;
+using static System.ComponentModel.EditorBrowsableState;
 using static System.Drawing.Color;
 using static System.Drawing.Drawing2D.PenAlignment;
 using static System.Drawing.Drawing2D.SmoothingMode;
@@ -12,17 +16,23 @@ using static YANF.Script.YANShape;
 
 namespace YANF.Control
 {
-    [DefaultEvent("StringChanged")]
+    [DefaultBindingProperty(nameof(Text))]
+    [DefaultEvent(nameof(TextChanged))]
+    [DefaultProperty(nameof(Text))]
+    [ToolboxBitmap(typeof(TextBox))]
     public class YANTxt : UserControl
     {
         #region Fields
         private Color _borderColor = MediumSlateBlue;
         private Color _placeholderColor = DarkGray;
         private string _placeholderText = null;
+        private string _innerAccessibleName = null;
+        private string _innerAccessibleDescription = null;
         private int _borderSize = 2;
         private int _borderRadius = 0;
         private bool _is_UnderlinedStyle = false;
         private bool _is_Focus = false;
+        private bool _is_Painted = false;
         private readonly CueTextBox _txtText;
         #endregion
 
@@ -66,6 +76,7 @@ namespace YANF.Control
 
         #region Properties
         [Category("YAN Appearance"), Description("Indicates how the text should be aligned for edit controls.")]
+        [DefaultValue(HorizontalAlignment.Center)]
         public HorizontalAlignment TextAlign
         {
             get => _txtText.TextAlign;
@@ -80,6 +91,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("This property specifies the color of the border around the control.")]
+        [DefaultValue(typeof(Color), "MediumSlateBlue")]
         public Color BorderColor
         {
             get => _borderColor;
@@ -93,10 +105,12 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("This property specifies the color of the border around the control when the control have the focus.")]
+        [Category("YAN Appearance"), Description("This property specifies the color of the border around the control when the control has the focus.")]
+        [DefaultValue(typeof(Color), "HotPink")]
         public Color BorderFocusColor { get; set; } = HotPink;
 
         [Category("YAN Appearance"), Description("The color of the placeholder text.")]
+        [DefaultValue(typeof(Color), "DarkGray")]
         public Color PlaceholderColor
         {
             get => _placeholderColor;
@@ -110,7 +124,43 @@ namespace YANF.Control
             }
         }
 
+        /// <summary>
+        /// Gets or sets the text of the control (the text typed by the user).
+        /// </summary>
+        /// <remarks>
+        /// This is the main, data-bindable property of the control; <see cref="TextChanged"/> is raised with this control as
+        /// the sender when it changes. The placeholder is painted over an empty box and is never part of the text, so an empty
+        /// box returns "" (see <see cref="String"/> for the legacy value that is null while the placeholder shows).
+        /// </remarks>
         [Category("YAN Appearance"), Description("The text associated with the control.")]
+        [Bindable(true)]
+        [Browsable(true)]
+        [DefaultValue("")]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+        [Editor("System.ComponentModel.Design.MultilineStringEditor, System.Design, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a", typeof(UITypeEditor))]
+        [EditorBrowsable(Always)]
+        [Localizable(true)]
+        public override string Text
+        {
+            get => _txtText.Text;
+            set
+            {
+                // a control dropped in the designer starts empty, like TextBox, instead of showing its site name
+                if (!IsSiteNameFromDesigner(value))
+                {
+                    _txtText.Text = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Legacy alias of <see cref="Text"/> (1.0): null while the box is unfocused, empty (or white space only) and a
+        /// placeholder is set; setting null or white space clears the box when a placeholder is set. Use <see cref="Text"/>.
+        /// </summary>
+        [Category("YAN Appearance"), Description("The text associated with the control (legacy alias of Text).")]
+        [Browsable(false)]
+        [DesignerSerializationVisibility(Hidden)]
+        [EditorBrowsable(Never)]
         public string String
         {
             // null while the box is unfocused, empty (or whitespace only) and a placeholder is set; the raw text while focused, as in 1.0.2
@@ -120,6 +170,8 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("The text that is displayed when the control has no text and does not have the focus.")]
+        [DefaultValue(null)]
+        [Localizable(true)]
         public string PlaceholderText
         {
             get => _placeholderText;
@@ -134,6 +186,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("This property specifies the size, in pixels, of the border around the control.")]
+        [DefaultValue(2)]
         public int BorderSize
         {
             get => _borderSize;
@@ -150,6 +203,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("This property allows you to add rounded corners to the control.")]
+        [DefaultValue(0)]
         public int BorderRadius
         {
             get => _borderRadius;
@@ -165,10 +219,12 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("Specifies the maximum number of characters that can be entered into the edit control.")]
+        [Category("YAN Behavior"), Description("Specifies the maximum number of characters that can be entered into the edit control.")]
+        [DefaultValue(32767)]
         public int MaxLength { get => _txtText.MaxLength; set => _txtText.MaxLength = value; }
 
-        [Category("YAN Appearance"), Description("When this property is true, the underline added to text.")]
+        [Category("YAN Appearance"), Description("When this property is true, only a line under the control is drawn instead of the whole border.")]
+        [DefaultValue(false)]
         public bool UnderlinedStyle
         {
             get => _is_UnderlinedStyle;
@@ -182,10 +238,45 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("Indicates the character to display for password input for single-line edit controls.")]
+        /// <summary>
+        /// Legacy name of <see cref="UseSystemPasswordChar"/> (a bool, unlike TextBox.PasswordChar). Use <see cref="UseSystemPasswordChar"/>.
+        /// </summary>
+        [Category("YAN Behavior"), Description("Indicates if the text in the edit control should appear as the default password character (legacy name of UseSystemPasswordChar).")]
+        [Browsable(false)]
+        [DesignerSerializationVisibility(Hidden)]
+        [EditorBrowsable(Never)]
         public bool PasswordChar { get => _txtText.UseSystemPasswordChar; set => _txtText.UseSystemPasswordChar = value; }
 
-        [Category("YAN Appearance"), Description("Control whether the text of the edit control can span more than one line.")]
+        /// <summary>
+        /// Gets or sets a value indicating whether the text is masked with the system password character (the legacy
+        /// <see cref="PasswordChar"/> property reads and writes the same value).
+        /// </summary>
+        [Category("YAN Behavior"), Description("Indicates if the text in the edit control should appear as the default password character.")]
+        [DefaultValue(false)]
+        public bool UseSystemPasswordChar { get => _txtText.UseSystemPasswordChar; set => _txtText.UseSystemPasswordChar = value; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the text is read-only; read-only text can still be selected and copied.
+        /// </summary>
+        [Category("YAN Behavior"), Description("Controls whether the text in the edit control can be changed or not.")]
+        [DefaultValue(false)]
+        public bool ReadOnly { get => _txtText.ReadOnly; set => _txtText.ReadOnly = value; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether ENTER types a new line in a multiline box instead of activating the default
+        /// button of the form. When true, ENTER is not suppressed in a single-line box either, so its KeyPress event is raised.
+        /// </summary>
+        /// <remarks>
+        /// A single-line box (when the form has no AcceptButton) then passes ENTER on to the Windows edit control, which answers
+        /// with the system beep: handle ENTER in <see cref="System.Windows.Forms.Control.KeyPress"/> and set
+        /// <see cref="KeyPressEventArgs.Handled"/> to true to avoid it (the event data is shared with the inner text box).
+        /// </remarks>
+        [Category("YAN Behavior"), Description("Indicates if return characters are accepted as input for multiline edit controls.")]
+        [DefaultValue(false)]
+        public bool AcceptsReturn { get => _txtText.AcceptsReturn; set => _txtText.AcceptsReturn = value; }
+
+        [Category("YAN Behavior"), Description("Control whether the text of the edit control can span more than one line.")]
+        [DefaultValue(false)]
         public bool Multiline
         {
             get => _txtText.Multiline;
@@ -200,11 +291,27 @@ namespace YANF.Control
         }
 
         // Event
-        [Category("YAN Event"), Description("Event raised when the value of the Txt property is changed on Control.")]
+        /// <summary>
+        /// Occurs when the value of the <see cref="Text"/> property changes (typed by the user or set by code). The sender is this
+        /// control; focus changes never raise it. Raised by <see cref="System.Windows.Forms.Control.OnTextChanged(EventArgs)"/>.
+        /// </summary>
+        [Category("YAN Event"), Description("Occurs when the value of the Text property changes.")]
+        [Browsable(true)]
+        [EditorBrowsable(Always)]
+        public new event EventHandler TextChanged { add => base.TextChanged += value; remove => base.TextChanged -= value; }
+
+        /// <summary>
+        /// Legacy event raised with <see cref="TextChanged"/>, with the inner text box as the sender (1.0 behaviour). Use <see cref="TextChanged"/>.
+        /// </summary>
+        [Category("YAN Event"), Description("Event raised when the value of the String property is changed on Control (legacy, use TextChanged).")]
+        [Browsable(false)]
+        [EditorBrowsable(Never)]
         public event EventHandler StringChanged;
         #endregion
 
         #region Overridden
+        [Category("Appearance"), Description("The background color of the component.")]
+        [DefaultValue(typeof(Color), "White")]
         public override Color BackColor
         {
             get => base.BackColor;
@@ -215,6 +322,8 @@ namespace YANF.Control
             }
         }
 
+        [Category("Appearance"), Description("The foreground color of this component, which is used to display text.")]
+        [DefaultValue(typeof(Color), "DimGray")]
         public override Color ForeColor
         {
             get => base.ForeColor;
@@ -225,6 +334,7 @@ namespace YANF.Control
             }
         }
 
+        [Category("Appearance"), Description("The font used to display text in the control.")]
         public override Font Font
         {
             get => base.Font;
@@ -242,6 +352,7 @@ namespace YANF.Control
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
+            _is_Painted = true;
             var graphics = e.Graphics;
             var borderRadius = GetBorderRadius();
             var borderSize = GetBorderSize();
@@ -298,6 +409,17 @@ namespace YANF.Control
             UpdateHCtrl();
         }
 
+        /// <summary>
+        /// Called when the control is first created: also gives the inner text box the <see cref="System.Windows.Forms.Control.AccessibleName"/> and
+        /// <see cref="System.Windows.Forms.Control.AccessibleDescription"/> of this control (unless they were set on it directly), so that screen readers
+        /// announce them. Later changes are picked up when the box is entered and whenever an accessibility client asks the box for its accessible object.
+        /// </summary>
+        protected override void OnCreateControl()
+        {
+            base.OnCreateControl();
+            ForwardAccessibility();
+        }
+
         protected override void OnParentBackColorChanged(EventArgs e)
         {
             base.OnParentBackColorChanged(e);
@@ -317,6 +439,8 @@ namespace YANF.Control
         private void Txt_Enter(object sender, EventArgs e)
         {
             _is_Focus = true;
+            // AccessibleName has no change event: pick up a value set after the control was created before it is announced
+            ForwardAccessibility();
             _txtText.Select(0, _txtText.TextLength);
             Invalidate();
         }
@@ -335,7 +459,7 @@ namespace YANF.Control
         private void Txt_KeyDown(object sender, KeyEventArgs e)
         {
             OnKeyDown(e);
-            if (e.KeyCode == Keys.Enter && !_txtText.Multiline)
+            if (e.KeyCode == Keys.Enter && !_txtText.Multiline && !_txtText.AcceptsReturn)
             {
                 e.SuppressKeyPress = true;
             }
@@ -344,8 +468,12 @@ namespace YANF.Control
         // Raises the key up event
         private void Txt_KeyUp(object sender, KeyEventArgs e) => OnKeyUp(e);
 
-        // Raises the text changed event
-        private void Txt_TextChanged(object sender, EventArgs e) => StringChanged?.Invoke(sender, e);
+        // Raises the text changed event (sender = this) and the legacy string changed event (sender = the inner text box, as in 1.0)
+        private void Txt_TextChanged(object sender, EventArgs e)
+        {
+            OnTextChanged(e);
+            StringChanged?.Invoke(sender, e);
+        }
 
         // Update the rounded region of the text box when its size changes
         private void Txt_SizeChanged(object sender, EventArgs e) => UpdateTextRegion();
@@ -354,6 +482,25 @@ namespace YANF.Control
         #region Methods
         // Check whether a placeholder is set
         private bool HasPlaceholder() => !string.IsNullOrWhiteSpace(_placeholderText);
+
+        // Check whether the designer is writing the site name into Text while it initializes a newly dropped control: ControlDesigner
+        // does it for every browsable Text (TextBox's own designer clears it again). Designer files being loaded are never ignored
+        private bool IsSiteNameFromDesigner(string value)
+            => !_is_Painted && _txtText.TextLength == 0 && Site is { DesignMode: true } site && value == site.Name
+            && site.GetService(typeof(IDesignerHost)) is not IDesignerHost { Loading: true };
+
+        // Copy AccessibleName and AccessibleDescription to the inner text box (the control that screen readers announce), keeping a value set on it directly
+        private void ForwardAccessibility()
+        {
+            if (_txtText.AccessibleName == _innerAccessibleName)
+            {
+                _txtText.AccessibleName = _innerAccessibleName = AccessibleName;
+            }
+            if (_txtText.AccessibleDescription == _innerAccessibleDescription)
+            {
+                _txtText.AccessibleDescription = _innerAccessibleDescription = AccessibleDescription;
+            }
+        }
 
         // Get the border radius that fits the current size (the configured value is never changed)
         private int GetBorderRadius() => (int)EffectiveRadius(ClientRectangle, _borderRadius);
@@ -416,6 +563,7 @@ namespace YANF.Control
         private sealed class CueTextBox : TextBox
         {
             private const int WM_PAINT = 0x000F;
+            private const int WM_GETOBJECT = 0x003D;
             private string _cue;
             private Color _cueColor;
 
@@ -443,6 +591,12 @@ namespace YANF.Control
 
             protected override void WndProc(ref Message m)
             {
+                // a screen reader asks for the accessible object of the box: give it the current accessible name of the owner first (the
+                // accessible object of TextBoxBase is kept, with its UIA support, so the name is copied instead of being read from the owner)
+                if (m.Msg == WM_GETOBJECT)
+                {
+                    (Parent as YANTxt)?.ForwardAccessibility();
+                }
                 base.WndProc(ref m);
                 // blank text (whitespace only) counts as empty, like the String property and the placeholder of 1.0.2
                 if (m.Msg == WM_PAINT && !Focused && !string.IsNullOrWhiteSpace(_cue) && (TextLength == 0 || string.IsNullOrWhiteSpace(Text)))

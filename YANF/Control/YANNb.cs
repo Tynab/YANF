@@ -12,11 +12,16 @@ using static YANF.Script.YANShape;
 
 namespace YANF.Control
 {
-    [DefaultEvent("ValueChanged")]
+    [DefaultBindingProperty(nameof(Value))]
+    [DefaultEvent(nameof(ValueChanged))]
+    [DefaultProperty(nameof(Value))]
+    [ToolboxBitmap(typeof(NumericUpDown))]
     public class YANNb : UserControl
     {
         #region Fields
         private Color _borderColor = MediumSlateBlue;
+        private string _innerAccessibleName = null;
+        private string _innerAccessibleDescription = null;
         private int _borderSize = 1;
         private int _borderRadius = 0;
         private bool _is_UnderlinedStyle = false;
@@ -64,6 +69,7 @@ namespace YANF.Control
         public string String;
 
         [Category("YAN Appearance"), Description("Indicates how the text should be aligned for edit controls.")]
+        [DefaultValue(HorizontalAlignment.Center)]
         public HorizontalAlignment TextAlign
         {
             get => _nudNum.TextAlign;
@@ -78,6 +84,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("This property specifies the color of the border around the control.")]
+        [DefaultValue(typeof(Color), "MediumSlateBlue")]
         public Color BorderColor
         {
             get => _borderColor;
@@ -91,10 +98,12 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("This property specifies the color of the border around the control when the control have the focus.")]
+        [Category("YAN Appearance"), Description("This property specifies the color of the border around the control when the control has the focus.")]
+        [DefaultValue(typeof(Color), "LightYellow")]
         public Color BorderFocusColor { get; set; } = LightYellow;
 
-        [Category("YAN Appearance"), Description("Indicates the minimum value for the numeric up-down control.")]
+        [Category("YAN Data"), Description("Indicates the minimum value for the numeric up-down control.")]
+        [DefaultValue(typeof(decimal), "0")]
         public decimal Minimum
         {
             get => _nudNum.Minimum;
@@ -108,7 +117,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("Indicates the maximum value for the numeric up-down control.")]
+        [Category("YAN Data"), Description("Indicates the maximum value for the numeric up-down control.")]
+        [DefaultValue(typeof(decimal), "100")]
         public decimal Maximum
         {
             get => _nudNum.Maximum;
@@ -122,7 +132,9 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("The current value of the numeric up-down control.")]
+        [Category("YAN Data"), Description("The current value of the numeric up-down control.")]
+        [Bindable(true)]
+        [DefaultValue(typeof(decimal), "0")]
         public decimal Value
         {
             get => _nudNum.Value;
@@ -133,10 +145,12 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("indicates the amount to increment or decrement on each button click.")]
+        [Category("YAN Data"), Description("Indicates the amount to increment or decrement on each button click.")]
+        [DefaultValue(typeof(decimal), "1")]
         public decimal Increment { get => _nudNum.Increment; set => _nudNum.Increment = value; }
 
         [Category("YAN Appearance"), Description("This property specifies the size, in pixels, of the border around the control.")]
+        [DefaultValue(1)]
         public int BorderSize
         {
             get => _borderSize;
@@ -153,6 +167,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("This property allows you to add rounded corners to the control.")]
+        [DefaultValue(0)]
         public int BorderRadius
         {
             get => _borderRadius;
@@ -169,6 +184,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("Indicates the number of decimal places to display.")]
+        [DefaultValue(0)]
         public int DecimalPlaces
         {
             get => _nudNum.DecimalPlaces;
@@ -182,7 +198,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("When this property is true, the underline added to text.")]
+        [Category("YAN Appearance"), Description("When this property is true, only a line under the control is drawn instead of the whole border.")]
+        [DefaultValue(false)]
         public bool UnderlinedStyle
         {
             get => _is_UnderlinedStyle;
@@ -197,6 +214,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("Indicates whether the thousands separator will be inserted between every three decimal digits.")]
+        [DefaultValue(true)]
         public bool ThousandsSeparator
         {
             get => _nudNum.ThousandsSeparator;
@@ -210,12 +228,25 @@ namespace YANF.Control
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the value can be changed only with the up and down buttons (and the arrow keys), not by typing.
+        /// </summary>
+        [Category("YAN Behavior"), Description("Indicates whether the text can be changed by the use of the up or down buttons only.")]
+        [DefaultValue(false)]
+        public bool ReadOnly { get => _nudNum.ReadOnly; set => _nudNum.ReadOnly = value; }
+
         //event
-        [Category("YAN Event"), Description("Event raised when the value of the Val property is changed on Control.")]
+        /// <summary>
+        /// Occurs when the value of the <see cref="Value"/> property changes. Raised by <see cref="OnValueChanged(EventArgs)"/>;
+        /// in 1.x the sender is the inner NumericUpDown, as in 1.0 (read the value from the YANNb, not from the sender).
+        /// </summary>
+        [Category("YAN Event"), Description("Occurs when the value of the Value property changes.")]
         public event EventHandler ValueChanged;
         #endregion
 
         #region Overridden
+        [Category("Appearance"), Description("The background color of the component.")]
+        [DefaultValue(typeof(Color), "White")]
         public override Color BackColor
         {
             get => base.BackColor;
@@ -226,6 +257,8 @@ namespace YANF.Control
             }
         }
 
+        [Category("Appearance"), Description("The foreground color of this component, which is used to display text.")]
+        [DefaultValue(typeof(Color), "DimGray")]
         public override Color ForeColor
         {
             get => base.ForeColor;
@@ -236,6 +269,7 @@ namespace YANF.Control
             }
         }
 
+        [Category("Appearance"), Description("The font used to display text in the control.")]
         public override Font Font
         {
             get => base.Font;
@@ -313,6 +347,16 @@ namespace YANF.Control
             UpdateHCtrl();
         }
 
+        /// <summary>
+        /// Called when the control is first created: also gives the inner numeric up-down the <see cref="System.Windows.Forms.Control.AccessibleName"/> and
+        /// <see cref="System.Windows.Forms.Control.AccessibleDescription"/> of this control (unless they were set on it directly), so that screen readers announce them.
+        /// </summary>
+        protected override void OnCreateControl()
+        {
+            base.OnCreateControl();
+            ForwardAccessibility();
+        }
+
         protected override void OnParentBackColorChanged(EventArgs e)
         {
             base.OnParentBackColorChanged(e);
@@ -326,6 +370,8 @@ namespace YANF.Control
         private void Nud_Enter(object sender, EventArgs e)
         {
             _is_Focus = true;
+            // AccessibleName has no change event: pick up a value set after the control was created before it is announced
+            ForwardAccessibility();
             _nudNum.Select(0, _nudNum.Text.Length);
             Invalidate();
         }
@@ -358,7 +404,7 @@ namespace YANF.Control
         private void Nud_ValueChanged(object sender, EventArgs e)
         {
             String = _nudNum.Value.ToString();
-            ValueChanged?.Invoke(sender, e);
+            OnValueChanged(e);
         }
 
         // Update the rounded region of the numeric up-down when its size changes
@@ -366,6 +412,12 @@ namespace YANF.Control
         #endregion
 
         #region Methods
+        /// <summary>
+        /// Raises the <see cref="ValueChanged"/> event. Override it to run code before or after the handlers (call the base method).
+        /// </summary>
+        /// <param name="e">The event data.</param>
+        protected virtual void OnValueChanged(EventArgs e) => ValueChanged?.Invoke(_nudNum, e); // 1.x: the inner NumericUpDown is the sender, as in 1.0 (2.0: this)
+
         // Get the border radius that fits the current size (the configured value is never changed)
         private int GetBorderRadius() => (int)EffectiveRadius(ClientRectangle, _borderRadius);
 
@@ -403,6 +455,19 @@ namespace YANF.Control
             else
             {
                 SetRegion(_nudNum, (Region)null);
+            }
+        }
+
+        // Copy AccessibleName and AccessibleDescription to the inner numeric up-down (the control that screen readers announce), keeping a value set on it directly
+        private void ForwardAccessibility()
+        {
+            if (_nudNum.AccessibleName == _innerAccessibleName)
+            {
+                _nudNum.AccessibleName = _innerAccessibleName = AccessibleName;
+            }
+            if (_nudNum.AccessibleDescription == _innerAccessibleDescription)
+            {
+                _nudNum.AccessibleDescription = _innerAccessibleDescription = AccessibleDescription;
             }
         }
 

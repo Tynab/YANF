@@ -11,6 +11,7 @@ using static YANF.Script.YANConstant.PrgTextPosition;
 
 namespace YANF.Control
 {
+    [ToolboxBitmap(typeof(ProgressBar))]
     public class YANPrg : ProgressBar
     {
         #region Fields
@@ -37,6 +38,7 @@ namespace YANF.Control
 
         #region Properties
         [Category("YAN Appearance"), Description("The color of the channel.")]
+        [DefaultValue(typeof(Color), "LightSteelBlue")]
         public Color ChannelColor
         {
             get => _channelColor;
@@ -51,6 +53,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("The color of the slider.")]
+        [DefaultValue(typeof(Color), "RoyalBlue")]
         public Color SliderColor
         {
             get => _sliderColor;
@@ -65,6 +68,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("The background color of the value.")]
+        [DefaultValue(typeof(Color), "RoyalBlue")]
         public Color ValueBackColor
         {
             get => _valueBackColor;
@@ -78,7 +82,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("Indicates how the value should be aligned for edit controls.")]
+        [Category("YAN Appearance"), Description("Indicates where the value is displayed on the control (None hides it).")]
+        [DefaultValue(PrgTextPosition.Right)]
         public PrgTextPosition TextAlign
         {
             get => _textAlign;
@@ -92,7 +97,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("That symbol that will be displayed before value on the control.")]
+        [Category("YAN Appearance"), Description("The symbol that is displayed before the value on the control.")]
+        [DefaultValue(null)]
         public string SymbolBefore
         {
             get => _symbolBefore;
@@ -106,7 +112,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("That symbol that will be displayed after value on the control.")]
+        [Category("YAN Appearance"), Description("The symbol that is displayed after the value on the control.")]
+        [DefaultValue(null)]
         public string SymbolAfter
         {
             get => _symbolAfter;
@@ -120,7 +127,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("That symbol that will be displayed before value on the control.")]
+        [Category("YAN Appearance"), Description("The height of the channel in pixels.")]
+        [DefaultValue(6)]
         public int ChannelHeight
         {
             get => _channelHeight;
@@ -135,6 +143,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("The height of the slider in pixels.")]
+        [DefaultValue(6)]
         public int SliderHeight
         {
             get => _sliderHeight;
@@ -148,7 +157,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("When this property is true, the maximum value added to after value.")]
+        [Category("YAN Appearance"), Description("When this property is true, the maximum value is displayed after the value.")]
+        [DefaultValue(false)]
         public bool ShowMaximum
         {
             get => _is_ShowMaximum;
@@ -164,10 +174,13 @@ namespace YANF.Control
         #endregion
 
         #region Overridden
+        [Category("Appearance"), Description("The font used to display the value.")]
         [Browsable(true)]
         [EditorBrowsable(Always)]
         public override Font Font { get => base.Font; set => base.Font = value; }
 
+        [Category("Appearance"), Description("The color of the value.")]
+        [DefaultValue(typeof(Color), "White")]
         public override Color ForeColor { get => base.ForeColor; set => base.ForeColor = value; }
 
         protected override void OnPaintBackground(PaintEventArgs e)

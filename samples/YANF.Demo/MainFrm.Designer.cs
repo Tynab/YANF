@@ -29,7 +29,6 @@ namespace YANF.Demo
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainFrm));
             this.panel1 = new System.Windows.Forms.Panel();
             this.yanTg4 = new YANF.Control.YANTg();
@@ -51,7 +50,6 @@ namespace YANF.Demo
             this.yanBtn2 = new YANF.Control.YANBtn();
             this.yanDdl2 = new YANF.Control.YANDdl();
             this.yanPic1 = new YANF.Control.YANCirPic();
-            this.tmrMain = new System.Windows.Forms.Timer(this.components);
             this.yanTg2 = new YANF.Control.YANTg();
             this.yanPrg4 = new YANF.Control.YANPrg();
             this.yanTg1 = new YANF.Control.YANTg();
@@ -82,6 +80,8 @@ namespace YANF.Demo
             this.yanDdl1 = new YANF.Control.YANDdl();
             this.yanBtn1 = new YANF.Control.YANBtn();
             this.btnLoadScr = new YANF.Control.YANBtn();
+            this.tgLegacy = new YANF.Control.YANTg();
+            this.lblLegacy = new System.Windows.Forms.Label();
             this.panel1.SuspendLayout();
             this.yanPnl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic1)).BeginInit();
@@ -377,6 +377,8 @@ namespace YANF.Demo
             // 
             this.yanPnl1.Angle = 45F;
             this.yanPnl1.BottomColor = System.Drawing.Color.HotPink;
+            this.yanPnl1.Controls.Add(this.lblLegacy);
+            this.yanPnl1.Controls.Add(this.tgLegacy);
             this.yanPnl1.Controls.Add(this.btnLoadScr);
             this.yanPnl1.Controls.Add(this.btnWaitScr);
             this.yanPnl1.Controls.Add(this.btnDemo2);
@@ -536,10 +538,6 @@ namespace YANF.Demo
             this.yanPic1.TabIndex = 1;
             this.yanPic1.TabStop = false;
             this.yanPic1.TopColor = System.Drawing.Color.RoyalBlue;
-            // 
-            // tmrMain
-            // 
-            this.tmrMain.Tick += new System.EventHandler(this.TmrMain_Tick);
             // 
             // yanTg2
             // 
@@ -1153,6 +1151,30 @@ namespace YANF.Demo
             this.btnLoadScr.UseVisualStyleBackColor = false;
             this.btnLoadScr.Click += new System.EventHandler(this.BtnLoadScr_Click);
             // 
+            // tgLegacy
+            // 
+            this.tgLegacy.AutoSize = true;
+            this.tgLegacy.Location = new System.Drawing.Point(115, 222);
+            this.tgLegacy.MinimumSize = new System.Drawing.Size(45, 22);
+            this.tgLegacy.Name = "tgLegacy";
+            this.tgLegacy.Size = new System.Drawing.Size(45, 22);
+            this.tgLegacy.TabIndex = 5;
+            this.tgLegacy.UseVisualStyleBackColor = true;
+            // 
+            // lblLegacy
+            // 
+            this.lblLegacy.AutoSize = true;
+            this.lblLegacy.BackColor = System.Drawing.Color.Transparent;
+            this.lblLegacy.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.lblLegacy.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.lblLegacy.ForeColor = System.Drawing.Color.White;
+            this.lblLegacy.Location = new System.Drawing.Point(166, 224);
+            this.lblLegacy.Name = "lblLegacy";
+            this.lblLegacy.Size = new System.Drawing.Size(149, 17);
+            this.lblLegacy.TabIndex = 6;
+            this.lblLegacy.Text = "Use 1.0 services (legacy)";
+            this.lblLegacy.Click += new System.EventHandler(this.LblLegacy_Click);
+            // 
             // MainFrm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -1199,6 +1221,7 @@ namespace YANF.Demo
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.yanPnl1.ResumeLayout(false);
+            this.yanPnl1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic16)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.yanPic13)).EndInit();
@@ -1268,11 +1291,12 @@ namespace YANF.Demo
         private Control.YANTg yanTg4;
         private Control.YANTg yanTg3;
         private Control.YANBtn btnUpdScr;
-        private System.Windows.Forms.Timer tmrMain;
         private Control.YANBtn btnDemo1;
         private Control.YANBtn btnDemo2;
         private Control.YANBtn btnWaitScr;
         private Control.YANBtn btnLoadScr;
+        private Control.YANTg tgLegacy;
+        private System.Windows.Forms.Label lblLegacy;
     }
 }
 

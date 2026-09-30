@@ -6,6 +6,7 @@ using static System.Drawing.Color;
 
 namespace YANF.Control
 {
+    [ToolboxBitmap(typeof(Panel))]
     public class YANGradPnl : Panel
     {
         #region Fields
@@ -24,6 +25,7 @@ namespace YANF.Control
 
         #region Properties
         [Category("YAN Appearance"), Description("The color of the top gradient.")]
+        [DefaultValue(typeof(Color), "RoyalBlue")]
         public Color TopColor
         {
             get => _topColor;
@@ -38,6 +40,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("The color of the bottom gradient.")]
+        [DefaultValue(typeof(Color), "HotPink")]
         public Color BottomColor
         {
             get => _bottomColor;
@@ -51,7 +54,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("Angle of the gradient.")]
+        [Category("YAN Appearance"), Description("The angle, in degrees from 0 to 360, of the gradient.")]
+        [DefaultValue(0f)]
         public float Angle
         {
             get => _angle;

@@ -1075,6 +1075,7 @@
             this.btnSave.FlatAppearance.MouseDownBackColor = System.Drawing.Color.RoyalBlue;
             this.btnSave.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(95)))), ((int)(((byte)(215)))));
             this.btnSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSave.Focusable = true;
             this.btnSave.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
             this.btnSave.ForeColor = System.Drawing.Color.White;
             this.btnSave.Image = ((System.Drawing.Image)(resources.GetObject("btnSave.Image")));
@@ -1082,7 +1083,6 @@
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(50, 31);
             this.btnSave.TabIndex = 0;
-            this.btnSave.TabStop = false;
             this.toolTipMain.SetToolTip(this.btnSave, "Cập nhật");
             this.btnSave.UseVisualStyleBackColor = false;
             this.btnSave.Click += new System.EventHandler(this.BtnSave_Click);
@@ -1480,6 +1480,7 @@
             // 
             // Demo1
             // 
+            this.AcceptButton = this.btnSave;
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(1200, 600);
@@ -1491,11 +1492,8 @@
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "Demo1";
-            this.Opacity = 0D;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "HRM";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Demo1_FormClosing);
-            this.Shown += new System.EventHandler(this.Demo1_Shown);
             this.pnlMain.ResumeLayout(false);
             this.panel3.ResumeLayout(false);
             this.panel5.ResumeLayout(false);

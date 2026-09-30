@@ -1,19 +1,23 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using YANF.Script;
 using YANF.Script.Service;
 using static System.Math;
+using static System.Windows.Forms.MessageBoxButtons;
+using static System.Windows.Forms.MessageBoxIcon;
 using static YANF.Script.YANConstant;
+using static YANF.Script.YANConstant.MsgBoxLang;
 
 namespace YANF.Demo
 {
     public partial class MainFrm : Form
     {
         #region Fields
-        private IYANSrcService _srcService;
-        private IYANDlvScrService _dlvScrService;
-        private string _choosenOne;
-        private int _percent;
+        // Simulated work: 100 steps (one per percent) of STEP_MS milliseconds, and the size of the simulated download
+        private const int STEP_MS = 30;
+        private const double TOTAL_MB = 137;
         #endregion
 
         #region Constructors
@@ -22,43 +26,72 @@ namespace YANF.Demo
 
         #region Events
         // Show update screen
-        private void BtnUpdScr_Click(object sender, EventArgs e)
+        private async void BtnUpdScr_Click(object sender, EventArgs e)
         {
-            if (!tmrMain.Enabled)
+            try
             {
-                _choosenOne = "Update";
-                _percent = 0;
-                _dlvScrService = new YANUpdScrService();
-                _dlvScrService.OnLoader(this);
-                tmrMain.StartAdv();
+                if (tgLegacy.Checked)
+                {
+                    IYANDlvScrService service = new YANUpdScrService();
+                    RunLegacy(service, percent => service.PublishValue(percent, Capacity(percent), (int)Ceiling(percent * W_UPDATE_SCR / 100d)));
+                    return;
+                }
+                // YANLoader.Show: a scope around awaited work on the UI thread; the form takes no input until it is disposed
+                using var scope = YANLoader.Show(this, new YANLoaderOptions
+                {
+                    Kind = YANLoaderKind.Update
+                });
+                for (var percent = 1; percent <= 100; percent++)
+                {
+                    await Task.Delay(STEP_MS);
+                    scope.SetProgress(percent, Capacity(percent));
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex);
             }
         }
 
         // Show wait screen
-        private void BtnWaitScr_Click(object sender, EventArgs e)
+        private async void BtnWaitScr_Click(object sender, EventArgs e)
         {
-            if (!tmrMain.Enabled)
+            try
             {
-                _choosenOne = "Wait";
-                _percent = 0;
-                _srcService = new YANWaitScrService();
-                _srcService.OnLoader(this);
-                this.FadeOut();
-                tmrMain.StartAdv();
+                if (tgLegacy.Checked)
+                {
+                    RunLegacy(new YANWaitScrService(), null);
+                    return;
+                }
+                // RunWithLoaderAsync: any task will do, the Wait screen shows no progress
+                await this.RunWithLoaderAsync((progress, ct) => Task.Delay(100 * STEP_MS, ct), new YANLoaderOptions
+                {
+                    Kind = YANLoaderKind.Wait
+                }, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex);
             }
         }
 
         // Show load screen
-        private void BtnLoadScr_Click(object sender, EventArgs e)
+        private async void BtnLoadScr_Click(object sender, EventArgs e)
         {
-            if (!tmrMain.Enabled)
+            try
             {
-                _choosenOne = "Load";
-                _percent = 0;
-                _dlvScrService = new YANLoadScrService();
-                _dlvScrService.OnLoader(this);
-                this.FadeOut();
-                tmrMain.StartAdv();
+                if (tgLegacy.Checked)
+                {
+                    IYANDlvScrService service = new YANLoadScrService();
+                    RunLegacy(service, percent => service.PublishValue(percent, null, 0));
+                    return;
+                }
+                // RunWithLoaderAsync: the work runs on the thread pool and reports its progress from there
+                await this.RunWithLoaderAsync((progress, ct) => Task.Run(() => Work(progress, ct), ct));
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex);
             }
         }
 
@@ -68,56 +101,54 @@ namespace YANF.Demo
         // Show demo 2 screen
         private void BtnDemo2_Click(object sender, EventArgs e) => new Demo2().Show();
 
-        // Timer main
-        private void TmrMain_Tick(object sender, EventArgs e)
+        // lbl Legacy click: switch tg Legacy too
+        private void LblLegacy_Click(object sender, EventArgs e) => tgLegacy.Checked = !tgLegacy.Checked;
+        #endregion
+
+        #region Methods
+        // Simulated work on a worker thread (IProgress<int> can be used from any thread)
+        private static void Work(IProgress<int> progress, CancellationToken ct)
         {
-            switch (_choosenOne)
+            for (var percent = 1; percent <= 100; percent++)
             {
-                case "Update":
-                {
-                    if (_percent < 100)
-                    {
-                        _percent++;
-                        _dlvScrService.PublishValue(_percent, string.Format("{0} MB / {1} MB", _percent * 1.37, 100 * 1.37), (int)Ceiling(_percent * W_UPDATE_SCR / 100d));
-                    }
-                    else
-                    {
-                        _dlvScrService.OffLoader();
-                        tmrMain.StopAdv();
-                    }
-                    break;
-                }
-                case "Wait":
-                {
-                    if (_percent < 100)
-                    {
-                        _percent++;
-                    }
-                    else
-                    {
-                        _srcService.OffLoader();
-                        tmrMain.StopAdv();
-                        this.FadeIn();
-                    }
-                    break;
-                }
-                case "Load":
-                {
-                    if (_percent < 100)
-                    {
-                        _percent++;
-                        _dlvScrService.PublishValue(_percent, null, 0);
-                    }
-                    else
-                    {
-                        _dlvScrService.OffLoader();
-                        tmrMain.StopAdv();
-                        this.FadeIn();
-                    }
-                    break;
-                }
+                ct.ThrowIfCancellationRequested();
+                Thread.Sleep(STEP_MS);
+                progress.Report(percent);
             }
         }
+
+        // 1.0 services, kept for work that blocks the UI thread: the screen runs on a thread of its own, so it keeps moving meanwhile
+        // (publish is null for the Wait screen; PublishValue can be called from any thread, without Invoke)
+        private void RunLegacy(IYANSrcService service, Action<int> publish)
+        {
+            service.OnLoader(this);
+            try
+            {
+                for (var percent = 1; percent <= 100; percent++)
+                {
+                    // blocking work, for example a synchronous database call
+                    Thread.Sleep(STEP_MS);
+                    publish?.Invoke(percent);
+                }
+            }
+            finally
+            {
+                service.OffLoader();
+            }
+        }
+
+        // Detail text of the update screen
+        private static string Capacity(int percent) => $"{percent * TOTAL_MB / 100:0.##} MB / {TOTAL_MB:0.##} MB";
+
+        // Show what failed (an async void handler must not let an exception escape)
+        private void ShowError(Exception ex) => YANMessageBox.Show(this, new YANMessageBoxOptions
+        {
+            Caption = "ERROR",
+            Text = ex.Message,
+            Buttons = OK,
+            Icon = Error,
+            Language = ENG
+        });
         #endregion
     }
 }

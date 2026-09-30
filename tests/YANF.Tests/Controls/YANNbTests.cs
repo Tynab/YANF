@@ -1,4 +1,8 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using Xunit;
 using YANF.Control;
@@ -83,6 +87,73 @@ namespace YANF.Tests.Controls
             Assert.Equal(43m.ToString(), n.String);
         });
 
+        // 1.1 adds the protected virtual OnValueChanged; the sender stays the inner NumericUpDown in 1.x (it becomes the YANNb in 2.0)
+        [Fact]
+        public void OnValueChanged_RaisesValueChangedWithUnchangedSender() => Sta.Run(() =>
+        {
+            using var n = new NbProbe();
+            var nud = Priv.Field<NumericUpDown>(n, "_nudNum");
+            var senders = new List<object>();
+            n.ValueChanged += (s, e) => senders.Add(s);
+            n.Value = 5;
+            nud.UpButton();
+            // unchanged value: nothing raised
+            n.Value = 6;
+            Assert.Equal(2, n.Calls);
+            Assert.Equal(2, senders.Count);
+            Assert.All(senders, s => Assert.Same(nud, s));
+            Assert.Equal(6m.ToString(), n.String);
+        });
+
+        [Fact]
+        public void ReadOnly_PassThrough() => Sta.Run(() =>
+        {
+            using var n = new YANNb();
+            var nud = Priv.Field<NumericUpDown>(n, "_nudNum");
+            var p = TypeDescriptor.GetProperties(n)[nameof(YANNb.ReadOnly)];
+            Assert.False(n.ReadOnly);
+            Assert.False(p.ShouldSerializeValue(n));
+            n.ReadOnly = true;
+            Assert.True(nud.ReadOnly);
+            Assert.True(p.ShouldSerializeValue(n));
+            // the buttons still change the value
+            nud.UpButton();
+            Assert.Equal(1m, n.Value);
+            n.ReadOnly = false;
+            Assert.False(nud.ReadOnly);
+        });
+
+        // Value is the property the Data Sources window and the (DataBindings) section bind
+        [Fact]
+        public void Value_IsDefaultBindingProperty() => Sta.Run(() =>
+        {
+            using var n = new YANNb();
+            Assert.Equal(nameof(YANNb.Value), TypeDescriptor.GetAttributes(n).OfType<DefaultBindingPropertyAttribute>().Single().Name);
+            Assert.Equal(BindableAttribute.Yes, TypeDescriptor.GetProperties(n)[nameof(YANNb.Value)].Attributes[typeof(BindableAttribute)]);
+        });
+
+        // Screen readers announce the inner NumericUpDown, which receives the focus: it gets the accessible name of the control
+        [Fact]
+        public void AccessibleName_ForwardedToInnerNumeric() => Sta.Run(ui =>
+        {
+            var n = new YANNb { AccessibleName = "Quantity", AccessibleDescription = "Items to order" };
+            var nud = Priv.Field<NumericUpDown>(n, "_nudNum");
+            // OnCreateControl runs when the control is created on a shown form
+            ui.Show(n);
+            Assert.Equal("Quantity", nud.AccessibleName);
+            Assert.Equal("Items to order", nud.AccessibleDescription);
+            // changed later: picked up when the control is entered, before it is announced
+            n.AccessibleName = "Amount";
+            Priv.Call(n, "Nud_Enter", nud, EventArgs.Empty);
+            Assert.Equal("Amount", nud.AccessibleName);
+            // a value set on the inner control directly is never overwritten
+            nud.AccessibleName = "Own name";
+            n.AccessibleName = "Other";
+            Priv.Call(n, "Nud_Enter", nud, EventArgs.Empty);
+            Assert.Equal("Own name", nud.AccessibleName);
+            Assert.Equal("Items to order", nud.AccessibleDescription);
+        });
+
         [Fact]
         public void Setters_NormaliseAndResizeKeepsValues() => Sta.Run(() =>
         {
@@ -133,5 +204,17 @@ namespace YANF.Tests.Controls
             n.BorderRadius = 0;
             Assert.Null(n.Region);
         });
+
+        // Counts the calls of the protected virtual OnValueChanged
+        private sealed class NbProbe : YANNb
+        {
+            public int Calls { get; private set; }
+
+            protected override void OnValueChanged(EventArgs e)
+            {
+                Calls++;
+                base.OnValueChanged(e);
+            }
+        }
     }
 }

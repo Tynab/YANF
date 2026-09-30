@@ -1,244 +1,130 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
+using YANF.Script;
+using static System.ComponentModel.EditorBrowsableState;
 using static System.Drawing.Color;
-using static System.Drawing.FontStyle;
 using static System.Windows.Forms.DialogResult;
 using static System.Windows.Forms.MessageBoxButtons;
-using static System.Windows.Forms.MessageBoxDefaultButton;
 using static System.Windows.Forms.MessageBoxIcon;
 using static YANF.Properties.Resources;
 using static YANF.Script.YANConstant;
 using static YANF.Script.YANConstant.MsgBoxLang;
 using static YANF.Script.YANEvent;
-using static YANF.Script.YANMath;
 
 namespace YANF.Screen
 {
     public partial class YANMessageBoxScreen : SoftScreen
     {
         #region Fields
-        private readonly Font _fntTitVn = new("Tahoma", 10);
-        private readonly Font _fntTitJp = new("Yu Gothic", 12);
-        private readonly Font _fntCapVn = new("Verdana", 10);
-        private readonly Font _fntCapJp = new("Meiryo", 9);
-        private readonly Font _fntTextVn = new("Segoe UI Light", 9.5f);
-        private readonly Font _fntTextJp = new("Meiryo", 8);
+        private const int BTN_MARGIN = 10;
+        private const int DFLT_BORDER = 2;
+
+        // Buttons of each set, left to right
+        private static readonly Dictionary<MessageBoxButtons, DialogResult[]> _btnSets = new()
+        {
+            [MessageBoxButtons.OK] = [DialogResult.OK],
+            [OKCancel] = [DialogResult.OK, Cancel],
+            [AbortRetryIgnore] = [Abort, Retry, Ignore],
+            [YesNoCancel] = [Yes, No, Cancel],
+            [YesNo] = [Yes, No],
+            [RetryCancel] = [Retry, Cancel]
+        };
+
+        // Fonts of each language: caption, message, buttons (a language without a row keeps the designer fonts)
+        private static readonly Dictionary<MsgBoxLang, (string Family, float Size)[]> _langFnts = new()
+        {
+            [VIE] = [("Tahoma", 10), ("Segoe UI Light", 9.5f), ("Verdana", 10)],
+            [JAP] = [("Yu Gothic", 12), ("Meiryo", 8), ("Meiryo", 9)]
+        };
+
+        private Font[] _fntsLang; // created for this box only, disposed with it
         private Color _primaryColor = CornflowerBlue;
         #endregion
 
         #region Constructors
-        public YANMessageBoxScreen(string text)
+        /// <summary>
+        /// Creates the message box that <paramref name="options"/> describes. <see cref="YANMessageBox.Show(IWin32Window, YANMessageBoxOptions)"/>
+        /// shows it and disposes it.
+        /// </summary>
+        /// <param name="options">What the box shows.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="options"/> is null.</exception>
+        /// <exception cref="InvalidEnumArgumentException"><see cref="YANMessageBoxOptions.Buttons"/> is not a <see cref="MessageBoxButtons"/> value.</exception>
+        public YANMessageBoxScreen(YANMessageBoxOptions options)
         {
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+            if (!_btnSets.TryGetValue(options.Buttons, out var results))
+            {
+                throw new InvalidEnumArgumentException(nameof(options), (int)options.Buttons, typeof(MessageBoxButtons));
+            }
             InitializeComponent();
             InitializeItems();
-            // btn Close
-            btnClose.Click += BtnClose_Click;
             // prop
-            PrimaryColor = _primaryColor;
-            lblCaption.Text = null;
-            lblMessage.Text = text;
-            SetSize(MessageBoxButtons.OK);
-            SetBtns(MessageBoxButtons.OK, Button1); // set default btns
-        }
-
-        public YANMessageBoxScreen(string text, MsgBoxLang lang)
-        {
-            InitializeComponent();
-            InitializeItems();
-            // btn Close
-            btnClose.Click += BtnClose_Click;
-            // prop
+            var lang = options.Language ?? ENG;
             SetFntLang(lang);
             PrimaryColor = _primaryColor;
-            lblCaption.Text = null;
-            lblMessage.Text = text;
-            SetSize(MessageBoxButtons.OK);
-            // set default btns
-            switch (lang)
-            {
-                case JAP:
-                {
-                    SetBtnsJp(MessageBoxButtons.OK, Button1);
-                    break;
-                }
-                case VIE:
-                {
-                    SetBtnsVn(MessageBoxButtons.OK, Button1);
-                    break;
-                }
-            }
+            TopMost = options.TopMost;
+            lblMessage.MaximumSize = new Size(SystemInformation.WorkingArea.Width / 2, 0); // long text wraps
+            lblCaption.Text = options.Caption;
+            lblMessage.Text = options.Text;
+            SetSize(results.Length);
+            SetBtns(results, options.Buttons, options.DefaultButton, lang, options.StrictClose);
+            SetIcon(options.Icon);
         }
 
-        public YANMessageBoxScreen(string cap, string text)
+        [EditorBrowsable(Never)]
+        public YANMessageBoxScreen(string text) : this(new YANMessageBoxOptions { Text = text })
         {
-            InitializeComponent();
-            InitializeItems();
-            // btn Close
-            btnClose.Click += BtnClose_Click;
-            // prop
-            PrimaryColor = _primaryColor;
-            lblCaption.Text = cap;
-            lblMessage.Text = text;
-            SetSize(MessageBoxButtons.OK);
-            SetBtns(MessageBoxButtons.OK, Button1); // set default btns
         }
 
-        public YANMessageBoxScreen(string cap, string text, MsgBoxLang lang)
+        [EditorBrowsable(Never)]
+        public YANMessageBoxScreen(string text, MsgBoxLang lang) : this(new YANMessageBoxOptions { Text = text, Language = lang })
         {
-            InitializeComponent();
-            InitializeItems();
-            // btn Close
-            btnClose.Click += BtnClose_Click;
-            // prop
-            SetFntLang(lang);
-            PrimaryColor = _primaryColor;
-            lblCaption.Text = cap;
-            lblMessage.Text = text;
-            SetSize(MessageBoxButtons.OK);
-            // set default btns
-            switch (lang)
-            {
-                case JAP:
-                {
-                    SetBtnsJp(MessageBoxButtons.OK, Button1);
-                    break;
-                }
-                case VIE:
-                {
-                    SetBtnsVn(MessageBoxButtons.OK, Button1);
-                    break;
-                }
-            }
         }
 
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns)
+        [EditorBrowsable(Never)]
+        public YANMessageBoxScreen(string cap, string text) : this(new YANMessageBoxOptions { Caption = cap, Text = text })
         {
-            InitializeComponent();
-            InitializeItems();
-            // btn Close
-            btnClose.Click += BtnClose_Click;
-            // prop
-            PrimaryColor = _primaryColor;
-            lblCaption.Text = cap;
-            lblMessage.Text = text;
-            SetSize(btns);
-            SetBtns(btns, Button1); // set [default btn 1]
         }
 
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MsgBoxLang lang)
+        [EditorBrowsable(Never)]
+        public YANMessageBoxScreen(string cap, string text, MsgBoxLang lang) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Language = lang })
         {
-            InitializeComponent();
-            InitializeItems();
-            // btn Close
-            btnClose.Click += BtnClose_Click;
-            // prop
-            SetFntLang(lang);
-            PrimaryColor = _primaryColor;
-            lblCaption.Text = cap;
-            lblMessage.Text = text;
-            SetSize(btns);
-            // set [default btn 1]
-            switch (lang)
-            {
-                case JAP:
-                {
-                    SetBtnsJp(btns, Button1);
-                    break;
-                }
-                case VIE:
-                {
-                    SetBtnsVn(btns, Button1);
-                    break;
-                }
-            }
         }
 
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon)
+        [EditorBrowsable(Never)]
+        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns })
         {
-            InitializeComponent();
-            InitializeItems();
-            // btn Close
-            btnClose.Click += BtnClose_Click;
-            // prop
-            PrimaryColor = _primaryColor;
-            lblCaption.Text = cap;
-            lblMessage.Text = text;
-            SetSize(btns);
-            SetBtns(btns, Button1);
-            SetIcon(icon);
         }
 
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MsgBoxLang lang)
+        [EditorBrowsable(Never)]
+        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MsgBoxLang lang) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Language = lang })
         {
-            InitializeComponent();
-            InitializeItems();
-            // btn Close
-            btnClose.Click += BtnClose_Click;
-            // prop
-            SetFntLang(lang);
-            PrimaryColor = _primaryColor;
-            lblCaption.Text = cap;
-            lblMessage.Text = text;
-            SetSize(btns);
-            // set [default btn 1]
-            switch (lang)
-            {
-                case JAP:
-                {
-                    SetBtnsJp(btns, Button1);
-                    break;
-                }
-                case VIE:
-                {
-                    SetBtnsVn(btns, Button1);
-                    break;
-                }
-            }
-            SetIcon(icon);
         }
 
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt)
+        [EditorBrowsable(Never)]
+        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon })
         {
-            InitializeComponent();
-            InitializeItems();
-            // btn Close
-            btnClose.Click += BtnClose_Click;
-            // prop
-            PrimaryColor = _primaryColor;
-            lblCaption.Text = cap;
-            lblMessage.Text = text;
-            SetSize(btns);
-            SetBtns(btns, btnDflt);
-            SetIcon(icon);
         }
 
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt, MsgBoxLang lang)
+        [EditorBrowsable(Never)]
+        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MsgBoxLang lang) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, Language = lang })
         {
-            InitializeComponent();
-            InitializeItems();
-            // btn Close
-            btnClose.Click += BtnClose_Click;
-            // prop
-            SetFntLang(lang);
-            PrimaryColor = _primaryColor;
-            lblCaption.Text = cap;
-            lblMessage.Text = text;
-            SetSize(btns);
-            switch (lang)
-            {
-                case JAP:
-                {
-                    SetBtnsJp(btns, btnDflt);
-                    break;
-                }
-                case VIE:
-                {
-                    SetBtnsVn(btns, btnDflt);
-                    break;
-                }
-            }
-            SetIcon(icon);
+        }
+
+        [EditorBrowsable(Never)]
+        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, DefaultButton = btnDflt })
+        {
+        }
+
+        [EditorBrowsable(Never)]
+        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt, MsgBoxLang lang) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, DefaultButton = btnDflt, Language = lang })
+        {
         }
         #endregion
 
@@ -254,9 +140,38 @@ namespace YANF.Screen
         }
         #endregion
 
+        #region Overridden
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            var img = disposing ? picIcon?.Image : null; // read before the picture box is disposed
+            if (disposing)
+            {
+                components?.Dispose();
+            }
+            base.Dispose(disposing);
+            if (disposing)
+            {
+                // what this box created for itself (the designer's fonts belong to the designer code)
+                img?.Dispose();
+                if (_fntsLang != null)
+                {
+                    Array.ForEach(_fntsLang, f => f.Dispose());
+                    _fntsLang = null;
+                }
+            }
+        }
+        #endregion
+
         #region Events
         // Close
         private void BtnClose_Click(object sender, EventArgs e) => Close();
+
+        // Btn got focus: Enter now presses the focused btn (Form.UpdateDefaultButton), so the border moves to it
+        private void Btn_GotFocus(object sender, EventArgs e) => MarkBtn(sender);
         #endregion
 
         #region Methods
@@ -277,516 +192,96 @@ namespace YANF.Screen
             btn1.Visible = false;
             btn2.Visible = false;
             btn3.Visible = false;
+            // the border marks the btn that Enter presses: the default btn, then the focused one (✕ focused: none)
+            foreach (var btn in new[] { btn1, btn2, btn3, btnClose })
+            {
+                btn.GotFocus += Btn_GotFocus;
+            }
         }
 
-        // Set language font
+        // Set language font (created once for this box; a language without fonts of its own keeps the designer fonts)
         private void SetFntLang(MsgBoxLang lang)
         {
-            switch (lang)
+            if (!_langFnts.TryGetValue(lang, out var specs))
             {
-                case JAP:
-                {
-                    lblCaption.Font = _fntTitJp;
-                    lblMessage.Font = _fntTextJp;
-                    btn1.Font = _fntCapJp;
-                    btn2.Font = _fntCapJp;
-                    btn3.Font = _fntCapJp;
-                    break;
-                }
-                case VIE:
-                {
-                    lblCaption.Font = _fntTitVn;
-                    lblMessage.Font = _fntTextVn;
-                    btn1.Font = _fntCapVn;
-                    btn2.Font = _fntCapVn;
-                    btn3.Font = _fntCapVn;
-                    break;
-                }
+                return;
             }
+            _fntsLang = Array.ConvertAll(specs, s => new Font(s.Family, s.Size));
+            lblCaption.Font = _fntsLang[0];
+            lblMessage.Font = _fntsLang[1];
+            btn1.Font = _fntsLang[2];
+            btn2.Font = _fntsLang[2];
+            btn3.Font = _fntsLang[2];
         }
 
         // Set size
-        private void SetSize(MessageBoxButtons btns)
+        private void SetSize(int btnCount)
         {
             var w = lblMessage.Width + picIcon.Width + pnlBody.Padding.Left;
-            var min = 0;
-            switch (btns)
-            {
-                case MessageBoxButtons.OK:
-                {
-                    min = btn1.Width + 10 * 2 + +Padding.Left + Padding.Right;
-                    break;
-                }
-                case OKCancel:
-                case RetryCancel:
-                case YesNo:
-                {
-                    min = btn1.Width * 2 + 10 * 3 + +Padding.Left + Padding.Right;
-                    break;
-                }
-                default:
-                {
-                    min = btn1.Width * 3 + 10 * 4 + +Padding.Left + Padding.Right;
-                    break;
-                }
-            }
-            w = Max(w, min, lblCaption.Width + btnClose.Width + Padding.Left + Padding.Right);
+            var min = btn1.Width * btnCount + BTN_MARGIN * (btnCount + 1) + Padding.Left + Padding.Right;
+            w = Math.Max(Math.Max(w, min), lblCaption.Width + btnClose.Width + Padding.Left + Padding.Right);
             if (lblMessage.Height > 17 + lblMessage.Padding.Top + lblMessage.Padding.Bottom)
             {
+                // multi-line: the side padding goes, the wrap width stays (same line breaks, so the text still fits the width above)
+                lblMessage.MaximumSize = new Size(Math.Max(1, lblMessage.MaximumSize.Width - lblMessage.Padding.Horizontal), 0);
                 lblMessage.Padding = new Padding(0, 0, 0, 15);
             }
             var h = pnlHeader.Height + lblMessage.Height + pnlFooter.Height + pnlBody.Padding.Top + Padding.Top + Padding.Bottom;
             Size = new Size(w, h);
         }
 
-        // Set btns
-        private void SetBtns(MessageBoxButtons btns, MessageBoxDefaultButton btnDflt)
+        // Set btns: the buttons of the set centered in the footer, then the default (Enter), Esc and close buttons
+        private void SetBtns(DialogResult[] results, MessageBoxButtons btns, MessageBoxDefaultButton btnDflt, MsgBoxLang lang, bool isStrictClose)
         {
+            var slots = new[] { btn1, btn2, btn3 };
+            var n = results.Length;
+            var gap = n == 2 ? BTN_MARGIN * 2 : BTN_MARGIN;
             var xCtr = (pnlFooter.Width - btn1.Width) / 2;
             var yCtr = (pnlFooter.Height - btn1.Height) / 2;
-            switch (btns)
+            var x = xCtr - (n - 1) * (btn1.Width + gap) / 2;
+            for (var i = 0; i < n; i++)
             {
-                case MessageBoxButtons.OK:
-                {
-                    // ok btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr, yCtr);
-                    btn1.Text = "OK";
-                    btn1.DialogResult = DialogResult.OK; // set dialogResult
-                    // set default btn
-                    SetDefaultBtn(btnDflt);
-                    break;
-                }
-                case OKCancel:
-                {
-                    // ok btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width / 2 - 10, yCtr);
-                    btn1.Text = "OK";
-                    btn1.DialogResult = DialogResult.OK; // set dialogResult
-                    // cancel btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr + btn2.Width / 2 + 10, yCtr);
-                    btn2.Text = "Cancel";
-                    btn2.DialogResult = Cancel; // set dialogResult
-                    btn2.BackColor = DimGray;
-                    // set default btn
-                    if (btnDflt != Button3) // there are only 2 btns, so the default btn cannot be btn3
-                    {
-                        SetDefaultBtn(btnDflt);
-                    }
-                    else
-                    {
-                        SetDefaultBtn(Button1);
-                    }
-                    break;
-                }
-                case RetryCancel:
-                {
-                    // retry btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width / 2 - 10, yCtr);
-                    btn1.Text = "Retry";
-                    btn1.DialogResult = Retry; // set dialogResult
-                    // cancel btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr + btn2.Width / 2 + 10, yCtr);
-                    btn2.Text = "Cancel";
-                    btn2.DialogResult = Cancel; // set dialogResult
-                    btn2.BackColor = DimGray;
-                    // set default btn
-                    if (btnDflt != Button3) // there are only 2 btns, so the default btn cannot be btn3
-                    {
-                        SetDefaultBtn(btnDflt);
-                    }
-                    else
-                    {
-                        SetDefaultBtn(Button1);
-                    }
-                    break;
-                }
-                case YesNo:
-                {
-                    // yes btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width / 2 - 10, yCtr);
-                    btn1.Text = "Yes";
-                    btn1.DialogResult = Yes; //set dialogResult
-                    // no btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr + btn2.Width / 2 + 10, yCtr);
-                    btn2.Text = "No";
-                    btn2.DialogResult = No; //set dialogResult
-                    btn2.BackColor = IndianRed;
-                    // set default btn
-                    if (btnDflt != Button3) // there are only 2 btns, so the default btn cannot be btn3
-                    {
-                        SetDefaultBtn(btnDflt);
-                    }
-                    else
-                    {
-                        SetDefaultBtn(Button1);
-                    }
-                    break;
-                }
-                case YesNoCancel:
-                {
-                    // yes btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width - 10, yCtr);
-                    btn1.Text = "Yes";
-                    btn1.DialogResult = Yes; // set dialogResult
-                    // no btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr, yCtr);
-                    btn2.Text = "No";
-                    btn2.DialogResult = No; // set dialogResult
-                    btn2.BackColor = IndianRed;
-                    // cancel btn
-                    btn3.Visible = true;
-                    btn3.Location = new Point(xCtr + btn2.Width + 10, yCtr);
-                    btn3.Text = "Cancel";
-                    btn3.DialogResult = Cancel; // set dialogResult
-                    btn3.BackColor = DimGray;
-                    // set default btn
-                    SetDefaultBtn(btnDflt);
-                    break;
-                }
-                case AbortRetryIgnore:
-                {
-                    // abort btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width - 10, yCtr);
-                    btn1.Text = "Abort";
-                    btn1.DialogResult = Abort; // set dialogResult
-                    btn1.BackColor = Goldenrod;
-                    // retry btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr, yCtr);
-                    btn2.Text = "Retry";
-                    btn2.DialogResult = Retry; // set dialogResult
-                    // ignore btn
-                    btn3.Visible = true;
-                    btn3.Location = new Point(xCtr + btn2.Width + 10, yCtr);
-                    btn3.Text = "Ignore";
-                    btn3.DialogResult = Ignore; // set dialogResult
-                    btn3.BackColor = IndianRed;
-                    // set default btn
-                    SetDefaultBtn(btnDflt);
-                    break;
-                }
+                slots[i].Visible = true;
+                slots[i].Location = new Point(x + i * (btn1.Width + gap), yCtr);
+                slots[i].Text = GetMsgBoxBtnText(lang, btns, results[i]);
+                slots[i].DialogResult = results[i];
+                slots[i].BackColor = GetBtnColor(results[i]);
+            }
+            // default btn: a requested btn that the box does not show falls back to btn 1
+            var iDflt = (int)btnDflt >> 8;
+            var dflt = slots[iDflt >= 0 && iDflt < n ? iDflt : 0];
+            MarkBtn(dflt);
+            AcceptButton = dflt;
+            ActiveControl = dflt;
+            // Esc: the Cancel btn, else the OK btn of an OK-only box, else none (Windows message box rule)
+            var iCancel = Array.IndexOf(results, Cancel);
+            CancelButton = iCancel >= 0 ? slots[iCancel] : btns == MessageBoxButtons.OK ? btn1 : null;
+            // close btn: Cancel (1.0), or strictly the Esc btn's result and hidden without one
+            if (isStrictClose)
+            {
+                btnClose.DialogResult = CancelButton?.DialogResult ?? DialogResult.None;
+                btnClose.Visible = CancelButton != null;
             }
         }
 
-        // Set btns Vietnamese
-        private void SetBtnsVn(MessageBoxButtons btns, MessageBoxDefaultButton btnDflt)
+        // Mark btn: a white border on btn, none on the other btns
+        private void MarkBtn(object btn)
         {
-            var xCtr = (pnlFooter.Width - btn1.Width) / 2;
-            var yCtr = (pnlFooter.Height - btn1.Height) / 2;
-            switch (btns)
+            foreach (var slot in new[] { btn1, btn2, btn3 })
             {
-                case MessageBoxButtons.OK:
-                {
-                    // ok btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr, yCtr);
-                    btn1.Text = "Đóng";
-                    btn1.DialogResult = DialogResult.OK; //set dialogResult
-                    // set default btn
-                    SetDefaultBtn(btnDflt);
-                    break;
-                }
-                case OKCancel:
-                {
-                    // ok btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width / 2 - 10, yCtr);
-                    btn1.Text = "Xong";
-                    btn1.DialogResult = DialogResult.OK; // set dialogResult
-                    // cancel btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr + btn2.Width / 2 + 10, yCtr);
-                    btn2.Text = "Hủy";
-                    btn2.DialogResult = Cancel; // set dialogResult
-                    btn2.BackColor = DimGray;
-                    // set default btn
-                    if (btnDflt != Button3) // there are only 2 btns, so the default btn cannot be btn3
-                    {
-                        SetDefaultBtn(btnDflt);
-                    }
-                    else
-                    {
-                        SetDefaultBtn(Button1);
-                    }
-                    break;
-                }
-                case RetryCancel:
-                {
-                    // retry btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width / 2 - 10, yCtr);
-                    btn1.Text = "Thử lại";
-                    btn1.DialogResult = Retry; // set dialogResult
-                    // cancel btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr + btn2.Width / 2 + 10, yCtr);
-                    btn2.Text = "Hủy";
-                    btn2.DialogResult = Cancel; // set dialogResult
-                    btn2.BackColor = DimGray;
-                    // set default btn
-                    if (btnDflt != Button3) // there are only 2 btns, so the default btn cannot be btn3
-                    {
-                        SetDefaultBtn(btnDflt);
-                    }
-                    else
-                    {
-                        SetDefaultBtn(Button1);
-                    }
-                    break;
-                }
-                case YesNo:
-                {
-                    // yes btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width / 2 - 10, yCtr);
-                    btn1.Text = "Vâng";
-                    btn1.DialogResult = Yes; // set dialogResult
-                    // no btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr + btn2.Width / 2 + 10, yCtr);
-                    btn2.Text = "Không";
-                    btn2.DialogResult = No; // set dialogResult
-                    btn2.BackColor = IndianRed;
-                    // set default btn
-                    if (btnDflt != Button3) // there are only 2 btns, so the default btn cannot be btn3
-                    {
-                        SetDefaultBtn(btnDflt);
-                    }
-                    else
-                    {
-                        SetDefaultBtn(Button1);
-                    }
-                    break;
-                }
-                case YesNoCancel:
-                {
-                    // yes btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width - 10, yCtr);
-                    btn1.Text = "Vâng";
-                    btn1.DialogResult = Yes; // set dialogResult
-                    // no btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr, yCtr);
-                    btn2.Text = "Không";
-                    btn2.DialogResult = No; // set dialogResult
-                    btn2.BackColor = IndianRed;
-                    // cancel btn
-                    btn3.Visible = true;
-                    btn3.Location = new Point(xCtr + btn2.Width + 10, yCtr);
-                    btn3.Text = "Hủy";
-                    btn3.DialogResult = Cancel; // set dialogResult
-                    btn3.BackColor = DimGray;
-                    // set default btn
-                    SetDefaultBtn(btnDflt);
-                    break;
-                }
-                case AbortRetryIgnore:
-                {
-                    // abort btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width - 10, yCtr);
-                    btn1.Text = "Hủy Bỏ";
-                    btn1.DialogResult = Abort; // set dialogResult
-                    btn1.BackColor = Goldenrod;
-                    // retry btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr, yCtr);
-                    btn2.Text = "Thử lại";
-                    btn2.DialogResult = Retry; // set dialogResult
-                    // ignore Button
-                    btn3.Visible = true;
-                    btn3.Location = new Point(xCtr + btn2.Width + 10, yCtr);
-                    btn3.Text = "Bỏ qua";
-                    btn3.DialogResult = Ignore; // set dialogResult
-                    btn3.BackColor = IndianRed;
-                    // set default btn
-                    SetDefaultBtn(btnDflt);
-                    break;
-                }
+                slot.FlatAppearance.BorderColor = White;
+                slot.FlatAppearance.BorderSize = slot == btn ? DFLT_BORDER : 0;
             }
         }
 
-        // Set btns Japanese
-        private void SetBtnsJp(MessageBoxButtons btns, MessageBoxDefaultButton btnDflt)
+        // Get btn color
+        private static Color GetBtnColor(DialogResult res) => res switch
         {
-            var xCtr = (pnlFooter.Width - btn1.Width) / 2;
-            var yCtr = (pnlFooter.Height - btn1.Height) / 2;
-            switch (btns)
-            {
-                case MessageBoxButtons.OK:
-                {
-                    // ok btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr, yCtr);
-                    btn1.Text = "オーケー";
-                    btn1.DialogResult = DialogResult.OK; // set dialogResult
-                    // set default btn
-                    SetDefaultBtn(btnDflt);
-                    break;
-                }
-                case OKCancel:
-                {
-                    // ok btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width / 2 - 10, yCtr);
-                    btn1.Text = "オーケー";
-                    btn1.DialogResult = DialogResult.OK; // set dialogResult
-                    // cancel btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr + btn2.Width / 2 + 10, yCtr);
-                    btn2.Text = "キャンセル";
-                    btn2.DialogResult = Cancel; // set dialogResult
-                    btn2.BackColor = DimGray;
-                    // set default btn
-                    if (btnDflt != Button3) // there are only 2 btns, so the default btn cannot be btn3
-                    {
-                        SetDefaultBtn(btnDflt);
-                    }
-                    else
-                    {
-                        SetDefaultBtn(Button1);
-                    }
-                    break;
-                }
-                case RetryCancel:
-                {
-                    // retry btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width / 2 - 10, yCtr);
-                    btn1.Text = "リトライ";
-                    btn1.DialogResult = Retry; // set dialogResult
-                    // cancel btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr + btn2.Width / 2 + 10, yCtr);
-                    btn2.Text = "キャンセル";
-                    btn2.DialogResult = Cancel; // set dialogResult
-                    btn2.BackColor = DimGray;
-                    // set default btn
-                    if (btnDflt != Button3) // there are only 2 btns, so the default btn cannot be btn3
-                    {
-                        SetDefaultBtn(btnDflt);
-                    }
-                    else
-                    {
-                        SetDefaultBtn(Button1);
-                    }
-                    break;
-                }
-                case YesNo:
-                {
-                    // yes btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width / 2 - 10, yCtr);
-                    btn1.Text = "はい";
-                    btn1.DialogResult = Yes; // set dialogResult
-                    // no btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr + btn2.Width / 2 + 10, yCtr);
-                    btn2.Text = "いいえ";
-                    btn2.DialogResult = No; // set dialogResult
-                    btn2.BackColor = IndianRed;
-                    // set default btn
-                    if (btnDflt != Button3) // there are only 2 btns, so the default btn cannot be btn3
-                    {
-                        SetDefaultBtn(btnDflt);
-                    }
-                    else
-                    {
-                        SetDefaultBtn(Button1);
-                    }
-                    break;
-                }
-                case YesNoCancel:
-                {
-                    // yes btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width - 10, yCtr);
-                    btn1.Text = "はい";
-                    btn1.DialogResult = Yes; // set dialogResult
-                    // no btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr, yCtr);
-                    btn2.Text = "いいえ";
-                    btn2.DialogResult = No; // set dialogResult
-                    btn2.BackColor = IndianRed;
-                    // cancel btn
-                    btn3.Visible = true;
-                    btn3.Location = new Point(xCtr + btn2.Width + 10, yCtr);
-                    btn3.Text = "キャンセル";
-                    btn3.DialogResult = Cancel; // set dialogResult
-                    btn3.BackColor = DimGray;
-                    // set default btn
-                    SetDefaultBtn(btnDflt);
-                    break;
-                }
-                case AbortRetryIgnore:
-                {
-                    // abort btn
-                    btn1.Visible = true;
-                    btn1.Location = new Point(xCtr - btn1.Width - 10, yCtr);
-                    btn1.Text = "アボート";
-                    btn1.DialogResult = Abort; // set dialogResult
-                    btn1.BackColor = Goldenrod;
-                    // retry btn
-                    btn2.Visible = true;
-                    btn2.Location = new Point(xCtr, yCtr);
-                    btn2.Text = "リトライ";
-                    btn2.DialogResult = Retry; // set dialogResult
-                    // ignore btn
-                    btn3.Visible = true;
-                    btn3.Location = new Point(xCtr + btn2.Width + 10, yCtr);
-                    btn3.Text = "無視";
-                    btn3.DialogResult = Ignore; // set dialogResult
-                    btn3.BackColor = IndianRed;
-                    // set default btn
-                    SetDefaultBtn(btnDflt);
-                    break;
-                }
-            }
-        }
-
-        // Set default btn
-        private void SetDefaultBtn(MessageBoxDefaultButton btnDflt)
-        {
-            switch (btnDflt)
-            {
-                case Button1:
-                {
-                    // focus btn 1
-                    btn1.Select();
-                    btn1.ForeColor = White;
-                    btn1.Font = new Font(btn1.Font, Underline);
-                    break;
-                }
-                case Button2:
-                {
-                    // focus btn 2
-                    btn2.Select();
-                    btn2.ForeColor = White;
-                    btn2.Font = new Font(btn2.Font, Underline);
-                    break;
-                }
-                case Button3:
-                {
-                    // focus btn 3
-                    btn3.Select();
-                    btn3.ForeColor = White;
-                    btn3.Font = new Font(btn3.Font, Underline);
-                    break;
-                }
-            }
-        }
+            Cancel => DimGray,
+            No or Ignore => IndianRed,
+            Abort => Goldenrod,
+            _ => SeaGreen
+        };
 
         // Set icon
         private void SetIcon(MessageBoxIcon icon)
@@ -796,7 +291,7 @@ namespace YANF.Screen
                 case Error:
                 {
                     // error
-                    picIcon.Image = pMessError;
+                    SetImage(pMessError);
                     PrimaryColor = FromArgb(224, 79, 95);
                     btnClose.FlatAppearance.MouseOverBackColor = Crimson;
                     break;
@@ -804,32 +299,39 @@ namespace YANF.Screen
                 case Information:
                 {
                     // information
-                    picIcon.Image = pMessInfomation;
+                    SetImage(pMessInfomation);
                     PrimaryColor = FromArgb(38, 191, 166);
                     break;
                 }
                 case Question:
                 {
                     // question
-                    picIcon.Image = pMessQuestion;
+                    SetImage(pMessQuestion);
                     PrimaryColor = FromArgb(10, 119, 232);
                     break;
                 }
                 case Warning:
                 {
                     // warning
-                    picIcon.Image = pMessWarning;
+                    SetImage(pMessWarning);
                     PrimaryColor = FromArgb(255, 140, 0);
                     break;
                 }
                 case MessageBoxIcon.None:
                 {
-                    // none
-                    picIcon.Image = pMessChat;
+                    // none: the designer's chat image is already shown
                     PrimaryColor = CornflowerBlue;
                     break;
                 }
             }
+        }
+
+        // Set image (each resource read is a new bitmap that only this box uses)
+        private void SetImage(Image img)
+        {
+            var old = picIcon.Image;
+            picIcon.Image = img;
+            old?.Dispose();
         }
         #endregion
     }

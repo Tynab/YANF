@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using YANF.Control;
 using YANF.Script;
 using static YANF.Demo.Properties.Resources;
-using static YANF.Script.YANEvent;
 
 namespace YANF.Demo
 {
     public partial class Demo2 : Form
     {
         #region Fields
+        private const int FADE_MS = 250;
         // btn images, loaded once (every Resources getter call allocates a new Bitmap)
         // normal images come from InitializeComponent, hover images are loaded here
         private readonly Bitmap _pBI;
@@ -23,60 +22,32 @@ namespace YANF.Demo
         public Demo2()
         {
             InitializeComponent();
+            // fade in when shown and out when closed, without blocking the UI thread
+            this.EnableFade(FADE_MS, FADE_MS);
             // reuse the normal images the designer already loaded
             _pBI = (Bitmap)btnBack.BackgroundImage;
             _pQI = (Bitmap)btnQuit.BackgroundImage;
             // dispose cached images with frm
             Disposed += Demo2_Disposed;
-            // move frm by pnl
-            foreach (var pnl in this.GetAllObjs(typeof(Panel)))
+            // move frm by pnl (yangradpnl too: GetAllObjs<T> also finds the types derived from T)
+            foreach (var pnl in this.GetAllObjs<Panel>())
             {
-                pnl.MouseDown += MoveFrm_MouseDown;
-                pnl.MouseMove += MoveFrm_MouseMove;
-                pnl.MouseUp += MoveFrm_MouseUp;
+                pnl.EnableDrag();
             }
-            // move frm by pic
-            foreach (var pic in this.GetAllObjs(typeof(PictureBox)))
+            // move frm by pic (yancirpic too)
+            foreach (var pic in this.GetAllObjs<PictureBox>())
             {
-                pic.MouseDown += MoveFrm_MouseDown;
-                pic.MouseMove += MoveFrm_MouseMove;
-                pic.MouseUp += MoveFrm_MouseUp;
+                pic.EnableDrag();
             }
             // move frm by lbl
-            foreach (var lbl in this.GetAllObjs(typeof(Label)))
+            foreach (var lbl in this.GetAllObjs<Label>())
             {
-                // without yanddl
-                if (lbl.Parent is not YANDdl)
-                {
-                    lbl.MouseDown += MoveFrm_MouseDown;
-                    lbl.MouseMove += MoveFrm_MouseMove;
-                    lbl.MouseUp += MoveFrm_MouseUp;
-                }
-            }
-            // move frm by yangradpnl
-            foreach (var pnl in this.GetAllObjs(typeof(YANGradPnl)))
-            {
-                pnl.MouseDown += MoveFrm_MouseDown;
-                pnl.MouseMove += MoveFrm_MouseMove;
-                pnl.MouseUp += MoveFrm_MouseUp;
-            }
-            // move frm by yancirpic
-            foreach (var pic in this.GetAllObjs(typeof(YANCirPic)))
-            {
-                pic.MouseDown += MoveFrm_MouseDown;
-                pic.MouseMove += MoveFrm_MouseMove;
-                pic.MouseUp += MoveFrm_MouseUp;
+                lbl.EnableDrag();
             }
         }
         #endregion
 
         #region Events
-        // Shown frm
-        private void Demo2_Shown(object sender, EventArgs e) => this.FadeIn();
-
-        // Closing frm
-        private void Demo2_FormClosing(object sender, FormClosingEventArgs e) => this.FadeOut();
-
         // Disposed frm (after its controls, so no button still paints the images)
         private void Demo2_Disposed(object sender, EventArgs e)
         {

@@ -12,6 +12,7 @@ using static YANF.Properties.Resources;
 
 namespace YANF.Control
 {
+    [ToolboxBitmap(typeof(DateTimePicker))]
     public class YANDp : DateTimePicker
     {
         #region Fields
@@ -32,7 +33,6 @@ namespace YANF.Control
             // paint everything in WM_PAINT through a back buffer
             SetStyle(UserPaint | AllPaintingInWmPaint | OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             // property
-            TabStop = false;
             MinimumSize = new Size(0, 35);
             Font = new Font(Font.Name, 10f);
         }
@@ -40,6 +40,7 @@ namespace YANF.Control
 
         #region Properties
         [Category("YAN Appearance"), Description("The background color of the component.")]
+        [DefaultValue(typeof(Color), "MediumSlateBlue")]
         public Color SkinColor
         {
             get => _skinColor;
@@ -55,6 +56,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("The foreground color of this component, which is used to display text.")]
+        [DefaultValue(typeof(Color), "White")]
         public Color TextColor
         {
             get => _textColor;
@@ -69,6 +71,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("This property specifies the color of the border around the control.")]
+        [DefaultValue(typeof(Color), "PaleVioletRed")]
         public Color BorderColor
         {
             get => _borderColor;
@@ -83,6 +86,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("This property specifies the size, in pixels, of the border around the control.")]
+        [DefaultValue(0)]
         public int BorderSize
         {
             get => _borderSize;
@@ -116,7 +120,23 @@ namespace YANF.Control
         protected override void OnKeyPress(KeyPressEventArgs e)
         {
             base.OnKeyPress(e);
+            // typed characters would edit the day, month or year field that the native control has selected, which UserPaint
+            // never shows: they are ignored (the arrow keys and the drop-down calendar, F4 or ALT+DOWN, still work)
             e.Handled = true;
+        }
+
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            // show the focus cue
+            Invalidate();
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            // hide the focus cue
+            Invalidate();
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -127,7 +147,7 @@ namespace YANF.Control
             }
             var graphics = e.Graphics;
             var borderSize = GetBorderSize();
-            using var penBorder = new Pen(_borderColor, borderSize);
+            using var penBorder = new Pen(GetBorderColor(), borderSize);
             using var skinBrush = new SolidBrush(_skinColor);
             using var openIcBrush = new SolidBrush(FromArgb(50, 64, 64, 64));
             using var textBrush = new SolidBrush(_textColor);
@@ -151,6 +171,11 @@ namespace YANF.Control
             }
             // draw icon
             graphics.DrawImage(_calIc, Width - _calIc.Width - 9, (Height - _calIc.Height) / 2);
+            // draw the keyboard focus cue inside the border (Windows hides it until the keyboard is used)
+            if (Focused && ShowFocusCues)
+            {
+                DrawFocusCue(graphics, Rectangle.Inflate(ClientRectangle, -(borderSize + 2), -(borderSize + 2)));
+            }
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -212,6 +237,26 @@ namespace YANF.Control
 
         // Get the border size that fits the current size (the configured value is never changed)
         private int GetBorderSize() => Max(0, Min(_borderSize, Min(Width, Height) / 2));
+
+        // Get the painted border color: the system frame color in high contrast mode (the configured value is never changed)
+        private Color GetBorderColor() => SystemInformation.HighContrast ? SystemColors.WindowFrame : _borderColor;
+
+        // Draw the keyboard focus cue (with the system colors in high contrast mode)
+        private void DrawFocusCue(Graphics graphics, Rectangle rectCue)
+        {
+            if (rectCue.Width <= 0 || rectCue.Height <= 0)
+            {
+                return;
+            }
+            if (SystemInformation.HighContrast)
+            {
+                ControlPaint.DrawFocusRectangle(graphics, rectCue);
+            }
+            else
+            {
+                ControlPaint.DrawFocusRectangle(graphics, rectCue, _textColor, _skinColor);
+            }
+        }
         #endregion
     }
 }

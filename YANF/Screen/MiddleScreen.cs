@@ -1,9 +1,10 @@
-﻿using System;
-
-namespace YANF.Screen
+﻿namespace YANF.Screen
 {
     public class MiddleScreen : AnonScreen
     {
-        public override void Frm_Close() => throw new NotImplementedException();
+        /// <summary>
+        /// Closes the form (1.0.x threw NotImplementedException here). The overlay screens override it to fade out, close and dispose.
+        /// </summary>
+        public override void Frm_Close() => Close();
     }
 }

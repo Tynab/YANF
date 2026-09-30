@@ -17,18 +17,27 @@ using static System.Windows.Forms.FlatStyle;
 
 namespace YANF.Control;
 
-[DefaultEvent("OnSelectedIndexChanged")]
+[DefaultBindingProperty(nameof(Text))]
+[DefaultEvent(nameof(SelectedIndexChanged))]
+[DefaultProperty(nameof(Items))]
+[LookupBindingProperties(nameof(DataSource), nameof(DisplayMember), nameof(ValueMember), nameof(SelectedValue))]
+[ToolboxBitmap(typeof(ComboBox))]
 public partial class YANDdl : UserControl
 {
     #region Fields
     private ContentAlignment _textAlign = MiddleLeft;
     private Color _backColor = WhiteSmoke;
     private Color _iconColor = MediumSlateBlue;
+    private Color _iconFocusColor = HotPink;
     private Color _listBackColor = FromArgb(230, 228, 245);
     private Color _listTextColor = DimGray;
     private Color _borderColor = MediumSlateBlue;
+    private Color _borderFocusColor = HotPink;
     private string _string;
+    private string _innerAccessibleName = null;
+    private string _innerAccessibleDescription = null;
     private int _borderSize = 1;
+    private bool _is_Focus = false;
     private readonly Label _lblText;
     private readonly Button _btnIc;
     private readonly ComboBox _cmbList;
@@ -48,6 +57,7 @@ public partial class YANDdl : UserControl
         _cmbList.Font = new Font(Font.Name, 10f);
         _cmbList.KeyUp += Ctrl_KeyUp;
         _cmbList.SelectedIndexChanged += Cmb_SelectedIndexChanged;
+        _cmbList.SelectedValueChanged += Cmb_SelectedValueChanged;
         _cmbList.TextChanged += Cmb_TextChanged;
         _cmbList.TextChanged += Cmb_StringChanged;
         // button icon
@@ -93,6 +103,7 @@ public partial class YANDdl : UserControl
 
     #region Properties
     [Category("YAN Appearance"), Description("Indicates how the text should be aligned for edit controls.")]
+    [DefaultValue(ContentAlignment.MiddleLeft)]
     public ContentAlignment TextAlign
     {
         get => _textAlign;
@@ -104,6 +115,7 @@ public partial class YANDdl : UserControl
     }
 
     [Category("YAN Appearance"), Description("The background color of the component.")]
+    [DefaultValue(typeof(Color), "WhiteSmoke")]
     public new Color BackColor
     {
         get => _backColor;
@@ -116,6 +128,7 @@ public partial class YANDdl : UserControl
     }
 
     [Category("YAN Appearance"), Description("The color of the icon.")]
+    [DefaultValue(typeof(Color), "MediumSlateBlue")]
     public Color IconColor
     {
         get => _iconColor;
@@ -126,7 +139,26 @@ public partial class YANDdl : UserControl
         }
     }
 
+    /// <summary>
+    /// Gets or sets the color of the icon while the control has the focus. <see cref="Color.Empty"/> or a transparent color keeps <see cref="IconColor"/>.
+    /// </summary>
+    [Category("YAN Appearance"), Description("The color of the icon when the control has the focus.")]
+    [DefaultValue(typeof(Color), "HotPink")]
+    public Color IconFocusColor
+    {
+        get => _iconFocusColor;
+        set
+        {
+            if (_iconFocusColor != value)
+            {
+                _iconFocusColor = value;
+                _btnIc.Invalidate();
+            }
+        }
+    }
+
     [Category("YAN Appearance"), Description("The background color of the list of the component.")]
+    [DefaultValue(typeof(Color), "230, 228, 245")]
     public Color ListBackColor
     {
         get => _listBackColor;
@@ -138,6 +170,7 @@ public partial class YANDdl : UserControl
     }
 
     [Category("YAN Appearance"), Description("The foreground color of this component, which is used to display list.")]
+    [DefaultValue(typeof(Color), "DimGray")]
     public Color ListTextColor
     {
         get => _listTextColor;
@@ -149,6 +182,7 @@ public partial class YANDdl : UserControl
     }
 
     [Category("YAN Appearance"), Description("This property specifies the color of the border around the control.")]
+    [DefaultValue(typeof(Color), "MediumSlateBlue")]
     public Color BorderColor
     {
         get => _borderColor;
@@ -159,7 +193,26 @@ public partial class YANDdl : UserControl
         }
     }
 
+    /// <summary>
+    /// Gets or sets the color of the border while the control has the focus. <see cref="Color.Empty"/> or a transparent color keeps <see cref="BorderColor"/>.
+    /// </summary>
+    [Category("YAN Appearance"), Description("This property specifies the color of the border around the control when the control has the focus.")]
+    [DefaultValue(typeof(Color), "HotPink")]
+    public Color BorderFocusColor
+    {
+        get => _borderFocusColor;
+        set
+        {
+            if (_borderFocusColor != value)
+            {
+                _borderFocusColor = value;
+                Invalidate();
+            }
+        }
+    }
+
     [Category("YAN Appearance"), Description("This property specifies the size, in pixels, of the border around the control.")]
+    [DefaultValue(1)]
     public int BorderSize
     {
         get => _borderSize;
@@ -171,8 +224,42 @@ public partial class YANDdl : UserControl
         }
     }
 
+    /// <summary>
+    /// Gets or sets the text shown by the control: the prompt (for example "Select...") while the combo box is blank, otherwise the
+    /// selected or typed text (see <see cref="Text"/> for the value). Setting it while the combo box is blank also sets the prompt that
+    /// is shown again when the text is cleared.
+    /// </summary>
     [Category("YAN Appearance"), Description("The text associated with the control.")]
-    public string String { get => _lblText.Text; set => _lblText.Text = value; }
+    [DefaultValue("Select...")]
+    [Localizable(true)]
+    public string String
+    {
+        get => _lblText.Text;
+        set
+        {
+            _lblText.Text = value;
+            // the label shows the prompt while the combo box is blank: remember it, so that clearing the text shows it again
+            if (string.IsNullOrWhiteSpace(_cmbList.Text))
+            {
+                _string = value;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the text of the combo box: the text of the selected item, or the typed text when <see cref="DropDownStyle"/> is
+    /// DropDown (with DropDownList, setting it selects the item with that text). <see cref="TextChanged"/> is raised when it changes.
+    /// </summary>
+    /// <remarks>
+    /// This is the value of the control and it can be data-bound; it is never the prompt shown by <see cref="String"/>, so it is ""
+    /// until an item is selected or text is typed. It is not written by the designer.
+    /// </remarks>
+    [Category("YAN Data"), Description("The text of the combo box: the selected item or the typed text.")]
+    [Bindable(true)]
+    [Browsable(false)]
+    [DesignerSerializationVisibility(Hidden)]
+    [EditorBrowsable(Always)]
+    public override string Text { get => _cmbList.Text; set => _cmbList.Text = value; }
 
     [Category("YAN Appearance"), Description("Controls the appearance and functionality of the combo box.")]
     [DefaultValue(ComboBoxStyle.DropDown)]
@@ -202,7 +289,7 @@ public partial class YANDdl : UserControl
     [DefaultValue(null)]
     public object DataSource { get => _cmbList.DataSource; set => _cmbList.DataSource = value; }
 
-    [Category("YAN Appearance"), Description("The autocomplete custom source, which is a custom StringCollection used when the AutoCompleteSource is CustomSource.")]
+    [Category("YAN Behavior"), Description("The autocomplete custom source, which is a custom StringCollection used when the AutoCompleteSource is CustomSource.")]
     [Browsable(true)]
     [DesignerSerializationVisibility(Content)]
     [Editor("System.Windows.Forms.Design.ListControlStringCollectionEditor, System.Design, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a", typeof(UITypeEditor))]
@@ -210,26 +297,44 @@ public partial class YANDdl : UserControl
     [Localizable(true)]
     public AutoCompleteStringCollection AutoCompleteCustomSource { get => _cmbList.AutoCompleteCustomSource; set => _cmbList.AutoCompleteCustomSource = value; }
 
-    [Category("YAN Data"), Description("The source of complete strings used for automatic completion.")]
+    [Category("YAN Behavior"), Description("The source of complete strings used for automatic completion.")]
     [Browsable(true)]
     [DefaultValue(AutoCompleteSource.ListItems)]
     [EditorBrowsable(Always)]
     public AutoCompleteSource AutoCompleteSource { get => _cmbList.AutoCompleteSource; set => _cmbList.AutoCompleteSource = value; }
 
-    [Category("YAN Data"), Description("Indicates the text completion behavior of the combo box.")]
+    [Category("YAN Behavior"), Description("Indicates the text completion behavior of the combo box.")]
     [Browsable(true)]
     [DefaultValue(AutoCompleteMode.SuggestAppend)]
     [EditorBrowsable(Always)]
     public AutoCompleteMode AutoCompleteMode { get => _cmbList.AutoCompleteMode; set => _cmbList.AutoCompleteMode = value; }
 
+    [Category("YAN Data"), Description("The selected item of the combo box.")]
     [Bindable(true)]
     [Browsable(false)]
     [DesignerSerializationVisibility(Hidden)]
     public object SelectedItem { get => _cmbList.SelectedItem; set => _cmbList.SelectedItem = value; }
 
+    [Category("YAN Data"), Description("The index of the selected item of the combo box (-1 when nothing is selected).")]
     [Browsable(false)]
     [DesignerSerializationVisibility(Hidden)]
     public int SelectedIndex { get => _cmbList.SelectedIndex; set => _cmbList.SelectedIndex = value; }
+
+    /// <summary>
+    /// Gets or sets the value of the <see cref="ValueMember"/> property of the selected item, as for a ComboBox.
+    /// </summary>
+    /// <remarks>
+    /// The getter returns null when no <see cref="DataSource"/> is set (items added through <see cref="Items"/>) or nothing is
+    /// selected, and the selected item itself when a DataSource is set and <see cref="ValueMember"/> is empty. The setter selects the
+    /// item with that value (nothing is selected when no item has it); it does nothing when no DataSource is set, and throws
+    /// <see cref="InvalidOperationException"/> when a DataSource is set and ValueMember is empty, also when a Binding pushes the value.
+    /// </remarks>
+    [Category("YAN Data"), Description("The value of the member property specified by the ValueMember property for the selected item.")]
+    [Bindable(true)]
+    [Browsable(false)]
+    [DefaultValue(null)]
+    [DesignerSerializationVisibility(Hidden)]
+    public object SelectedValue { get => _cmbList.SelectedValue; set => _cmbList.SelectedValue = value; }
 
     [Category("YAN Data"), Description("Indicates the property to display for the items in this control.")]
     [DefaultValue("")]
@@ -243,14 +348,50 @@ public partial class YANDdl : UserControl
     public string ValueMember { get => _cmbList.ValueMember; set => _cmbList.ValueMember = value; }
 
     //event
+    /// <summary>
+    /// Occurs when the value of the <see cref="SelectedIndex"/> property changes. The sender is this control.
+    /// </summary>
     [Category("YAN Event"), Description("Occurs when the value of the SelectedIndex property changes.")]
+    public event EventHandler SelectedIndexChanged;
+
+    /// <summary>
+    /// Occurs when the value of the <see cref="SelectedValue"/> property changes. The sender is this control.
+    /// Raised by <see cref="OnSelectedValueChanged(EventArgs)"/>.
+    /// </summary>
+    [Category("YAN Event"), Description("Occurs when the value of the SelectedValue property changes.")]
+    public event EventHandler SelectedValueChanged;
+
+    /// <summary>
+    /// Occurs when the value of the <see cref="Text"/> property changes (an item is selected or text is typed). The sender is this
+    /// control; focus changes never raise it. Raised by <see cref="System.Windows.Forms.Control.OnTextChanged(EventArgs)"/>.
+    /// </summary>
+    [Category("YAN Event"), Description("Occurs when the text of the combo box changes.")]
+    [Browsable(true)]
+    [EditorBrowsable(Always)]
+    public new event EventHandler TextChanged { add => base.TextChanged += value; remove => base.TextChanged -= value; }
+
+    /// <summary>
+    /// Legacy name of <see cref="SelectedIndexChanged"/>, raised just before it with the inner combo box as the sender (1.0 behaviour).
+    /// Use <see cref="SelectedIndexChanged"/>.
+    /// </summary>
+    [Category("YAN Event"), Description("Occurs when the value of the SelectedIndex property changes (legacy, use SelectedIndexChanged).")]
+    [Browsable(false)]
+    [EditorBrowsable(Never)]
     public event EventHandler OnSelectedIndexChanged;
 
-    [Category("YAN Event"), Description("Event raised when the value of the Txt property is changed on Control.")]
+    /// <summary>
+    /// Legacy event raised with <see cref="TextChanged"/> (when the text of the combo box changes, not when <see cref="String"/>
+    /// changes), with the inner combo box as the sender (1.0 behaviour). Use <see cref="TextChanged"/>.
+    /// </summary>
+    [Category("YAN Event"), Description("Event raised when the text of the combo box changes (legacy, use TextChanged).")]
+    [Browsable(false)]
+    [EditorBrowsable(Never)]
     public event EventHandler StringChanged;
     #endregion
 
     #region Overridden
+    [Category("Appearance"), Description("The foreground color of this component, which is used to display text.")]
+    [DefaultValue(typeof(Color), "DimGray")]
     public override Color ForeColor
     {
         get => base.ForeColor;
@@ -261,6 +402,7 @@ public partial class YANDdl : UserControl
         }
     }
 
+    [Category("Appearance"), Description("The font used to display text in the control.")]
     public override Font Font
     {
         get => base.Font;
@@ -283,9 +425,72 @@ public partial class YANDdl : UserControl
         base.OnPaint(e);
         _lblText.TextAlign = _textAlign;
     }
+
+    /// <summary>
+    /// Paints the background, which shows as the border around the inner controls: with <see cref="BorderFocusColor"/> while the
+    /// control has the focus (<see cref="BorderColor"/> is not changed).
+    /// </summary>
+    /// <param name="e">The paint data.</param>
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+        var isHighlight = _is_Focus && _borderFocusColor.A > 0;
+        if (!isHighlight || _borderFocusColor.A < 255)
+        {
+            base.OnPaintBackground(e);
+        }
+        if (isHighlight)
+        {
+            using var brush = new SolidBrush(_borderFocusColor);
+            e.Graphics.FillRectangle(brush, ClientRectangle);
+        }
+    }
+
+    /// <summary>
+    /// Called when the control is first created: also gives the inner combo box the <see cref="System.Windows.Forms.Control.AccessibleName"/> and
+    /// <see cref="System.Windows.Forms.Control.AccessibleDescription"/> of this control (unless they were set on it directly), so that screen readers announce them.
+    /// </summary>
+    protected override void OnCreateControl()
+    {
+        base.OnCreateControl();
+        ForwardAccessibility();
+    }
     #endregion
 
     #region Methods
+    /// <summary>
+    /// Raises the <see cref="SelectedValueChanged"/> event with this control as the sender.
+    /// </summary>
+    /// <param name="e">The event data.</param>
+    protected virtual void OnSelectedValueChanged(EventArgs e) => SelectedValueChanged?.Invoke(this, e);
+
+    // Show the text of the combo box in the label; blank text shows the prompt, or nothing while the user edits it (DropDown style)
+    private void ShowComboText()
+    {
+        var text = _cmbList.Text;
+        _lblText.Text = !string.IsNullOrWhiteSpace(text) ? text : (_is_Focus && _cmbList.DropDownStyle != DropDownList ? null : _string);
+    }
+
+    // Track the focus and repaint the border and the icon, which are highlighted while the control has the focus
+    private void SetFocusHighlight(bool isFocus)
+    {
+        _is_Focus = isFocus;
+        Invalidate();
+        _btnIc.Invalidate();
+    }
+
+    // Copy AccessibleName and AccessibleDescription to the inner combo box (the control that screen readers announce), keeping a value set on it directly
+    private void ForwardAccessibility()
+    {
+        if (_cmbList.AccessibleName == _innerAccessibleName)
+        {
+            _cmbList.AccessibleName = _innerAccessibleName = AccessibleName;
+        }
+        if (_cmbList.AccessibleDescription == _innerAccessibleDescription)
+        {
+            _cmbList.AccessibleDescription = _innerAccessibleDescription = AccessibleDescription;
+        }
+    }
+
     // Adjust combo box dimension
     private void AdjustCmbDimension()
     {

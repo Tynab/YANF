@@ -2,12 +2,14 @@
 using System.Drawing;
 using System.Windows.Forms;
 using static System.Drawing.Color;
+using static System.Drawing.Drawing2D.DashStyle;
 using static System.Drawing.Drawing2D.SmoothingMode;
 using static System.Windows.Forms.Cursors;
 using static YANF.Script.YANShape;
 
 namespace YANF.Control
 {
+    [ToolboxBitmap(typeof(CheckBox))]
     public class YANTg : CheckBox
     {
         #region Fields
@@ -21,13 +23,13 @@ namespace YANF.Control
         #region Constructors
         public YANTg()
         {
-            TabStop = false;
             MinimumSize = new Size(45, 22);
         }
         #endregion
 
         #region Properties
-        [Category("YAN Appearance"), Description("The background color of the control when the control set to on.")]
+        [Category("YAN Appearance"), Description("The color of the surface when the control is on.")]
+        [DefaultValue(typeof(Color), "MediumSlateBlue")]
         public Color OnBackColor
         {
             get => _onBackColor;
@@ -41,7 +43,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("The color of the control when the control set to on.")]
+        [Category("YAN Appearance"), Description("The color of the toggle when the control is on.")]
+        [DefaultValue(typeof(Color), "WhiteSmoke")]
         public Color OnToggleColor
         {
             get => _onToggleColor;
@@ -55,7 +58,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("The background color of the control when the control set to off.")]
+        [Category("YAN Appearance"), Description("The color of the surface when the control is off.")]
+        [DefaultValue(typeof(Color), "Gray")]
         public Color OffBackColor
         {
             get => _offBackColor;
@@ -69,7 +73,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("The color of the control when the control set to off.")]
+        [Category("YAN Appearance"), Description("The color of the toggle when the control is off.")]
+        [DefaultValue(typeof(Color), "Gainsboro")]
         public Color OffToggleColor
         {
             get => _offToggleColor;
@@ -83,7 +88,7 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("When this property is true, the background color of the control is set to solid.")]
+        [Category("YAN Appearance"), Description("When this property is true, the surface is filled with its color; otherwise only its outline is drawn.")]
         [DefaultValue(true)]
         public bool SolidStyle
         {
@@ -100,7 +105,8 @@ namespace YANF.Control
         #endregion
 
         #region Overridden
-        [Category("YAN Appearance")]
+        [Category("YAN Appearance"), Description("Not used: the toggle displays no text, and setting it has no effect.")]
+        [DefaultValue("")]
         public override string Text
         {
             get => base.Text;
@@ -137,6 +143,30 @@ namespace YANF.Control
             {
                 graphics.FillEllipse(brushToggle, Checked ? new Rectangle(Width - Height + 1, 2, tgSize, tgSize) : new Rectangle(2, 2, tgSize, tgSize));
             }
+            // draw the keyboard focus cue (Windows hides it until the keyboard is used); ButtonBase repaints on focus changes.
+            // It takes the toggle color in both styles: it contrasts with a solid surface, and on an outlined one it stands out
+            // from the outline that it runs along (the surface color would only make the outline look thicker)
+            if (Focused && ShowFocusCues)
+            {
+                DrawFocusCue(graphics, brushToggle.Color);
+            }
+        }
+        #endregion
+
+        #region Methods
+        // Draw the keyboard focus cue: a dotted outline inside the surface, between its edge and the toggle
+        private void DrawFocusCue(Graphics graphics, Color color)
+        {
+            // one pixel inside the edge of the surface and concentric with its ends; whole-pixel coordinates keep the one-pixel
+            // dotted line sharp (with anti-aliasing, GDI+ centres pixels on whole coordinates)
+            using var pathCue = RoundedRect(new RectangleF(1, 1, Width - 4, Height - 3), (Height - 3) / 2f);
+            if (pathCue == null)
+            {
+                return;
+            }
+            using var penCue = new Pen(SystemInformation.HighContrast ? SystemColors.ControlText : color);
+            penCue.DashStyle = Dot;
+            graphics.DrawPath(penCue, pathCue);
         }
         #endregion
     }

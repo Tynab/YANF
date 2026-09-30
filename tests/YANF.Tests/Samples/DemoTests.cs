@@ -3,11 +3,18 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using Xunit;
+using YANF.Control;
 using YANF.Demo;
+using YANF.Script;
+using static System.Windows.Forms.DialogResult;
+using static YANF.Tests.Samples.SampleKit;
+using static YANF.Tests.Services.LoaderKit;
 
 namespace YANF.Tests.Samples
 {
-    // Fixes in the sample application (samples/YANF.Demo), kept from the 1.0.3 smoke tests
+    using Control = System.Windows.Forms.Control;
+
+    // Fixes in the sample application (samples/YANF.Demo), kept from the 1.0.3 smoke tests, and its use of the 1.1 API
     public class DemoTests
     {
         // 1.0.2 counted whole years only, so the age was one too high before the birthday
@@ -94,6 +101,148 @@ namespace YANF.Tests.Samples
             }
             frm.Dispose();
             Assert.All(all, img => Assert.True(Gdi.IsDisposed(img), "images not disposed with the form"));
+        });
+
+        // 1.1: EnableFade instead of the blocking FadeIn/FadeOut calls in Shown and FormClosing. 1.0 designed the forms at opacity 0
+        // for FadeIn; they are designed opaque now (EnableFade makes them transparent until shown), so they also show without
+        // Windows animations
+        [Theory]
+        [InlineData(typeof(Demo1))]
+        [InlineData(typeof(Demo2))]
+        public void Forms_FadeInWhenShown_AndOutWhenClosed(Type type) => Run(() =>
+        {
+            try
+            {
+                YANDisplay.UIEffectsOverride = true;
+                using var frm = (Form)Activator.CreateInstance(type);
+                // transparent until shown, then faded in
+                Assert.Equal(0, frm.Opacity, 3);
+                frm.Show();
+                Assert.True(PumpUntil(() => frm.Opacity >= 1 - 1e-6), "did not fade in: " + frm.Opacity);
+                // the close waits for the fade-out
+                var closedOpacity = -1d;
+                frm.FormClosed += (_, _) => closedOpacity = frm.Opacity;
+                frm.Close();
+                Assert.False(frm.IsDisposed, "closed at once, without the fade-out");
+                Assert.True(PumpUntil(() => frm.IsDisposed), "never closed");
+                Assert.Equal(0, closedOpacity, 3);
+                // Windows animations off: shown at full opacity and closed at once
+                YANDisplay.UIEffectsOverride = false;
+                using var plain = (Form)Activator.CreateInstance(type);
+                plain.Show();
+                PumpFor(50);
+                Assert.Equal(1, plain.Opacity, 3);
+                plain.Close();
+                Assert.True(plain.IsDisposed, "not closed at once");
+            }
+            finally
+            {
+                YANDisplay.UIEffectsOverride = null;
+            }
+        });
+
+        // 1.1: EnableDrag instead of the three 1.0 MoveFrm handlers, on the same surfaces as in 1.0: panels and labels (Demo1), and
+        // pictures too (Demo2; GetAllObjs<T> also finds YANGradPnl and YANCirPic). The inner label of a YANDdl is left alone
+        [Theory]
+        [InlineData(typeof(Demo1), false)]
+        [InlineData(typeof(Demo2), true)]
+        public void Forms_DragByTheirPassiveSurfaces(Type type, bool isPicSurface) => Sta.Run(() =>
+        {
+            using var frm = (Form)Activator.CreateInstance(type);
+            var all = Descendants(frm).ToList();
+            var surfaces = all.Where(c => (c is Panel or Label || (isPicSurface && c is PictureBox)) && c.Parent is not YANDdl).ToList();
+            Assert.NotEmpty(surfaces);
+            foreach (var c in all)
+            {
+                var expected = surfaces.Contains(c) ? 1 : 0;
+                Assert.True(expected == YanEventHandlers(c, nameof(Control.MouseDown)), $"{c.Name} ({c.GetType().Name}) in {c.Parent.Name}: {YanEventHandlers(c, nameof(Control.MouseDown))} drag handler(s), expected {expected}");
+                Assert.Equal(0, YanEventHandlers(c, nameof(Control.MouseMove)) + YanEventHandlers(c, nameof(Control.MouseUp)));
+            }
+            if (frm is Demo2)
+            {
+                Assert.Contains(surfaces, c => c is YANGradPnl);
+                Assert.Contains(surfaces, c => c is YANCirPic);
+            }
+            else
+            {
+                Assert.Contains(all, c => c.Parent is YANDdl && c is Label);
+            }
+        });
+
+        // 1.1: the Save button is focusable and the AcceptButton, so ENTER in a field saves (the 1.0 buttons never took the focus)
+        [Fact]
+        public void Demo1_Enter_PressesTheFocusableSaveButton() => Sta.Run(ui =>
+        {
+            try
+            {
+                YANDisplay.UIEffectsOverride = false;
+                using var frm = new Demo1();
+                var save = Priv.Field<YANBtn>(frm, "btnSave");
+                Assert.Same(save, frm.AcceptButton);
+                Assert.True(save.Focusable, "not focusable");
+                Assert.True(save.TabStop, "TAB does not reach it");
+                frm.Show();
+                ui.Pump(3);
+                Priv.Field<YANTxt>(frm, "txtHT").Focus();
+                ui.Pump(3);
+                string caption = null;
+                using (var boxes = new BoxWatcher(box =>
+                {
+                    caption = Part(box, "lblCaption");
+                    Press(box, OK);
+                }))
+                {
+                    Assert.True((bool)Priv.Call(frm, "ProcessDialogKey", Keys.Enter), "ENTER was not handled");
+                    boxes.Check(1);
+                    Assert.Equal("完了！", boxes.Texts[0]);
+                }
+                Assert.Equal("情報", caption);
+            }
+            finally
+            {
+                YANDisplay.UIEffectsOverride = null;
+            }
+        });
+
+        // 1.1: the Exit box is built from YANMessageBoxOptions: English, owned by the form, and Cancel is its default button
+        [Fact]
+        public void Demo1_Exit_AsksWithAnEnglishBox_WhereEnterKeepsTheForm() => Sta.Run(ui =>
+        {
+            try
+            {
+                YANDisplay.UIEffectsOverride = false;
+                using var frm = new Demo1();
+                var exit = Priv.Field<YANBtn>(frm, "btnExit");
+                frm.Show();
+                ui.Pump(3);
+                // ENTER presses the default button: Cancel, the form stays
+                using (var boxes = new BoxWatcher(box =>
+                {
+                    Assert.Equal("WARNING", Part(box, "lblCaption"));
+                    Assert.Same(frm, box.Owner);
+                    Assert.Equal(new[] { "OK", "Cancel" }, Buttons(box).OrderBy(b => b.DialogResult).Select(b => b.Text));
+                    var dflt = Assert.IsAssignableFrom<Button>(box.AcceptButton);
+                    Assert.Equal(Cancel, dflt.DialogResult);
+                    dflt.PerformClick();
+                }))
+                {
+                    Priv.Call(frm, "BtnExit_Click", exit, EventArgs.Empty);
+                    boxes.Check(1);
+                    Assert.Equal("If you close this window, all data will be lost!", boxes.Texts[0]);
+                }
+                Assert.False(frm.IsDisposed, "closed although Cancel was pressed");
+                // OK closes it
+                using (var boxes = new BoxWatcher(box => Press(box, OK)))
+                {
+                    Priv.Call(frm, "BtnExit_Click", exit, EventArgs.Empty);
+                    boxes.Check(1);
+                }
+                Assert.True(frm.IsDisposed, "not closed after OK");
+            }
+            finally
+            {
+                YANDisplay.UIEffectsOverride = null;
+            }
         });
     }
 }

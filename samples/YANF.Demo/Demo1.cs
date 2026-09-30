@@ -7,10 +7,10 @@ using YANF.Script;
 using static System.DateTime;
 using static System.Drawing.Color;
 using static System.Windows.Forms.MessageBoxButtons;
+using static System.Windows.Forms.MessageBoxDefaultButton;
 using static System.Windows.Forms.MessageBoxIcon;
 using static YANF.Demo.Properties.Resources;
 using static YANF.Script.YANConstant.MsgBoxLang;
-using static YANF.Script.YANEvent;
 using Label = System.Windows.Forms.Label;
 
 namespace YANF.Demo
@@ -19,6 +19,7 @@ namespace YANF.Demo
     {
         #region Fields
         private const int _maxMenu = 6;
+        private const int FADE_MS = 250;
         private int _activeMenu = 1;
         // btn Exit images, loaded once (every Resources getter call allocates a new Bitmap)
         private readonly Bitmap _pXI = pXI;
@@ -29,40 +30,34 @@ namespace YANF.Demo
         public Demo1()
         {
             InitializeComponent();
+            // fade in when shown and out when closed, without blocking the UI thread
+            this.EnableFade(FADE_MS, FADE_MS);
             // dispose cached images with frm
             Disposed += Demo1_Disposed;
             // move frm by pnl
-            foreach (var pnl in this.GetAllObjs(typeof(Panel)))
+            foreach (var pnl in this.GetAllObjs<Panel>())
             {
-                pnl.MouseDown += MoveFrm_MouseDown;
-                pnl.MouseMove += MoveFrm_MouseMove;
-                pnl.MouseUp += MoveFrm_MouseUp;
+                pnl.EnableDrag();
             }
-            // move frm by lbl
-            foreach (var lbl in this.GetAllObjs(typeof(Label)))
+            // move frm by lbl, without the inner lbl of yanddl (its children are not walked)
+            foreach (var lbl in this.GetAllObjs<Label>(c => c is not YANDdl))
             {
-                // without yanddl
-                if (lbl.Parent is not YANDdl)
-                {
-                    lbl.MouseDown += MoveFrm_MouseDown;
-                    lbl.MouseMove += MoveFrm_MouseMove;
-                    lbl.MouseUp += MoveFrm_MouseUp;
-                }
+                lbl.EnableDrag();
             }
             // lbl highlight link by ddl
-            foreach (var ddl in this.GetAllObjs(typeof(YANDdl)))
+            foreach (var ddl in this.GetAllObjs<YANDdl>())
             {
                 ddl.Enter += DdlLinkLbl_Enter;
                 ddl.Leave += DdlLinkLbl_Leave;
             }
             // lbl highlight link by dp
-            foreach (var dp in this.GetAllObjs(typeof(YANDp)))
+            foreach (var dp in this.GetAllObjs<YANDp>())
             {
                 dp.Enter += DpLinkLbl_Enter;
                 dp.Leave += DpLinkLbl_Leave;
             }
             // lbl highlight link by txt
-            foreach (var txt in this.GetAllObjs(typeof(YANTxt)))
+            foreach (var txt in this.GetAllObjs<YANTxt>())
             {
                 txt.Enter += TxtLinkLbl_Enter;
                 txt.Leave += TxtLinkLbl_Leave;
@@ -89,12 +84,6 @@ namespace YANF.Demo
         #endregion
 
         #region Event
-        // Shown frm
-        private void Demo1_Shown(object sender, EventArgs e) => this.FadeIn();
-
-        // Closing frm
-        private void Demo1_FormClosing(object sender, FormClosingEventArgs e) => this.FadeOut();
-
         // Disposed frm (after its controls, so no button still paints the images)
         private void Demo1_Disposed(object sender, EventArgs e)
         {
@@ -142,10 +131,19 @@ namespace YANF.Demo
         // btn Back click
         private void BtnBack_Click(object sender, EventArgs e) => Close();
 
-        // btn Exit click
+        // btn Exit click (Cancel is the default button: ENTER keeps the data)
         private void BtnExit_Click(object sender, EventArgs e)
         {
-            if (YANMessageBox.Show("WARNING", "If you close this window, all data will be lost!", OKCancel, Warning) == DialogResult.OK)
+            var options = new YANMessageBoxOptions
+            {
+                Caption = "WARNING",
+                Text = "If you close this window, all data will be lost!",
+                Buttons = OKCancel,
+                Icon = Warning,
+                DefaultButton = Button2,
+                Language = ENG
+            };
+            if (YANMessageBox.Show(this, options) == DialogResult.OK)
             {
                 Close();
             }

@@ -9,6 +9,7 @@ using static System.Windows.Forms.TextRenderer;
 
 namespace YANF.Control
 {
+    [ToolboxBitmap(typeof(RadioButton))]
     public class YANRdo : RadioButton
     {
         #region Fields
@@ -16,12 +17,13 @@ namespace YANF.Control
         private Color _unCheckedColor = Gray;
         private Color _highlightText = DarkGoldenrod;
         private bool _is_Hover = false;
+        // '&' is drawn as it is, as 1.0 drew it with Graphics.DrawString (a mnemonic underline would change the text of existing forms)
+        private const TextFormatFlags TEXT_FLAGS = TextFormatFlags.NoPrefix;
         #endregion
 
         #region Constructors
         public YANRdo()
         {
-            TabStop = false;
             MinimumSize = new Size(0, 21);
             Padding = new Padding(10, 0, 0, 0);
             Font = new Font(Font.Name, 10f);
@@ -29,7 +31,8 @@ namespace YANF.Control
         #endregion
 
         #region Properties
-        [Category("YAN Appearance"), Description("The color of the control when the control set to checked.")]
+        [Category("YAN Appearance"), Description("The color of the circle when the control is checked.")]
+        [DefaultValue(typeof(Color), "MediumSlateBlue")]
         public Color CheckedColor
         {
             get => _checkedColor;
@@ -43,7 +46,8 @@ namespace YANF.Control
             }
         }
 
-        [Category("YAN Appearance"), Description("The color of the control when the control set to unchecked.")]
+        [Category("YAN Appearance"), Description("The color of the circle when the control is unchecked.")]
+        [DefaultValue(typeof(Color), "Gray")]
         public Color UnCheckedColor
         {
             get => _unCheckedColor;
@@ -58,6 +62,7 @@ namespace YANF.Control
         }
 
         [Category("YAN Appearance"), Description("The color of the text when the mouse pointer is over the control.")]
+        [DefaultValue(typeof(Color), "DarkGoldenrod")]
         public Color HighlightText
         {
             get => _highlightText;
@@ -99,7 +104,6 @@ namespace YANF.Control
             // drawing
             using var penBorder = new Pen(_checkedColor, 1.6f);
             using var brushRbCheck = new SolidBrush(_checkedColor);
-            using var brushText = new SolidBrush(_is_Hover ? _highlightText : ForeColor);
             // draw surface
             graphics.Clear(BackColor);
             // draw radio button
@@ -113,8 +117,18 @@ namespace YANF.Control
                 penBorder.Color = _unCheckedColor;
                 graphics.DrawEllipse(penBorder, rectRbBorder);
             }
-            // draw text
-            graphics.DrawString(Text, Font, brushText, rbBorderSize + 8, (Height - MeasureText(Text, Font).Height) / 2);
+            // draw text with TextRenderer, which also measures it, so the drawn text matches its measured size
+            var textSize = MeasureText(Text, Font, Size.Empty, TEXT_FLAGS);
+            var textLocation = new Point((int)rbBorderSize + 8, (Height - textSize.Height) / 2);
+            DrawText(graphics, Text, Font, textLocation, _is_Hover ? _highlightText : ForeColor, TEXT_FLAGS);
+            // draw the keyboard focus cue around the text, or the circle when there is no text (Windows hides it until the
+            // keyboard is used); ButtonBase repaints on focus changes
+            if (Focused && ShowFocusCues)
+            {
+                var rectCue = string.IsNullOrEmpty(Text) ? Rectangle.Round(RectangleF.Inflate(rectRbBorder, 1, 1)) : new Rectangle(textLocation, textSize);
+                rectCue.Intersect(ClientRectangle);
+                DrawFocusCue(graphics, rectCue);
+            }
         }
 
         protected override Cursor DefaultCursor => Hand;
@@ -132,6 +146,26 @@ namespace YANF.Control
             base.OnMouseLeave(e);
             _is_Hover = false;
             Invalidate();
+        }
+        #endregion
+
+        #region Methods
+        // Draw the keyboard focus cue (with the system colors in high contrast mode)
+        private void DrawFocusCue(Graphics graphics, Rectangle rectCue)
+        {
+            if (rectCue.Width <= 0 || rectCue.Height <= 0)
+            {
+                return;
+            }
+            graphics.SmoothingMode = None;
+            if (SystemInformation.HighContrast)
+            {
+                ControlPaint.DrawFocusRectangle(graphics, rectCue);
+            }
+            else
+            {
+                ControlPaint.DrawFocusRectangle(graphics, rectCue, ForeColor, BackColor);
+            }
         }
         #endregion
     }

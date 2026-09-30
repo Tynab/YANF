@@ -37,7 +37,7 @@ namespace YANF.Script.Service
         public void OffLoader() => Interlocked.Exchange(ref _host, null)?.Close();
 
         // Implementation UpdateValue
-        public void PublishValue(int percent, string capacity, int width) => Volatile.Read(ref _host)?.Publish(s => s.lblPercent.Text = $"{percent}%");
+        public void PublishValue(int percent, string capacity, int width) => Volatile.Read(ref _host)?.Publish(s => s.SetProgress(percent, capacity));
         #endregion
     }
 }

@@ -66,6 +66,42 @@ namespace YANF.Tests.Controls
             Assert.True(Gdi.Same(bmp.GetPixel(5, 17), Color.Red), "skin color not painted into the bitmap, got " + bmp.GetPixel(5, 17));
         });
 
+        // 1.0 forced TabStop = false: TAB now reaches a new date picker (1.0 designer files keep their explicit TabStop = false)
+        [Fact]
+        public void Tab_ReachesTheDatePicker() => Sta.Run(ui =>
+        {
+            var txt = new TextBox();
+            var legacy = new YANDp { TabStop = false };
+            var d = new YANDp();
+            var frm = ui.Show(txt, legacy, d);
+            Assert.True(d.TabStop);
+            Assert.True(frm.SelectNextControl(txt, true, true, true, true));
+            Assert.Same(d, frm.ActiveControl);
+        });
+
+        // Typed characters stay ignored: with UserPaint the native control never shows which day, month or year field they
+        // would edit (the arrow keys and the drop-down calendar keep working)
+        [Fact]
+        public void TypedCharacters_StillIgnored() => Sta.Run(() =>
+        {
+            using var d = new YANDp();
+            var e = new KeyPressEventArgs('5');
+            Priv.Call(d, "OnKeyPress", e);
+            Assert.True(e.Handled);
+        });
+
+        [Fact]
+        public void FocusCue_AllSizesAndBorders_Draw() => Sta.Run(ui =>
+        {
+            foreach (var size in Sweep.PaintSizes)
+            {
+                foreach (var border in new[] { 0, 1, 20, 1000 })
+                {
+                    ui.Case($"focused YANDp {size.Width}x{size.Height} b={border}", () => ui.DrawAndDispose(Sweep.Sized(new AllControlsTests.FocusedDp { BorderSize = border }, size)));
+                }
+            }
+        });
+
         private static RectangleF IconArea(YANDp d) => Priv.Field<RectangleF>(d, "_icBtnArea");
 
         private static int IconWidth(YANDp d) => (int)Priv.Call(d, "GetWIcBtn");

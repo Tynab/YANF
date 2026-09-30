@@ -14,6 +14,7 @@ using static YANF.Script.YANShape;
 
 namespace YANF.Control;
 
+[ToolboxBitmap(typeof(PictureBox))]
 public partial class YANCirPic : PictureBox
 {
     #region Fields
@@ -38,6 +39,7 @@ public partial class YANCirPic : PictureBox
 
     #region Properties
     [Category("YAN Appearance"), Description("The color of the top border gradient.")]
+    [DefaultValue(typeof(Color), "RoyalBlue")]
     public Color BorderTopColor
     {
         get => _borderTopColor;
@@ -52,6 +54,7 @@ public partial class YANCirPic : PictureBox
     }
 
     [Category("YAN Appearance"), Description("The color of the bottom border gradient.")]
+    [DefaultValue(typeof(Color), "HotPink")]
     public Color BorderBottomColor
     {
         get => _borderBottomColor;
@@ -66,6 +69,7 @@ public partial class YANCirPic : PictureBox
     }
 
     [Category("YAN Appearance"), Description("The color of the top gradient.")]
+    [DefaultValue(typeof(Color), "RoyalBlue")]
     public Color TopColor
     {
         get => _topColor;
@@ -80,6 +84,7 @@ public partial class YANCirPic : PictureBox
     }
 
     [Category("YAN Appearance"), Description("The color of the bottom gradient.")]
+    [DefaultValue(typeof(Color), "HotPink")]
     public Color BottomColor
     {
         get => _bottomColor;
@@ -93,7 +98,8 @@ public partial class YANCirPic : PictureBox
         }
     }
 
-    [Category("YAN Appearance"), Description("Sets and returns the line style used to draw the border line of the control.")]
+    [Category("YAN Appearance"), Description("The dash style of the border line of the control.")]
+    [DefaultValue(DashStyle.Solid)]
     public DashStyle BorderLineStyle
     {
         get => _borderLineStyle;
@@ -107,7 +113,8 @@ public partial class YANCirPic : PictureBox
         }
     }
 
-    [Category("YAN Appearance"), Description("Sets the style of element of border.")]
+    [Category("YAN Appearance"), Description("The cap style of the dashes of the border line.")]
+    [DefaultValue(DashCap.Flat)]
     public DashCap BorderCapStyle
     {
         get => _borderCapStyle;
@@ -121,7 +128,8 @@ public partial class YANCirPic : PictureBox
         }
     }
 
-    [Category("YAN Appearance"), Description("Angle of the gradient of border.")]
+    [Category("YAN Appearance"), Description("The angle, in degrees from 0 to 360, of the border gradient.")]
+    [DefaultValue(50f)]
     public float BorderAngle
     {
         get => _borderAngle;
@@ -135,7 +143,8 @@ public partial class YANCirPic : PictureBox
         }
     }
 
-    [Category("YAN Appearance"), Description("Angle of the gradient.")]
+    [Category("YAN Appearance"), Description("The angle, in degrees from 0 to 360, of the gradient.")]
+    [DefaultValue(0f)]
     public float Angle
     {
         get => _angle;
@@ -150,6 +159,7 @@ public partial class YANCirPic : PictureBox
     }
 
     [Category("YAN Appearance"), Description("This property specifies the size, in pixels, of the border around the control.")]
+    [DefaultValue(2)]
     public int BorderSize
     {
         get => _borderSize;
@@ -202,7 +212,8 @@ public partial class YANCirPic : PictureBox
         }
         var borderSize = GetBorderSize(rectContourSmooth);
         var rectBorder = Inflate(rectContourSmooth, -borderSize, -borderSize);
-        using var borderGColor = new LinearGradientBrush(rectBorder, _borderTopColor, _borderBottomColor, _borderAngle);
+        // the gradient border is drawn in the system frame color in high contrast mode
+        using Brush borderGColor = SystemInformation.HighContrast ? new SolidBrush(SystemColors.WindowFrame) : new LinearGradientBrush(rectBorder, _borderTopColor, _borderBottomColor, _borderAngle);
         using var penSmooth = new Pen(Parent?.BackColor ?? BackColor, borderSize > 0 ? borderSize * 3 : 1);
         using var penBorder = new Pen(borderGColor, borderSize);
         graphics.SmoothingMode = AntiAlias;
