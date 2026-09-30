@@ -1,7 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net481</TargetFramework>
+    <!-- net481: .NET Framework apps. net8.0-windows: .NET 8 and 9 apps, which would otherwise get the net481 DLL through
+         NuGet's .NET Framework fallback (warning NU1701). net10.0-windows: .NET 10 and later. The three builds have the
+         same public API. A library gets no NETSDK1138 warning for net8.0 after .NET 8 support ends (10 Nov 2026);
+         dropping it later is a package change that package validation reports (PKV006). -->
+    <TargetFrameworks>net481;net8.0-windows;net10.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <LangVersion>12</LangVersion>
     <RootNamespace>YANF</RootNamespace>
@@ -14,9 +18,9 @@
 
   <!-- Assembly and package metadata (formerly Properties/AssemblyInfo.cs and YANF.nuspec) -->
   <PropertyGroup>
-    <!-- 2.0: MainFrm, Demo1 and Demo2 moved out of the package to samples/YANF.Demo (breaking, see CHANGELOG.md;
-         the accepted differences from the 1.0.1 baseline are listed in CompatibilitySuppressions.xml) -->
-    <Version>2.0.0-alpha.1</Version>
+    <!-- 2.0.0: a major version, with the breaking changes listed in CHANGELOG.md; the accepted differences from the 1.0.1
+         baseline are listed in CompatibilitySuppressions.xml -->
+    <Version>2.0.0</Version>
     <Title>YANF</Title>
     <Product>YANF</Product>
     <Company>YAN</Company>
@@ -34,6 +38,8 @@
     <PackageReleaseNotes>See https://github.com/Tynab/YANF/blob/main/CHANGELOG.md</PackageReleaseNotes>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <!-- Source Link comes with the .NET SDK (8.0.100 and later), no package needed: the Microsoft.SourceLink.GitHub 8.0.0
+         package pulled in Microsoft.Build.Tasks.Git 8.0.0, which has a known vulnerability (NU1902) -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
@@ -56,12 +62,12 @@
     <InternalsVisibleTo Include="YANF.Tests" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- YANDdl names System.Design editors by string; reference it explicitly for the net481 build -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <!-- YANDdl and YANTxt name System.Design editors by string; reference it explicitly for the net481 build (the .NET
+         targets get System.Design and System.Windows.Forms.Design from the Windows Desktop framework reference) -->
     <Reference Include="System.Design" />
     <!-- Lets the .NET SDK build net481 without a targeting pack installed (CI, non-Windows); build-time only -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,27 +1,23 @@
 ﻿using System.Drawing;
-using System.Windows.Forms;
+using YANF.Script;
 
 namespace YANF.Screen
 {
-    public partial class YANWaitScreen : YANOverlayScreen
+    /// <summary>
+    /// Waiting animation without progress, covering the window it is shown over (<see cref="YANLoader"/> and the legacy YANWaitScrService).
+    /// </summary>
+    internal partial class YANWaitScreen : YANOverlayScreen
     {
         #region Constructors
-        public YANWaitScreen(Form pFrm, int corner, bool isTop) : this(pFrm.Bounds, corner, isTop)
-        {
-        }
-
-        // Bounds are passed as a snapshot so the screen can be built on its own thread without touching pFrm
+        // Legacy service: fixed placement from a snapshot of the caller's bounds (the screen is built on its own thread)
         internal YANWaitScreen(Rectangle bounds, int corner, bool isTop) : this() => PlaceAt(bounds, corner, isTop);
 
         // YANLoader: placed over its owner when shown
-        internal YANWaitScreen() => InitializeComponent();
-        #endregion
-
-        #region Overridden
-        /// <summary>
-        /// Fades the screen out, then closes and disposes it (see <see cref="YANOverlayScreen.Frm_Close"/>).
-        /// </summary>
-        public override void Frm_Close() => base.Frm_Close();
+        internal YANWaitScreen()
+        {
+            InitializeComponent();
+            this.ScaleToDpi();
+        }
         #endregion
     }
 }

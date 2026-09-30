@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using Xunit;
 using YANF.Control;
 using YANF.Demo;
+using YANF.Screen;
 using YANF.Script;
 using static System.Windows.Forms.DialogResult;
 using static YANF.Tests.Samples.SampleKit;
@@ -14,7 +15,7 @@ namespace YANF.Tests.Samples
 {
     using Control = System.Windows.Forms.Control;
 
-    // Fixes in the sample application (samples/YANF.Demo), kept from the 1.0.3 smoke tests, and its use of the 1.1 API
+    // Fixes in the sample application (samples/YANF.Demo), kept from the 1.0.3 smoke tests, and its use of the 1.1 and 2.0 API
     public class DemoTests
     {
         // 1.0.2 counted whole years only, so the age was one too high before the birthday
@@ -141,16 +142,14 @@ namespace YANF.Tests.Samples
             }
         });
 
-        // 1.1: EnableDrag instead of the three 1.0 MoveFrm handlers, on the same surfaces as in 1.0: panels and labels (Demo1), and
-        // pictures too (Demo2; GetAllObjs<T> also finds YANGradPnl and YANCirPic). The inner label of a YANDdl is left alone
-        [Theory]
-        [InlineData(typeof(Demo1), false)]
-        [InlineData(typeof(Demo2), true)]
-        public void Forms_DragByTheirPassiveSurfaces(Type type, bool isPicSurface) => Sta.Run(() =>
+        // 1.1: EnableDrag instead of the three 1.0 MoveFrm handlers, on the same surfaces as in 1.0: panels and labels. The inner
+        // label of a YANDdl is left alone
+        [Fact]
+        public void Demo1_DragsByItsPassiveSurfaces() => Sta.Run(() =>
         {
-            using var frm = (Form)Activator.CreateInstance(type);
+            using var frm = new Demo1();
             var all = Descendants(frm).ToList();
-            var surfaces = all.Where(c => (c is Panel or Label || (isPicSurface && c is PictureBox)) && c.Parent is not YANDdl).ToList();
+            var surfaces = all.Where(c => c is Panel or Label && c.Parent is not YANDdl).ToList();
             Assert.NotEmpty(surfaces);
             foreach (var c in all)
             {
@@ -158,15 +157,45 @@ namespace YANF.Tests.Samples
                 Assert.True(expected == YanEventHandlers(c, nameof(Control.MouseDown)), $"{c.Name} ({c.GetType().Name}) in {c.Parent.Name}: {YanEventHandlers(c, nameof(Control.MouseDown))} drag handler(s), expected {expected}");
                 Assert.Equal(0, YanEventHandlers(c, nameof(Control.MouseMove)) + YanEventHandlers(c, nameof(Control.MouseUp)));
             }
-            if (frm is Demo2)
+            Assert.Contains(all, c => c.Parent is YANDdl && c is Label);
+        });
+
+        // 2.0: Demo2 is a YANForm (borderless, rounded corners and a shadow, not resizable: its layout has a fixed size). The surfaces
+        // that moved it in 1.x (panels, pictures and labels, YANGradPnl and YANCirPic included) are its caption controls instead of
+        // EnableDrag handles
+        [Fact]
+        public void Demo2_IsAYANForm_MovedByItsPassiveSurfaces() => Sta.Run(() =>
+        {
+            using var frm = new Demo2();
+            Assert.IsAssignableFrom<YANForm>(frm);
+            Assert.Equal(FormBorderStyle.None, frm.FormBorderStyle);
+            Assert.False(frm.Resizable, "resizable");
+            Assert.True(frm.RoundedCorners, "square corners");
+            Assert.True(frm.DropShadow, "no shadow");
+            Assert.False(frm.MaximizeBox, "a double-click on a caption control would maximize it");
+            var all = Descendants(frm).ToList();
+            var surfaces = all.Where(c => c is Panel or Label or PictureBox).ToList();
+            Assert.Contains(surfaces, c => c is YANGradPnl);
+            Assert.Contains(surfaces, c => c is YANCirPic);
+            foreach (var c in all)
             {
-                Assert.Contains(surfaces, c => c is YANGradPnl);
-                Assert.Contains(surfaces, c => c is YANCirPic);
+                Assert.True(surfaces.Contains(c) == frm.IsCaptionControl(c), $"{c.Name} ({c.GetType().Name}) in {c.Parent.Name}: caption control {frm.IsCaptionControl(c)}");
+                Assert.Equal(0, YanEventHandlers(c, nameof(Control.MouseDown)) + YanEventHandlers(c, nameof(Control.MouseMove)) + YanEventHandlers(c, nameof(Control.MouseUp)));
             }
-            else
-            {
-                Assert.Contains(all, c => c.Parent is YANDdl && c is Label);
-            }
+            // the buttons stay buttons
+            Assert.False(frm.IsCaptionControl(Priv.Field<Button>(frm, "btnBack")), "Back is a caption control");
+        });
+
+        // 2.0: the sample is per-monitor DPI aware (app.manifest and App.config on .NET Framework, ApplicationHighDpiMode on .NET), so
+        // its forms are designed at 96 dpi and scaled to the DPI of their monitor (1.x: AutoScaleMode.None, the same pixels at any DPI)
+        [Theory]
+        [InlineData(typeof(MainFrm))]
+        [InlineData(typeof(Demo1))]
+        [InlineData(typeof(Demo2))]
+        public void Forms_ScaleWithTheDpi(Type type) => Sta.Run(() =>
+        {
+            using var frm = (Form)Activator.CreateInstance(type);
+            Assert.Equal(AutoScaleMode.Dpi, frm.AutoScaleMode);
         });
 
         // 1.1: the Save button is focusable and the AcceptButton, so ENTER in a field saves (the 1.0 buttons never took the focus)

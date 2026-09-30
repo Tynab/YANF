@@ -3,12 +3,10 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 using static System.Drawing.Color;
-using static System.Drawing.Drawing2D.PenAlignment;
-using static System.Drawing.Drawing2D.SmoothingMode;
-using static System.Drawing.Rectangle;
 using static System.Math;
 using static System.Windows.Forms.TextRenderer;
-using static YANF.Script.YANShape;
+using static YANF.Control.YANEditPaint;
+using static YANF.Control.YANPaint;
 
 namespace YANF.Control
 {
@@ -20,19 +18,22 @@ namespace YANF.Control
     {
         #region Fields
         private Color _borderColor = MediumSlateBlue;
+        private Color _borderFocusColor = LightYellow;
         private string _innerAccessibleName = null;
         private string _innerAccessibleDescription = null;
-        private int _borderSize = 1;
-        private int _borderRadius = 0;
         private bool _is_UnderlinedStyle = false;
         private bool _is_Focus = false;
         private readonly NumericUpDown _nudNum;
+        // BorderSize and BorderRadius (96-dpi pixels), the rounded shape of the control and its border
+        private readonly YANBorder _border;
+        private const int WM_DPICHANGED_AFTERPARENT = 0x02E3;
         #endregion
 
         #region Constructors
         public YANNb()
         {
             _nudNum = new NumericUpDown();
+            _border = new YANBorder(this, 1, 0);
             SuspendLayout();
             // numeric num
             _nudNum.BackColor = White;
@@ -47,7 +48,8 @@ namespace YANF.Control
             _nudNum.KeyDown += Nud_KeyDown;
             _nudNum.KeyPress += Nud_KeyPress;
             _nudNum.ValueChanged += Nud_ValueChanged;
-            _nudNum.SizeChanged += Nud_SizeChanged;
+            _nudNum.SizeChanged += Nud_BoundsChanged;
+            _nudNum.LocationChanged += Nud_BoundsChanged;
             // user control
             Controls.Add(_nudNum);
             DoubleBuffered = true;
@@ -55,11 +57,13 @@ namespace YANF.Control
             ForeColor = DimGray;
             BackColor = White;
             ThousandsSeparator = true;
-            AutoScaleMode = AutoScaleMode.None;
+            // 2.0: no AutoScaleMode.None, the control scales with its form like any other container (Padding, Size, the inner box)
             String = Value.ToString();
             Size = new Size(200, 30);
             Padding = new Padding(10, 7, 10, 7);
             Font = new Font(Font.Name, 11f);
+            // the parent is painted behind the rounded corners: repaint when it moves or when the parent changes behind it
+            FollowParent(this);
             // base
             ResumeLayout();
         }
@@ -100,7 +104,18 @@ namespace YANF.Control
 
         [Category("YAN Appearance"), Description("This property specifies the color of the border around the control when the control has the focus.")]
         [DefaultValue(typeof(Color), "LightYellow")]
-        public Color BorderFocusColor { get; set; } = LightYellow;
+        public Color BorderFocusColor
+        {
+            get => _borderFocusColor;
+            set
+            {
+                if (_borderFocusColor != value)
+                {
+                    _borderFocusColor = value;
+                    Invalidate();
+                }
+            }
+        }
 
         [Category("YAN Data"), Description("Indicates the minimum value for the numeric up-down control.")]
         [DefaultValue(typeof(decimal), "0")]
@@ -149,35 +164,45 @@ namespace YANF.Control
         [DefaultValue(typeof(decimal), "1")]
         public decimal Increment { get => _nudNum.Increment; set => _nudNum.Increment = value; }
 
+        /// <summary>
+        /// Gets or sets the width of the border in 96-dpi pixels: it is scaled to the DPI of the control. In <see cref="UnderlinedStyle"/>
+        /// the underline is BorderSize / 2 + 1 pixels thick at 96 dpi, as in 1.x (none for 0 when the corners are rounded, as in 1.x). A
+        /// negative value is stored as 0.
+        /// </summary>
         [Category("YAN Appearance"), Description("This property specifies the size, in pixels, of the border around the control.")]
         [DefaultValue(1)]
         public int BorderSize
         {
-            get => _borderSize;
+            get => _border.Size;
             set
             {
                 value = Max(0, value);
-                if (_borderSize != value)
+                if (_border.Size != value)
                 {
-                    _borderSize = value;
+                    _border.Size = value;
                     UpdateNudRegion();
                     Invalidate();
                 }
             }
         }
 
+        /// <summary>
+        /// Gets or sets the radius of the rounded corners in 96-dpi pixels (scaled to the DPI of the control; at most half the
+        /// height or width when painted). The corners are painted anti-aliased over the parent's own background. A negative value
+        /// is stored as 0.
+        /// </summary>
         [Category("YAN Appearance"), Description("This property allows you to add rounded corners to the control.")]
         [DefaultValue(0)]
         public int BorderRadius
         {
-            get => _borderRadius;
+            get => _border.Radius;
             set
             {
                 value = Max(0, value);
-                if (_borderRadius != value)
+                if (_border.Radius != value)
                 {
-                    _borderRadius = value;
-                    UpdateRegion();
+                    _border.Radius = value;
+                    UpdateNudRegion();
                     Invalidate();
                 }
             }
@@ -237,8 +262,8 @@ namespace YANF.Control
 
         //event
         /// <summary>
-        /// Occurs when the value of the <see cref="Value"/> property changes. Raised by <see cref="OnValueChanged(EventArgs)"/>;
-        /// in 1.x the sender is the inner NumericUpDown, as in 1.0 (read the value from the YANNb, not from the sender).
+        /// Occurs when the value of the <see cref="Value"/> property changes (typed, spun or set by code). The sender is this control
+        /// (2.0; 1.x passed the inner NumericUpDown). Raised by <see cref="OnValueChanged(EventArgs)"/>.
         /// </summary>
         [Category("YAN Event"), Description("Occurs when the value of the Value property changes.")]
         public event EventHandler ValueChanged;
@@ -284,57 +309,34 @@ namespace YANF.Control
             }
         }
 
+        /// <summary>
+        /// Paints the background: the surface in <see cref="BackColor"/> (and the BackgroundImage), with anti-aliased rounded corners
+        /// through which the parent's own background shows (a gradient, an image, what its Paint handlers draw; 1.x painted a ring of
+        /// Parent.BackColor there). As for a transparent BackColor in WinForms, sibling controls that overlap this control are not
+        /// painted behind it.
+        /// </summary>
+        /// <param name="e">The paint data.</param>
+        protected override void OnPaintBackground(PaintEventArgs e)
+        {
+            PaintEditSurface(this, e, _border, base.OnPaintBackground);
+        }
+
+        /// <summary>
+        /// Paints the border (or the underline in <see cref="UnderlinedStyle"/>): <see cref="BorderColor"/>, or
+        /// <see cref="BorderFocusColor"/> while the control has the focus; the system frame and highlight colors in high contrast mode.
+        /// </summary>
+        /// <param name="e">The paint data.</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            var graphics = e.Graphics;
-            var borderRadius = GetBorderRadius();
-            var borderSize = GetBorderSize();
-            using var penBorder = new Pen(_is_Focus ? BorderFocusColor : _borderColor, borderSize);
-            if (borderRadius > 1)
-            {
-                var rectBorderSmooth = ClientRectangle;
-                var smoothSize = borderSize > 0 ? borderSize : 1;
-                using var pathBorderSmooth = RoundedRect(rectBorderSmooth, borderRadius);
-                using var pathBorder = RoundedRect(Inflate(rectBorderSmooth, -borderSize, -borderSize), borderRadius - borderSize);
-                using var penBorderSmooth = new Pen(Parent?.BackColor ?? BackColor, smoothSize);
-                graphics.SmoothingMode = AntiAlias;
-                penBorder.Alignment = Center;
-                // draw border smoothing
-                graphics.DrawPath(penBorderSmooth, pathBorderSmooth);
-                if (_is_UnderlinedStyle)
-                {
-                    // draw border
-                    graphics.SmoothingMode = None;
-                    if (borderSize >= 1)
-                    {
-                        graphics.DrawLine(penBorder, 0, Height - 1, Width, Height - 1);
-                    }
-                }
-                else if (pathBorder != null)
-                {
-                    // draw border
-                    graphics.DrawPath(penBorder, pathBorder);
-                }
-            }
-            else
-            {
-                penBorder.Alignment = Inset;
-                if (_is_UnderlinedStyle)
-                {
-                    graphics.DrawLine(penBorder, 0, Height - 1, Width, Height - 1);
-                }
-                else if (borderSize >= 1)
-                {
-                    graphics.DrawRectangle(penBorder, 0, 0, Width - 0.5f, Height - 0.5f);
-                }
-            }
+            // 1.x drew no underline for a BorderSize of 0 on a rounded YANNb (a one-pixel line on a square one, as YANTxt does on both)
+            PaintEditBorder(this, e.Graphics, _border, _is_UnderlinedStyle, _is_Focus ? _borderFocusColor : _borderColor, _is_Focus, false);
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-            UpdateRegion();
+            UpdateNudRegion();
             if (DesignMode)
             {
                 UpdateHCtrl();
@@ -360,8 +362,54 @@ namespace YANF.Control
         protected override void OnParentBackColorChanged(EventArgs e)
         {
             base.OnParentBackColorChanged(e);
-            // the border smoothing is drawn with the parent back color
+            // the parent is painted behind the rounded corners
             Invalidate();
+        }
+
+        /// <summary>
+        /// Called when the DPI of the control changes (per-monitor DPI awareness): the rounded shape, the border and the region of the
+        /// inner numeric up-down are rebuilt for the new DPI.
+        /// </summary>
+        /// <param name="deviceDpiOld">The DPI before the change.</param>
+        /// <param name="deviceDpiNew">The new DPI.</param>
+        protected override void RescaleConstantsForDpi(int deviceDpiOld, int deviceDpiNew)
+        {
+            base.RescaleConstantsForDpi(deviceDpiOld, deviceDpiNew);
+            _border.Reset();
+            UpdateNudRegion();
+            Invalidate();
+        }
+
+        /// <summary>
+        /// Lets the clicks on the transparent rounded corners through to the parent, as the rounded region of 1.x did, and fits the
+        /// height of the control to its font again once its form has been rescaled for another DPI (per-monitor DPI awareness).
+        /// </summary>
+        /// <param name="m">The message.</param>
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+            if (_border.HitTest(ref m))
+            {
+                return;
+            }
+            if (m.Msg == WM_DPICHANGED_AFTERPARENT && !IsDisposed)
+            {
+                UpdateHCtrl();
+            }
+        }
+
+        /// <summary>
+        /// Releases the resources used by the control; the cached border shapes are released after its window is destroyed.
+        /// </summary>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            // after the window is gone, so that no late message builds the shape again
+            if (disposing)
+            {
+                _border.Dispose();
+            }
         }
         #endregion
 
@@ -407,8 +455,8 @@ namespace YANF.Control
             OnValueChanged(e);
         }
 
-        // Update the rounded region of the numeric up-down when its size changes
-        private void Nud_SizeChanged(object sender, EventArgs e) => UpdateNudRegion();
+        // Update the region of the numeric up-down when it moves or changes size (a new size or padding of the control)
+        private void Nud_BoundsChanged(object sender, EventArgs e) => UpdateNudRegion();
         #endregion
 
         #region Methods
@@ -416,45 +464,14 @@ namespace YANF.Control
         /// Raises the <see cref="ValueChanged"/> event. Override it to run code before or after the handlers (call the base method).
         /// </summary>
         /// <param name="e">The event data.</param>
-        protected virtual void OnValueChanged(EventArgs e) => ValueChanged?.Invoke(_nudNum, e); // 1.x: the inner NumericUpDown is the sender, as in 1.0 (2.0: this)
+        protected virtual void OnValueChanged(EventArgs e) => ValueChanged?.Invoke(this, e); // 2.0: this control is the sender (1.x: the inner NumericUpDown)
 
-        // Get the border radius that fits the current size (the configured value is never changed)
-        private int GetBorderRadius() => (int)EffectiveRadius(ClientRectangle, _borderRadius);
-
-        // Get the border size that fits the current size (the configured value is never changed)
-        private int GetBorderSize() => Max(0, Min(_borderSize, Min(Width, Height) / 2));
-
-        // Update the region of the control when its size or radius changes, never while painting
-        private void UpdateRegion()
-        {
-            var borderRadius = GetBorderRadius();
-            if (borderRadius > 1)
-            {
-                using var pathRegion = RoundedRect(ClientRectangle, borderRadius);
-                SetRegion(this, pathRegion);
-            }
-            else
-            {
-                SetRegion(this, (Region)null);
-            }
-            UpdateNudRegion();
-        }
-
-        // Update the rounded region of the numeric up-down, only needed when the corners of the control are big enough to cut it
+        // Update the region of the numeric up-down when the size, the shape, the padding or the DPI changes (see YANEditPaint.UpdateEditRegion)
         private void UpdateNudRegion()
         {
-            if (_nudNum == null)
+            if (_nudNum != null && _border != null)
             {
-                return;
-            }
-            if (GetBorderRadius() > 15)
-            {
-                using var pathNum = RoundedRect(_nudNum.ClientRectangle, GetBorderSize() * 2);
-                SetRegion(_nudNum, pathNum);
-            }
-            else
-            {
-                SetRegion(_nudNum, (Region)null);
+                UpdateEditRegion(this, _nudNum, _border, false);
             }
         }
 

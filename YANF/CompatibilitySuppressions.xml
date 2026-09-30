@@ -22,4 +22,46 @@
     <Right>lib/net481/YANF.dll</Right>
     <IsBaselineSuppression>true</IsBaselineSuppression>
   </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:YANF.Screen.YANLoadScreen</Target>
+    <Left>lib/net481/YANF.dll</Left>
+    <Right>lib/net481/YANF.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:YANF.Screen.YANMessageBoxScreen</Target>
+    <Left>lib/net481/YANF.dll</Left>
+    <Right>lib/net481/YANF.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:YANF.Screen.YANUpdateScreen</Target>
+    <Left>lib/net481/YANF.dll</Left>
+    <Right>lib/net481/YANF.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:YANF.Screen.YANWaitScreen</Target>
+    <Left>lib/net481/YANF.dll</Left>
+    <Right>lib/net481/YANF.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:YANF.Script.YANMessageBox.#ctor</Target>
+    <Left>lib/net481/YANF.dll</Left>
+    <Right>lib/net481/YANF.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0009</DiagnosticId>
+    <Target>T:YANF.Script.YANMessageBox</Target>
+    <Left>lib/net481/YANF.dll</Left>
+    <Right>lib/net481/YANF.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
 </Suppressions>

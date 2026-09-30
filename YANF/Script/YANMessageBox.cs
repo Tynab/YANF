@@ -5,7 +5,14 @@ using static YANF.Script.YANConstant;
 
 namespace YANF.Script
 {
-    public abstract class YANMessageBox
+    /// <summary>
+    /// Shows a YAN message box: a borderless box with an accent color per icon, button texts in English, Vietnamese or Japanese,
+    /// and the Enter, Esc and default-button rules of the Windows message box.
+    /// </summary>
+    /// <remarks>
+    /// A static class since 2.0 (it was an abstract class with only static members in 1.x; every <c>Show</c> signature is unchanged).
+    /// </remarks>
+    public static class YANMessageBox
     {
         /// <summary>
         /// Shows the message box that <paramref name="options"/> describes, with no explicit owner: WinForms makes the active window of

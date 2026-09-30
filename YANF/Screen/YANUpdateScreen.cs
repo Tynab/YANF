@@ -1,12 +1,22 @@
 ﻿using System.Drawing;
+using YANF.Script;
 using static System.Math;
 
 namespace YANF.Screen
 {
-    public partial class YANUpdateScreen : YANOverlayScreen
+    /// <summary>
+    /// Small update box with a percentage, a detail text and a progress bar, centred on the window it is shown over
+    /// (<see cref="YANLoader"/> and the legacy YANUpdScrService).
+    /// </summary>
+    internal partial class YANUpdateScreen : YANOverlayScreen
     {
         #region Constructors
-        public YANUpdateScreen() => InitializeComponent();
+        // YANLoader (placed over its owner when shown) and the legacy service without a usable parent (centred on the screen)
+        internal YANUpdateScreen()
+        {
+            InitializeComponent();
+            this.ScaleToDpi();
+        }
 
         // Centre on a snapshot of the caller's bounds (see ComputeBounds)
         internal YANUpdateScreen(Rectangle parentBounds) : this() => PlaceAt(parentBounds);
@@ -14,14 +24,9 @@ namespace YANF.Screen
 
         #region Overridden
         /// <summary>
-        /// Fades the screen out, then closes and disposes it (see <see cref="YANOverlayScreen.Frm_Close"/>).
-        /// </summary>
-        public override void Frm_Close() => base.Frm_Close();
-
-        /// <summary>
         /// Shows the percentage, the detail text (for example the downloaded size) and a progress bar sized from the screen's own width.
         /// </summary>
-        protected internal override void SetProgress(int percent, string detail) => ShowValues(percent, detail, (int)Ceiling(panelMain.ClientSize.Width * Max(0, Min(100, percent)) / 100d));
+        protected internal override void SetProgress(int percent, string detail) => ShowBar(percent, detail, (int)Ceiling(panelMain.ClientSize.Width * Max(0, Min(100, percent)) / 100d));
 
         /// <summary>
         /// Centres the screen on the window, kept inside the working area of that window's display (what CenterParent does with an owner).
@@ -36,12 +41,16 @@ namespace YANF.Screen
         #endregion
 
         #region Methods
-        // Show the three values; the bar width is in pixels (the legacy PublishValue passes it as is)
-        internal void ShowValues(int percent, string capacity, int width)
+        // Legacy PublishValue: the caller's bar width is in 96-dpi pixels (out of YANConstant.W_UPDATE_SCR, the width of the screen at
+        // 96 dpi), so it is scaled like the screen itself; the same pixels as 1.0 at 96 dpi
+        internal void ShowValues(int percent, string capacity, int width) => ShowBar(percent, capacity, this.LogicalToDevice(width));
+
+        // Show the three values; the bar width is in device pixels
+        private void ShowBar(int percent, string detail, int barWidth)
         {
             lblPercent.Text = $"{percent}%";
-            pnlProgressBar.Width = width;
-            lblCapacity.Text = capacity;
+            pnlProgressBar.Width = barWidth;
+            lblCapacity.Text = detail;
         }
         #endregion
     }

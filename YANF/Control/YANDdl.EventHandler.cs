@@ -4,6 +4,7 @@ using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using static System.Drawing.Drawing2D.SmoothingMode;
 using static System.Windows.Forms.ComboBoxStyle;
+using static YANF.Control.YANPaint;
 
 namespace YANF.Control;
 
@@ -44,13 +45,15 @@ public partial class YANDdl
     // Icon paint event
     private void Ic_Paint(object sender, PaintEventArgs e)
     {
-        var wIc = 14;
-        var hIc = 6;
+        // the arrow is 14 x 6 with a pen of 2 at 96 dpi, scaled to the DPI of the control
+        var dpi = GetDpi(this);
+        var wIc = LogicalToDevice(ARROW_WIDTH, dpi);
+        var hIc = LogicalToDevice(ARROW_HEIGHT, dpi);
         var rectIc = new Rectangle((_btnIc.Width - wIc) / 2, (_btnIc.Height - hIc) / 2, wIc, hIc);
         var graphics = e.Graphics;
         // draw arrow down icon, highlighted while the control has the focus
         using var path = new GraphicsPath();
-        using var pen = new Pen(_is_Focus && _iconFocusColor.A > 0 ? _iconFocusColor : _iconColor, 2);
+        using var pen = new Pen(GetIconColor(), LogicalToDevice(ARROW_PEN_WIDTH, dpi));
         graphics.SmoothingMode = AntiAlias;
         path.AddLine(rectIc.X, rectIc.Y, rectIc.X + wIc / 2, rectIc.Bottom);
         path.AddLine(rectIc.X + wIc / 2, rectIc.Bottom, rectIc.Right, rectIc.Y);

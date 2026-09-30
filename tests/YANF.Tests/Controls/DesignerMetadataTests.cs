@@ -38,14 +38,10 @@ namespace YANF.Tests.Controls
 
         // Framework properties whose inherited [DefaultValue] differs from the value that the constructor sets. The designer writes the
         // constructor value (it differs from the default) but never the framework default itself, which the constructor then replaces at
-        // run time: a user who picks that value in the designer loses it. Only a property that redeclares the default can fix it (an API
-        // addition), so they are listed here; a new mismatch fails the test
-        private static readonly Dictionary<string, string> KNOWN_INHERITED_MISMATCHES = new()
-        {
-            ["YANBtn.FlatStyle"] = "the constructor sets Flat: FlatStyle.Standard picked in the designer is lost",
-            ["YANBtn.FlatAppearance.BorderSize"] = "the constructor sets 0: a flat border size of 1 picked in the designer is lost",
-            ["YANCirPic.SizeMode"] = "the constructor sets StretchImage: PictureBoxSizeMode.Normal picked in the designer is lost"
-        };
+        // run time: a user who picks that value in the designer loses it. A new mismatch fails the test, and so does a listed one that
+        // no longer occurs. 2.0 fixed the three of 1.x: YANBtn.FlatStyle and YANCirPic.SizeMode are redeclared with the constructor's
+        // default, and YANBtn.FlatAppearance.BorderSize gets it from a type description provider of the button's FlatAppearance
+        private static readonly Dictionary<string, string> KNOWN_INHERITED_MISMATCHES = new();
 
         // Inherited framework properties whose value in a new control depends on the process rather than on the control, and why
         private static readonly Dictionary<string, string> PROCESS_DEPENDENT = new()
@@ -163,18 +159,23 @@ namespace YANF.Tests.Controls
                     mismatches.AddRange(CheckDefault(c, p, dv, name));
                 }
             }
+            var names = mismatches.Select(m => m.Substring(0, m.IndexOf(':'))).ToList();
             var unknown = mismatches.Where(m => !KNOWN_INHERITED_MISMATCHES.ContainsKey(m.Substring(0, m.IndexOf(':')))).ToList();
             Assert.True(unknown.Count == 0, string.Join(Environment.NewLine, unknown));
-            // a known mismatch that YANF now redeclares is fixed: it must leave the list (the test above checks the new declaration)
+            // a known mismatch that no longer occurs (YANF redeclares the property now, or gives it a default otherwise) is fixed: it must
+            // leave the list (the tests above check the new declaration)
             foreach (var known in KNOWN_INHERITED_MISMATCHES.Keys.Where(k => k.StartsWith(type.Name + ".", StringComparison.Ordinal)))
             {
                 Assert.False(own.Contains(known.Split('.')[1]), known + " is declared by YANF now: remove it from KNOWN_INHERITED_MISMATCHES");
+                Assert.True(names.Contains(known), known + " matches the constructor now: remove it from KNOWN_INHERITED_MISMATCHES");
             }
         });
 
         // Every public property and event declared by YANF has a description and a category for the property grid. A member declared by
-        // YANF uses one of the YAN categories; an override of a framework member may keep the framework's description and category.
-        // Two members of a control never share a description (1.0.2: YANPrg.ChannelHeight had the description of SymbolBefore)
+        // YANF uses one of the YAN categories; an override of a framework member may keep the framework's description and category, and
+        // so may a redeclaration (new) of a framework property that only changes its designer default (2.0: YANBtn.FlatStyle,
+        // YANCirPic.SizeMode). Two members of a control never share a description (1.0.2: YANPrg.ChannelHeight had the description of
+        // SymbolBefore)
         [Theory]
         [MemberData(nameof(ControlTypes))]
         public void PropertyAndEvent_HaveADescriptionAndACategory(Type type)
@@ -183,7 +184,7 @@ namespace YANF.Tests.Controls
             var descriptions = new Dictionary<string, string>();
             foreach (var p in OwnProperties(type))
             {
-                Check(p, IsOverride(p.GetGetMethod() ?? p.GetSetMethod()));
+                Check(p, IsOverride(p.GetGetMethod() ?? p.GetSetMethod()) || IsFrameworkRedeclaration(p));
             }
             foreach (var e in OwnEvents(type))
             {
@@ -273,6 +274,17 @@ namespace YANF.Tests.Controls
 
         // Check whether an accessor overrides a framework member (a redeclaration with new does not)
         private static bool IsOverride(MethodInfo accessor) => accessor.GetBaseDefinition().DeclaringType != accessor.DeclaringType;
+
+        // Check whether a property declared by YANF with new hides a public property of the framework base class (same name and type)
+        private static bool IsFrameworkRedeclaration(PropertyInfo p)
+        {
+            var framework = p.DeclaringType;
+            while (framework != null && framework.Assembly == LIBRARY)
+            {
+                framework = framework.BaseType;
+            }
+            return framework != null && framework.GetProperties(BindingFlags.Public | BindingFlags.Instance).Any(b => b.Name == p.Name && b.PropertyType == p.PropertyType);
+        }
 
         // Check whether YANF declares a ShouldSerialize method for the property (the framework's own ones, such as
         // Control.ShouldSerializeBackColor, write any value set in the constructor)

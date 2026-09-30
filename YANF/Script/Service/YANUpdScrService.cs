@@ -27,7 +27,8 @@ namespace YANF.Script.Service
         public void OffLoader() => Interlocked.Exchange(ref _host, null)?.Close();
 
         // Implementation UpdateValue
-        // The caller's width is kept as is (1.0.x contract); YANLoader computes the bar from the screen's own width instead
+        // The caller's width is in 96-dpi pixels out of YANConstant.W_UPDATE_SCR (1.0.x contract; the same pixels at 96 dpi) and is scaled
+        // with the screen; YANLoader computes the bar from the screen's own width instead
         public void PublishValue(int percent, string capacity, int width) => Volatile.Read(ref _host)?.Publish(s => s.ShowValues(percent, capacity, width));
         #endregion
     }

@@ -6,6 +6,11 @@ using static System.Drawing.Color;
 
 namespace YANF.Control
 {
+    /// <summary>
+    /// A panel painted with a linear gradient from <see cref="TopColor"/> to <see cref="BottomColor"/>. The gradient is the
+    /// panel's background, so the child controls that show what is behind them (a transparent BackColor, and the rounded corners
+    /// of the YANF controls) show the gradient, not the panel's BackColor. It keeps its colors in high contrast mode.
+    /// </summary>
     [ToolboxBitmap(typeof(Panel))]
     public class YANGradPnl : Panel
     {
@@ -71,14 +76,29 @@ namespace YANF.Control
         #endregion
 
         #region Overridden
+        /// <summary>
+        /// Paints the gradient as the background of the panel: its children see it too when they paint what is behind them (a
+        /// transparent BackColor, and the YANF controls, which paint their parent's own pixels behind their rounded corners).
+        /// </summary>
         protected override void OnPaintBackground(PaintEventArgs e)
         {
-            base.OnPaintBackground(e);
-            var rectSurface = ClientRectangle;
-            if (rectSurface.Width > 0 && rectSurface.Height > 0)
+            // an opaque gradient covers the BackColor, the BackgroundImage and (for a transparent BackColor) the parent: skip them
+            if (_topColor.A < 255 || _bottomColor.A < 255)
             {
-                using var brush = new LinearGradientBrush(rectSurface, _topColor, _bottomColor, _angle);
-                e.Graphics.FillRectangle(brush, rectSurface);
+                base.OnPaintBackground(e);
+            }
+            var rectSurface = ClientRectangle;
+            // only the area to paint: a child that paints its parent asks for the part behind it
+            var rectPaint = Rectangle.Intersect(rectSurface, e.ClipRectangle);
+            if (rectPaint.Width > 0 && rectPaint.Height > 0)
+            {
+                // the gradient always spans the whole client area; flipped tiles keep GDI+ from wrapping the end color onto the
+                // first row or column
+                using var brush = new LinearGradientBrush(rectSurface, _topColor, _bottomColor, _angle)
+                {
+                    WrapMode = WrapMode.TileFlipXY
+                };
+                e.Graphics.FillRectangle(brush, rectPaint);
             }
         }
         #endregion

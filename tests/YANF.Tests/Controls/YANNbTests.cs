@@ -87,9 +87,10 @@ namespace YANF.Tests.Controls
             Assert.Equal(43m.ToString(), n.String);
         });
 
-        // 1.1 adds the protected virtual OnValueChanged; the sender stays the inner NumericUpDown in 1.x (it becomes the YANNb in 2.0)
+        // 1.1 adds the protected virtual OnValueChanged. 2.0 (breaking): the sender is the YANNb, for a value set by code and for one
+        // spun or typed in the inner NumericUpDown (1.x passed the inner NumericUpDown)
         [Fact]
-        public void OnValueChanged_RaisesValueChangedWithUnchangedSender() => Sta.Run(() =>
+        public void OnValueChanged_RaisesValueChangedWithThisAsTheSender() => Sta.Run(() =>
         {
             using var n = new NbProbe();
             var nud = Priv.Field<NumericUpDown>(n, "_nudNum");
@@ -101,8 +102,13 @@ namespace YANF.Tests.Controls
             n.Value = 6;
             Assert.Equal(2, n.Calls);
             Assert.Equal(2, senders.Count);
-            Assert.All(senders, s => Assert.Same(nud, s));
+            Assert.All(senders, s => Assert.Same(n, s));
             Assert.Equal(6m.ToString(), n.String);
+            // a handler written for 1.x that reads the value through the sender now reads the YANNb
+            decimal? read = null;
+            n.ValueChanged += (s, e) => read = ((YANNb)s).Value;
+            nud.Value = 9;
+            Assert.Equal(9m, read);
         });
 
         [Fact]
@@ -185,23 +191,26 @@ namespace YANF.Tests.Controls
             ui.DrawDetached(free);
         });
 
-        // 1.0.2 assigned a new Region in OnPaint (repaint loop); regions now change with the shape only
+        // 1.0.2 assigned a new Region in OnPaint (repaint loop). 2.0: the control has no region at all (its rounded corners are painted
+        // over the parent); only the inner NumericUpDown gets one, when the corners are big enough to cut it, built with the shape
         [Fact]
-        public void Region_NotRebuiltByPaint() => Sta.Run(ui =>
+        public void Region_OnlyOnTheInnerNumeric_NotRebuiltByPaint() => Sta.Run(ui =>
         {
             var n = new YANNb { Size = new Size(200, 40), BorderRadius = 20, BorderSize = 2 };
-            ui.Draw(n);
-            var region = n.Region;
-            Assert.NotNull(region);
             var nud = Priv.Field<NumericUpDown>(n, "_nudNum");
-            Assert.NotNull(nud.Region);
             ui.Draw(n);
-            Assert.Same(region, n.Region);
+            // the height fits the font once created: a radius of 20 clamps to half of it
+            var cuts = n.Height / 2 > 15;
+            Assert.Null(n.Region);
+            var region = nud.Region;
+            Assert.Equal(cuts, region != null);
+            ui.Draw(n);
+            Assert.Same(region, nud.Region);
+            Assert.Null(n.Region);
+            n.Height = 60;
+            Assert.NotNull(nud.Region);
             n.BorderRadius = 5;
-            Assert.NotNull(n.Region);
-            Assert.NotSame(region, n.Region);
             Assert.Null(nud.Region);
-            n.BorderRadius = 0;
             Assert.Null(n.Region);
         });
 

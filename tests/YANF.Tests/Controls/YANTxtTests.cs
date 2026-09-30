@@ -256,20 +256,31 @@ namespace YANF.Tests.Controls
             ui.DrawDetached(free);
         });
 
-        // 1.0.2 assigned a new Region in OnPaint (repaint loop); regions now change with the shape only
+        // 1.0.2 assigned a new Region in OnPaint (repaint loop). 2.0: the control has no region at all (its rounded corners are painted
+        // over the parent); only the inner text box gets one, when the corners are big enough to cut it, built with the shape
         [Fact]
-        public void Region_NotRebuiltByPaint() => Sta.Run(ui =>
+        public void Region_OnlyOnTheInnerBox_NotRebuiltByPaint() => Sta.Run(ui =>
         {
-            var t = new YANTxt { Size = new Size(200, 40), BorderRadius = 20, BorderSize = 2 };
+            var t = new YANTxt { Multiline = true, Size = new Size(200, 60), BorderRadius = 25, BorderSize = 2 };
+            var inner = Inner(t);
             ui.Draw(t);
-            var region = t.Region;
-            Assert.NotNull(region);
-            Assert.NotNull(Inner(t).Region);
-            ui.Draw(t);
-            Assert.Same(region, t.Region);
-            t.BorderRadius = 0;
             Assert.Null(t.Region);
-            Assert.Null(Inner(t).Region);
+            var region = inner.Region;
+            Assert.NotNull(region);
+            ui.Draw(t);
+            Assert.Same(region, inner.Region);
+            Assert.Null(t.Region);
+            t.BorderRadius = 5;
+            Assert.Null(inner.Region);
+            t.BorderRadius = 25;
+            Assert.NotNull(inner.Region);
+            // the radius is clamped to half the height: 10 no longer cuts the inner box
+            t.Size = new Size(200, 20);
+            Assert.Null(inner.Region);
+            t.Size = new Size(200, 60);
+            t.BorderRadius = 0;
+            Assert.Null(inner.Region);
+            Assert.Null(t.Region);
         });
 
         // 1.1: Text is the content of the box (UserControl.Text was an unrelated hidden property that always returned "");
@@ -491,8 +502,478 @@ namespace YANF.Tests.Controls
             Assert.Equal("Inner", Inner(t2).AccessibleName);
         });
 
+        #region 2.0 painting (the edit-box painting is shared by YANTxt and YANNb)
+        // The rounded corners show what the parent paints (lime), not a ring of its BackColor (white); the border and the surface keep
+        // their colors (1.x: a Parent.BackColor ring, #15)
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void RoundedCorners_ShowTheParent_BorderAndSurfaceKeepTheirColors(Type type) => Sta.Run(ui =>
+        {
+            var c = Edit(type, 15, 2);
+            var pnl = OnPanel(ui, new PaintingTests.LimePanel(), c);
+            using var bmp = ui.Render(c);
+            foreach (var corner in EditCorners(c))
+            {
+                PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(corner.X, corner.Y), $"{type.Name} corner {corner}");
+            }
+            PaintingTests.AssertColor(Color.Red, bmp.GetPixel(c.Width / 2, 1), "top border");
+            PaintingTests.AssertColor(Color.Red, bmp.GetPixel(c.Width / 2, c.Height - 1), "bottom border");
+            PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(c.Width / 2, 4), "surface above the inner box");
+            PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(5, c.Height / 2), "surface left of the inner box");
+            Assert.Equal(Color.White, pnl.BackColor);
+            Assert.Null(c.Region);
+        });
+
+        // On a gradient, every corner shows the gradient pixel behind it (1.x: a solid ring in the panel's BackColor, #15)
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void RoundedCorners_ShowTheGradientBehind(Type type) => Sta.Run(ui =>
+        {
+            var c = Edit(type, 15, 2);
+            var pnl = OnPanel(ui, new YANGradPnl { TopColor = Color.Red, BottomColor = Color.Blue, BackColor = Color.White, Size = new Size(300, 200) }, c);
+            // created (and fitted to its font) before the parent is captured without it
+            c.CreateControl();
+            c.Visible = false;
+            using var bmpParent = ui.Render(pnl);
+            c.Visible = true;
+            using var bmp = ui.Render(c);
+            foreach (var corner in EditCorners(c))
+            {
+                var behind = bmpParent.GetPixel(c.Left + corner.X, c.Top + corner.Y);
+                Assert.False(Gdi.Same(behind, Color.White), "the gradient must differ from the panel's BackColor");
+                PaintingTests.AssertColor(behind, bmp.GetPixel(corner.X, corner.Y), $"{type.Name} corner {corner}", 3);
+            }
+        });
+
+        // The rounded edge is anti-aliased (a region clips at whole pixels): the corner has pixels blended between the parent and the border
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void RoundedCorners_AreAntiAliased(Type type) => Sta.Run(ui =>
+        {
+            var c = Edit(type, 15, 2);
+            OnPanel(ui, new PaintingTests.LimePanel(), c);
+            using var bmp = ui.Render(c);
+            var blended = 0;
+            for (var y = 0; y < 15; y++)
+            {
+                for (var x = 0; x < 15; x++)
+                {
+                    var px = bmp.GetPixel(x, y);
+                    if (!Gdi.Same(px, Color.Lime) && !Gdi.Same(px, Color.Red) && !Gdi.Same(px, Color.Blue))
+                    {
+                        blended++;
+                    }
+                }
+            }
+            Assert.True(blended > 0, "no anti-aliased pixel in the rounded corner");
+        });
+
+        // An opaque square box covers its whole area: the parent is not painted behind it (its Paint handlers do not run again);
+        // rounded corners paint it
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void ParentPainted_OnlyBehindRoundedCorners(Type type) => Sta.Run(ui =>
+        {
+            var pnl = new PaintingTests.LimePanel();
+            var paints = 0;
+            pnl.Paint += (s, e) => paints++;
+            var c = Edit(type, 0, 2);
+            OnPanel(ui, pnl, c);
+            using (var bmp = ui.Render(c))
+            {
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(1, 1), "square corner: border");
+            }
+            Assert.Equal(0, paints);
+            SetRadius(c, 15);
+            using (ui.Render(c))
+            {
+            }
+            Assert.True(paints > 0, "the parent is not painted behind the rounded corners");
+        });
+
+        // The underline is cut by the rounded corners (1.x: by the region) and is as thick as 1.x drew it, the part inside the box of a
+        // BorderSize-wide pen centred on the bottom row: BorderSize / 2 + 1 rows (one for 0, except on a rounded YANNb, where 1.x drew none)
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void Underline_CutByTheRoundedCorners_AsThickAsIn1x(Type type) => Sta.Run(ui =>
+        {
+            var c = Edit(type, 15, 2, true);
+            OnPanel(ui, new PaintingTests.LimePanel(), c);
+            using (var bmp = ui.Render(c))
+            {
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(c.Width / 2, c.Height - 1), "underline");
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(c.Width / 2, c.Height - 4), "above the underline of 2");
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(c.Width / 2, 1), "no top border");
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(1, c.Height / 2), "no left border");
+                PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(0, c.Height - 1), "bottom-left corner");
+                PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(c.Width - 1, c.Height - 1), "bottom-right corner");
+            }
+            SetBorderSize(c, 4);
+            using (var bmp = ui.Render(c))
+            {
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(c.Width / 2, c.Height - 3), "third row of the underline of 4");
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(c.Width / 2, c.Height - 4), "above the underline of 4");
+            }
+            SetBorderSize(c, 0);
+            using (var bmp = ui.Render(c))
+            {
+                if (c is YANNb)
+                {
+                    PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(c.Width / 2, c.Height - 1), "no underline for BorderSize 0 on a rounded YANNb");
+                }
+                else
+                {
+                    PaintingTests.AssertColor(Color.Red, bmp.GetPixel(c.Width / 2, c.Height - 1), "one-pixel underline for BorderSize 0");
+                }
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(c.Width / 2, c.Height - 3), "above the one-pixel underline");
+            }
+            // square corners: a one-pixel underline for BorderSize 0 on both, as in 1.x
+            SetRadius(c, 0);
+            using (var bmp = ui.Render(c))
+            {
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(c.Width / 2, c.Height - 1), "one-pixel underline for BorderSize 0, square");
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(c.Width / 2, c.Height - 2), "above the one-pixel underline, square");
+            }
+            SetRadius(c, 15);
+            // the box style draws nothing for BorderSize 0
+            SetUnderline(c, false);
+            using (var bmp = ui.Render(c))
+            {
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(c.Width / 2, c.Height - 1), "no border for BorderSize 0");
+            }
+        });
+
+        // A BackgroundImage is still painted (as the default background painted it in 1.x), inside the rounded shape
+        [Theory]
+        [InlineData(typeof(YANTxt), 0)]
+        [InlineData(typeof(YANTxt), 15)]
+        [InlineData(typeof(YANNb), 0)]
+        [InlineData(typeof(YANNb), 15)]
+        public void BackgroundImage_IsPaintedInTheShape(Type type, int radius) => Sta.Run(ui =>
+        {
+            var c = Edit(type, radius, 2);
+            using var img = new Bitmap(8, 8);
+            using (var g = Graphics.FromImage(img))
+            {
+                g.Clear(Color.Yellow);
+            }
+            c.BackgroundImage = img;
+            OnPanel(ui, new PaintingTests.LimePanel(), c);
+            using var bmp = ui.Render(c);
+            PaintingTests.AssertColor(Color.Yellow, bmp.GetPixel(5, c.Height / 2), "image left of the inner box");
+            PaintingTests.AssertColor(Color.Red, bmp.GetPixel(c.Width / 2, 1), "border over the image");
+            PaintingTests.AssertColor(radius > 0 ? Color.Lime : Color.Red, bmp.GetPixel(1, 1), "corner");
+        });
+
+        // BorderSize and BorderRadius are 96-dpi pixels: at 192 dpi a border of 2 is 4 pixels wide (a DPI-unaware application stays at 96)
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void Dpi_ScalesTheBorder(Type type) => Sta.Run(ui =>
+        {
+            var c = Edit(type, 0, 2);
+            OnPanel(ui, new PaintingTests.LimePanel(), c);
+            using (var bmp = ui.Render(c))
+            {
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(c.Width / 2, 1), "96 dpi: second row");
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(c.Width / 2, 3), "96 dpi: fourth row");
+            }
+            YANPaint.DpiOverride = 192;
+            try
+            {
+                using var bmp = ui.Render(c);
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(c.Width / 2, 1), "192 dpi: second row");
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(c.Width / 2, 3), "192 dpi: fourth row");
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(3, c.Height / 2), "192 dpi: fourth column");
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(c.Width / 2, 5), "192 dpi: sixth row");
+            }
+            finally
+            {
+                YANPaint.DpiOverride = null;
+            }
+        });
+
+        // High contrast mode paints the border with the system frame color, and the highlight color while the box has the focus
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void HighContrast_BorderUsesSystemColors(Type type) => Sta.Run(ui =>
+        {
+            YANPaint.HighContrastOverride = true;
+            try
+            {
+                var c = Edit(type, 0, 2);
+                OnPanel(ui, new PaintingTests.LimePanel(), c);
+                using (var bmp = ui.Render(c))
+                {
+                    PaintingTests.AssertColor(SystemColors.WindowFrame, bmp.GetPixel(c.Width / 2, 1), "border");
+                }
+                EnterEdit(c);
+                using (var bmp = ui.Render(c))
+                {
+                    PaintingTests.AssertColor(SystemColors.Highlight, bmp.GetPixel(c.Width / 2, 1), "focused border");
+                }
+            }
+            finally
+            {
+                YANPaint.HighContrastOverride = null;
+            }
+        });
+
+        // Zero, tiny and huge sizes, radii and borders on a painted parent (1000 x 1000 at most: a rounded box clips its inner editor
+        // with a region, and libgdiplus crashes on a region wider than about 1000 x 2000 pixels; GDI+ has no such limit)
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void TinySizes_OnAPaintedParent_Draw(Type type) => Sta.Run(ui =>
+        {
+            foreach (var size in new[] { new Size(0, 0), new Size(1, 1), new Size(3, 1), new Size(1, 3), new Size(1000, 1000) })
+            {
+                foreach (var (radius, border) in new[] { (0, 0), (15, 2), (1000, 1000), (0, 49), (int.MaxValue, int.MaxValue) })
+                {
+                    foreach (var underline in new[] { false, true })
+                    {
+                        ui.Case($"{type.Name} {size.Width}x{size.Height} r={radius} b={border} underline={underline}", () =>
+                        {
+                            var c = Sweep.Sized(Edit(type, radius, border, underline), size);
+                            OnPanel(ui, new PaintingTests.LimePanel(), c);
+                            ui.DrawAndDispose(c);
+                        });
+                    }
+                }
+            }
+        });
+
+        // Moving the box to another parent shows the new parent in its corners; a new window handle changes nothing
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void ParentChange_AndHandleRecreation(Type type) => Sta.Run(ui =>
+        {
+            var c = Edit(type, 15, 2);
+            OnPanel(ui, new PaintingTests.LimePanel(), c);
+            using (var bmp = ui.Render(c))
+            {
+                PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(1, 1), "first parent");
+            }
+            var pnlRed = OnPanel(ui, new PaintingTests.ColorPanel(Color.Red), c);
+            Assert.Same(pnlRed, c.Parent);
+            using (var bmp = ui.Render(c))
+            {
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(1, 1), "second parent");
+            }
+            var handle = c.Handle;
+            Priv.Call(c, "RecreateHandle");
+            Assert.NotEqual(handle, c.Handle);
+            using (var bmp = ui.Render(c))
+            {
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(1, 1), "after RecreateHandle");
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(5, c.Height / 2), "surface after RecreateHandle");
+            }
+            pnlRed.Controls.Remove(c);
+            ui.DrawDetached(c);
+            c.Dispose();
+        });
+
+        // A padding too small for the rounded corners: the inner editor is clipped by the rounded shape of the box, as the 1.x region
+        // of the box clipped it (the box itself has no region); with the default padding it is inside the shape and has no region
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void SmallPadding_ClipsTheInnerEditorByTheRoundedShape(Type type) => Sta.Run(ui =>
+        {
+            var c = Edit(type, 12, 2);
+            var inner = EditInner(c);
+            ui.Draw(c);
+            Assert.Null(inner.Region);
+            c.Padding = new Padding(2);
+            var region = inner.Region;
+            Assert.NotNull(region);
+            Assert.Null(c.Region);
+            using (var g = c.CreateGraphics())
+            {
+                // the corner of the editor lies outside the rounded corner of the box; its middle is kept
+                Assert.False(region.IsVisible(0, 0, g), "the corner of the inner editor is not clipped");
+                Assert.True(region.IsVisible(inner.Width / 2, inner.Height / 2, g), "the middle of the inner editor is clipped");
+            }
+            ui.Draw(c);
+            Assert.Same(region, inner.Region);
+            c.Padding = new Padding(10, 7, 10, 7);
+            Assert.Null(inner.Region);
+            SetRadius(c, 0);
+            c.Padding = new Padding(0);
+            Assert.Null(inner.Region);
+        });
+
+        // The transparent corners let clicks through to the parent, as the rounded region of 1.x did; the rest of the box takes them
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void HitTest_RoundedCornersAreTransparent(Type type) => Sta.Run(ui =>
+        {
+            var c = Edit(type, 15, 2);
+            OnPanel(ui, new PaintingTests.LimePanel(), c);
+            ui.Draw(c);
+            Assert.Equal(HTTRANSPARENT, HitTest(c, new Point(1, 1)));
+            Assert.Equal(HTTRANSPARENT, HitTest(c, new Point(c.Width - 2, c.Height - 2)));
+            Assert.NotEqual(HTTRANSPARENT, HitTest(c, new Point(5, c.Height / 2)));
+            Assert.NotEqual(HTTRANSPARENT, HitTest(c, new Point(c.Width / 2, 2)));
+            SetRadius(c, 0);
+            Assert.NotEqual(HTTRANSPARENT, HitTest(c, new Point(1, 1)));
+        });
+
+        // 2.0: the box scales with its form (1.x forced AutoScaleMode.None on it); after the form's AutoScale, the height of the
+        // single-line box still fits its font and its padding
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void AutoScale_FollowsTheForm_HeightFitsTheFont(Type type) => Sta.Run(ui =>
+        {
+            var c = Edit(type, 0, 2);
+            Assert.Equal(AutoScaleMode.Inherit, c.AutoScaleMode);
+            using var frm = new Form { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = Point.Empty, Size = new Size(700, 300) };
+            frm.SuspendLayout();
+            // designed at 64 dpi, shown at the screen's DPI (96 or more): the form scales its controls by 1.5 or more
+            frm.AutoScaleDimensions = new SizeF(64F, 64F);
+            frm.AutoScaleMode = AutoScaleMode.Dpi;
+            c.Location = new Point(10, 10);
+            frm.Controls.Add(c);
+            frm.ResumeLayout(false);
+            frm.PerformAutoScale();
+            Assert.True(c.Width > 200, $"not scaled with the form (width {c.Width})");
+            frm.Show();
+            ui.Pump(2);
+            var inner = EditInner(c);
+            Assert.Equal(inner.Height + c.Padding.Vertical, c.Height);
+            Assert.True(inner.Top >= c.Padding.Top && inner.Bottom <= c.Height - c.Padding.Bottom, $"inner box {inner.Bounds} outside the padding {c.Padding} of {c.Size}");
+        });
+
+        // Moved to a monitor with another DPI (per-monitor aware host): once the form has rescaled everything (WM_DPICHANGED_AFTERPARENT),
+        // the height of the single-line box fits its (rescaled) font again, without a new window for the inner editor
+        [Theory]
+        [InlineData(typeof(YANTxt))]
+        [InlineData(typeof(YANNb))]
+        public void DpiChangedAfterParent_FitsTheHeightToTheFontAgain(Type type) => Sta.Run(ui =>
+        {
+            var c = Edit(type, 0, 2);
+            ui.Show(c);
+            var inner = EditInner(c);
+            var fitted = c.Height;
+            Assert.Equal(inner.Height + c.Padding.Vertical, fitted);
+            c.Font = new Font(c.Font.FontFamily, c.Font.Size * 2);
+            // a run-time font change alone leaves the height to the application, as in 1.x
+            Assert.Equal(fitted, c.Height);
+            // the user may be typing in the box: its window (undo history, scroll position, caret) is kept, so the text box is not made
+            // multiline for a moment (on .NET that recreates its window) as when the form loads
+            var handle = inner.Handle;
+            var multilineChanges = 0;
+            if (inner is TextBox txt)
+            {
+                txt.MultilineChanged += (s, e) => multilineChanges++;
+            }
+            Send(c, WM_DPICHANGED_AFTERPARENT);
+            Assert.True(c.Height > fitted, "the height did not follow the bigger font");
+            Assert.Equal(inner.Height + c.Padding.Vertical, c.Height);
+            Assert.Equal(handle, inner.Handle);
+            Assert.Equal(0, multilineChanges);
+            // other messages change nothing
+            c.Height = 100;
+            Send(c, 0x0400);
+            Assert.Equal(100, c.Height);
+        });
+        #endregion
+
+        #region Helpers
+        private const int HTTRANSPARENT = -1;
+        private const int WM_NCHITTEST = 0x0084;
+        private const int WM_DPICHANGED_AFTERPARENT = 0x02E3;
+
         // The inner text box (a private CueTextBox)
         private static TextBox Inner(YANTxt t) => Priv.Field<TextBox>(t, "_txtText");
+
+        // A 200 x 40 blue edit box (YANTxt or YANNb) with a red border
+        internal static UserControl Edit(Type type, int radius, int border, bool underline = false)
+        {
+            UserControl c = type == typeof(YANNb)
+                ? new YANNb { BorderRadius = radius, BorderSize = border, UnderlinedStyle = underline, BorderColor = Color.Red, BackColor = Color.Blue }
+                : new YANTxt { BorderRadius = radius, BorderSize = border, UnderlinedStyle = underline, BorderColor = Color.Red, BackColor = Color.Blue };
+            c.Size = new Size(200, 40);
+            return c;
+        }
+
+        // The inner editor of an edit box
+        internal static System.Windows.Forms.Control EditInner(UserControl c) => c is YANNb ? Priv.Field<NumericUpDown>(c, "_nudNum") : Inner((YANTxt)c);
+
+        // Puts the edit box on a panel of the hidden host form, out of the panel's corner
+        internal static T OnPanel<T>(Ui ui, T pnl, UserControl c) where T : System.Windows.Forms.Control
+        {
+            if (pnl.Parent == null)
+            {
+                ui.Host.Controls.Add(pnl);
+            }
+            c.Location = new Point(30, 20);
+            pnl.Controls.Add(c);
+            return pnl;
+        }
+
+        // Pixels of the four corners that a radius of 15 leaves to the parent
+        private static Point[] EditCorners(System.Windows.Forms.Control c) => new[] { new Point(1, 1), new Point(c.Width - 2, 1), new Point(1, c.Height - 2), new Point(c.Width - 2, c.Height - 2) };
+
+        private static void SetRadius(UserControl c, int radius)
+        {
+            if (c is YANNb n)
+            {
+                n.BorderRadius = radius;
+            }
+            else
+            {
+                ((YANTxt)c).BorderRadius = radius;
+            }
+        }
+
+        private static void SetBorderSize(UserControl c, int size)
+        {
+            if (c is YANNb n)
+            {
+                n.BorderSize = size;
+            }
+            else
+            {
+                ((YANTxt)c).BorderSize = size;
+            }
+        }
+
+        private static void SetUnderline(UserControl c, bool underline)
+        {
+            if (c is YANNb n)
+            {
+                n.UnderlinedStyle = underline;
+            }
+            else
+            {
+                ((YANTxt)c).UnderlinedStyle = underline;
+            }
+        }
+
+        // Runs the Enter handler of the inner editor (the box then paints its focused border)
+        private static void EnterEdit(UserControl c) => Priv.Call(c, c is YANNb ? "Nud_Enter" : "Txt_Enter", EditInner(c), EventArgs.Empty);
+
+        // WM_NCHITTEST at a client point, through the window procedure
+        private static int HitTest(UserControl c, Point client)
+        {
+            var screen = c.PointToScreen(client);
+            var args = new object[] { Message.Create(c.Handle, WM_NCHITTEST, IntPtr.Zero, (IntPtr)unchecked((screen.Y << 16) | (screen.X & 0xFFFF))) };
+            Priv.Call(c, "WndProc", args);
+            return (int)((Message)args[0]).Result.ToInt64();
+        }
+
+        // A message without parameters, through the window procedure
+        private static void Send(UserControl c, int msg) => Priv.Call(c, "WndProc", new object[] { Message.Create(c.Handle, msg, IntPtr.Zero, IntPtr.Zero) });
 
         // Moves the focus into the box; runs the Enter handler itself where the window could not take the focus
         private static void Focus(Ui ui, YANTxt t, TextBox inner)
@@ -519,6 +1000,7 @@ namespace YANF.Tests.Controls
         private static int Red(TextBox inner) => Gdi.CountOnScreen(inner, Gdi.IsRed);
 
         private static int Dark(TextBox inner) => Gdi.CountOnScreen(inner, Gdi.IsDarkGray);
+        #endregion
 
         // Counts the calls of the protected virtual OnTextChanged
         private sealed class TxtProbe : YANTxt

@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using YANF.Control;
 using static System.ComponentModel.EditorBrowsableState;
 using static System.Drawing.FontStyle;
 using static System.Math;
@@ -43,7 +44,8 @@ namespace YANF.Script
         }
 
         // Windows animation effects are on (the Performance Options setting; off in many remote sessions)
-        private static bool IsAnimated => _uiEffectsOverride ?? UIEffectsEnabled;
+        // Same rule as the controls: UI effects and the Windows 10/11 "Animation effects" switch (reduced motion)
+        private static bool IsAnimated => YANF.Control.YANPaint.IsAnimated;
         #endregion
 
         #region Methods
@@ -106,7 +108,8 @@ namespace YANF.Script
         /// The opacity follows an ease-out curve over the elapsed time (measured with a <see cref="Stopwatch"/>), so the length of the
         /// fade does not depend on the timer resolution. Between frames it awaits a short <see cref="Task.Delay(int)"/>, so the message
         /// loop keeps running (input, painting, other forms). The target is applied at once when <paramref name="duration"/> is 0 or less
-        /// or when Windows animation effects are turned off (<see cref="SystemInformation.UIEffectsEnabled"/>). A disposed form is left
+        /// or when Windows animation effects are turned off (<see cref="SystemInformation.UIEffectsEnabled"/> or the Windows 10/11
+        /// "Animation effects" switch). A disposed form is left
         /// alone, including one disposed during the fade. Unlike <see cref="FadeIn"/> and <see cref="FadeOut"/>, this method returns at
         /// once: await the task where the next step must wait for the fade.
         /// </remarks>
@@ -141,7 +144,8 @@ namespace YANF.Script
         /// comes from Application.Exit, Windows shutdown, the Task Manager, or the owner or MDI parent closing; for an MDI child; and
         /// for a form that has MDI children or owned forms open (they would see FormClosing twice). FormClosing handlers added before
         /// the form is shown run before the fade decision; if a handler cancels the second close, the form fades back in.</para>
-        /// <para>Nothing is animated when Windows animation effects are off (<see cref="SystemInformation.UIEffectsEnabled"/>).
+        /// <para>Nothing is animated when Windows animation effects are off (<see cref="SystemInformation.UIEffectsEnabled"/> or the
+        /// Windows 10/11 "Animation effects" switch).
         /// Calling this again only updates the durations; it never subscribes twice. Do not combine it with
         /// <see cref="FadeIn"/>/<see cref="FadeOut"/> calls in Shown or FormClosing handlers.</para>
         /// <para>It does nothing at design time (for example in the constructor of a base form, which the Visual Studio designer runs
@@ -263,6 +267,24 @@ namespace YANF.Script
             }
             _highLightFonts.Remove(lbl);
             _highLightFonts.Add(lbl, newFont);
+        }
+
+        // Device pixels at the control's DPI for a length designed at 96 dpi: the shared helper of the controls (YANPaint: the rounding of
+        // Control.LogicalToDeviceUnits, the same length at 96 dpi, in a DPI-unaware process and on a WinForms without DeviceDpi; tests set
+        // YANPaint.DpiOverride)
+        internal static int LogicalToDevice(this System.Windows.Forms.Control ctrl, int value) => YANPaint.LogicalToDevice(ctrl, value);
+
+        // Scale a form designed at 96 dpi (AutoScaleMode.Dpi) to its DPI now, before code sizes or places it: WinForms would otherwise
+        // scale it at its next layout, over the sizes and bounds set meanwhile. Nothing changes at 96 dpi or in a DPI-unaware process
+        internal static void ScaleToDpi(this ContainerControl ctrl)
+        {
+            ctrl.PerformAutoScale();
+            if (YANPaint.DpiOverride is { } dpi)
+            {
+                // tests: from the machine's DPI (just applied) to the requested one
+                var factor = dpi / ctrl.CurrentAutoScaleDimensions.Width;
+                ctrl.Scale(new SizeF(factor, factor));
+            }
         }
 
         // Time-based ease-out fade to an already clamped opacity; stops when the form is disposed or the token is cancelled

@@ -27,8 +27,9 @@ namespace YANF.Script
         /// </summary>
         /// <param name="handle">Control used as a drag handle (a header panel, a caption label, a picture), or the form itself.</param>
         /// <remarks>
-        /// The drag is handed to Windows' own window-move loop (as if the title bar were pressed), so Aero Snap, multi-monitor moves,
-        /// Esc to cancel and the "show window contents while dragging" setting all work, and nothing is repainted per mouse move.
+        /// The drag is handed to Windows' own window-move loop (as if the title bar were pressed), so multi-monitor moves, Esc to cancel
+        /// and the "show window contents while dragging" setting work, and nothing is repainted per mouse move. Windows applies Aero Snap
+        /// only to forms with a sizable border (not to a borderless form).
         /// Only a single left-button press starts a drag: double-clicks and the other buttons reach the control as usual.
         /// While Windows drags the form the control receives no MouseUp or Click for that press, so use passive surfaces as handles.
         /// Calling it again on the same control does nothing more; <see cref="DisableDrag"/> removes it.

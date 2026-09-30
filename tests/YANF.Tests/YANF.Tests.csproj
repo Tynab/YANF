@@ -1,13 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net481</TargetFramework>
+    <!-- The library's .NET Framework and newest .NET builds (net8.0-windows is compiled from the same sources as
+         net10.0-windows) -->
+    <TargetFrameworks>net481;net10.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <LangVersion>12</LangVersion>
     <RootNamespace>YANF.Tests</RootNamespace>
     <AssemblyName>YANF.Tests</AssemblyName>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- WFO1000 (.NET 9+ Windows Forms analyzer): the tests' helper controls are never used in the designer -->
+    <NoWarn>$(NoWarn);WFO1000</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +21,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
     <!-- Lets the .NET SDK build net481 without a targeting pack installed; build-time only -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>

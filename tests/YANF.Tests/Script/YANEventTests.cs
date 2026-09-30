@@ -179,7 +179,7 @@ namespace YANF.Tests.Script
 
     /// <summary>
     /// Counts the handlers subscribed to an event of a component (its key in Component.Events is a private static field:
-    /// EventXxx or EVENT_XXX on .NET Framework, XxxEvent on mono).
+    /// EventXxx or EVENT_XXX on .NET Framework, s_xxxEvent on .NET, XxxEvent on mono).
     /// </summary>
     internal static class Handlers
     {
@@ -192,7 +192,7 @@ namespace YANF.Tests.Script
         private static object Key(Type type, string eventName)
         {
             var bare = eventName.EndsWith("Changed", StringComparison.Ordinal) ? eventName.Substring(0, eventName.Length - "Changed".Length) : eventName;
-            var names = new[] { "Event" + eventName, "EVENT_" + eventName.ToUpperInvariant(), eventName + "Event", "Event" + bare };
+            var names = new[] { "Event" + eventName, "EVENT_" + eventName.ToUpperInvariant(), eventName + "Event", "Event" + bare, Net(eventName), Net(bare) };
             for (var t = type; t != null; t = t.BaseType)
             {
                 foreach (var name in names)
@@ -206,5 +206,8 @@ namespace YANF.Tests.Script
             }
             throw new MissingFieldException(type.FullName, "event key of " + eventName);
         }
+
+        // .NET (Core) naming: s_mouseDownEvent, s_visibleEvent (VisibleChanged)
+        private static string Net(string name) => "s_" + char.ToLowerInvariant(name[0]) + name.Substring(1) + "Event";
     }
 }

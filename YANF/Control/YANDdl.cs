@@ -14,6 +14,7 @@ using static System.Windows.Forms.ComboBoxStyle;
 using static System.Windows.Forms.Cursors;
 using static System.Windows.Forms.DockStyle;
 using static System.Windows.Forms.FlatStyle;
+using static YANF.Control.YANPaint;
 
 namespace YANF.Control;
 
@@ -26,7 +27,6 @@ public partial class YANDdl : UserControl
 {
     #region Fields
     private ContentAlignment _textAlign = MiddleLeft;
-    private Color _backColor = WhiteSmoke;
     private Color _iconColor = MediumSlateBlue;
     private Color _iconFocusColor = HotPink;
     private Color _listBackColor = FromArgb(230, 228, 245);
@@ -36,11 +36,16 @@ public partial class YANDdl : UserControl
     private string _string;
     private string _innerAccessibleName = null;
     private string _innerAccessibleDescription = null;
-    private int _borderSize = 1;
     private bool _is_Focus = false;
     private readonly Label _lblText;
     private readonly Button _btnIc;
     private readonly ComboBox _cmbList;
+    // BorderSize (96-dpi pixels) and its width at the DPI of the control (the border fills the band outside the surface, see OnPaintBackground)
+    private readonly YANBorder _border;
+    // the arrow of the icon: its width, its height and the width of its pen, in 96-dpi pixels
+    private const int ARROW_WIDTH = 14;
+    private const int ARROW_HEIGHT = 6;
+    private const float ARROW_PEN_WIDTH = 2f;
     #endregion
 
     #region Constructors
@@ -49,6 +54,7 @@ public partial class YANDdl : UserControl
         _cmbList = new ComboBox();
         _lblText = new Label();
         _btnIc = new Button();
+        _border = new YANBorder(this, 1, 0);
         SuspendLayout();
         // combobox dropdown list
         _cmbList.BackColor = _listBackColor;
@@ -64,7 +70,6 @@ public partial class YANDdl : UserControl
         _btnIc.Dock = DockStyle.Right;
         _btnIc.FlatStyle = Flat;
         _btnIc.FlatAppearance.BorderSize = 0;
-        _btnIc.BackColor = _backColor;
         _btnIc.Cursor = Hand;
         _btnIc.TabStop = false;
         _btnIc.Size = new Size(30, 30);
@@ -73,7 +78,6 @@ public partial class YANDdl : UserControl
         // label text
         _lblText.Dock = Fill;
         _lblText.AutoSize = false;
-        _lblText.BackColor = _backColor;
         _lblText.TextAlign = _textAlign;
         _lblText.Padding = new Padding(8, 0, 0, 0);
         _lblText.Font = new Font(Font.Name, 10f);
@@ -84,18 +88,23 @@ public partial class YANDdl : UserControl
         Controls.Add(_lblText); // 2
         Controls.Add(_btnIc); // 1
         Controls.Add(_cmbList); // 0
+        // the border is painted along the edge: repaint all of it when the size changes
+        ResizeRedraw = true;
         ForeColor = DimGray;
+        // 2.0: the surface (also given to the label and the icon button); the border is painted from BorderColor
+        BackColor = WhiteSmoke;
         AutoCompleteMode = SuggestAppend;
         AutoCompleteSource = ListItems;
         String = "Select...";
         MinimumSize = new Size(200, 30);
         Size = new Size(200, 35);
-        Padding = new Padding(_borderSize);
+        Padding = GetBorderPadding();
         Font = new Font(Font.Name, 10f);
         Enter += Ddl_Enter;
         Leave += Ddl_Leave;
+        // the parent is painted behind a transparent surface or border: repaint when it moves or when the parent changes behind it
+        FollowParent(this);
         // base
-        base.BackColor = _borderColor;
         ResumeLayout();
         AdjustCmbDimension();
     }
@@ -110,20 +119,30 @@ public partial class YANDdl : UserControl
         set
         {
             _textAlign = value;
-            Invalidate();
+            _lblText.TextAlign = value;
         }
     }
 
+    /// <summary>
+    /// Gets or sets the background color of the control: its surface inside the border, behind the text and the icon.
+    /// </summary>
+    /// <remarks>
+    /// 2.0: this overrides <see cref="System.Windows.Forms.Control.BackColor"/>, so code that colors controls through a Control
+    /// reference (a theme loop, for example) colors the surface, and <see cref="System.Windows.Forms.Control.BackColorChanged"/> is
+    /// raised. In 1.x it hid Control.BackColor, which held the border color. A transparent or translucent color lets the parent's
+    /// own background show through.
+    /// </remarks>
     [Category("YAN Appearance"), Description("The background color of the component.")]
     [DefaultValue(typeof(Color), "WhiteSmoke")]
-    public new Color BackColor
+    public override Color BackColor
     {
-        get => _backColor;
+        get => base.BackColor;
         set
         {
-            _backColor = value;
-            _lblText.BackColor = _backColor;
-            _btnIc.BackColor = _backColor;
+            base.BackColor = value;
+            // the label and the icon button fill the surface
+            _lblText.BackColor = value;
+            _btnIc.BackColor = value;
         }
     }
 
@@ -181,6 +200,12 @@ public partial class YANDdl : UserControl
         }
     }
 
+    /// <summary>
+    /// Gets or sets the color of the border, painted between the edge of the control and its
+    /// <see cref="System.Windows.Forms.Control.Padding"/> as in 1.x (2.0: it no longer changes
+    /// <see cref="System.Windows.Forms.Control.BackColor"/>). A transparent or translucent color lets the parent's own background
+    /// show through.
+    /// </summary>
     [Category("YAN Appearance"), Description("This property specifies the color of the border around the control.")]
     [DefaultValue(typeof(Color), "MediumSlateBlue")]
     public Color BorderColor
@@ -188,8 +213,11 @@ public partial class YANDdl : UserControl
         get => _borderColor;
         set
         {
-            _borderColor = value;
-            base.BackColor = _borderColor;
+            if (_borderColor != value)
+            {
+                _borderColor = value;
+                Invalidate();
+            }
         }
     }
 
@@ -211,16 +239,22 @@ public partial class YANDdl : UserControl
         }
     }
 
+    /// <summary>
+    /// Gets or sets the width of the border in 96-dpi pixels: it is scaled to the DPI of the control. Setting it also sets
+    /// <see cref="System.Windows.Forms.Control.Padding"/> to the scaled width, so the text and the icon sit inside the border. A
+    /// negative value is stored as 0.
+    /// </summary>
     [Category("YAN Appearance"), Description("This property specifies the size, in pixels, of the border around the control.")]
     [DefaultValue(1)]
     public int BorderSize
     {
-        get => _borderSize;
+        get => _border.Size;
         set
         {
-            _borderSize = Max(0, value);
-            Padding = new Padding(_borderSize);
+            _border.Size = Max(0, value);
+            Padding = GetBorderPadding();
             AdjustCmbDimension();
+            Invalidate();
         }
     }
 
@@ -420,28 +454,75 @@ public partial class YANDdl : UserControl
         AdjustCmbDimension();
     }
 
-    protected override void OnPaint(PaintEventArgs e)
-    {
-        base.OnPaint(e);
-        _lblText.TextAlign = _textAlign;
-    }
+    /// <summary>
+    /// Raises the Paint event (the text alignment is given to the label by <see cref="TextAlign"/>; the border and the surface are
+    /// painted by <see cref="OnPaintBackground(PaintEventArgs)"/>).
+    /// </summary>
+    /// <param name="e">The paint data.</param>
+    protected override void OnPaint(PaintEventArgs e) => base.OnPaint(e);
 
     /// <summary>
-    /// Paints the background, which shows as the border around the inner controls: with <see cref="BorderFocusColor"/> while the
-    /// control has the focus (<see cref="BorderColor"/> is not changed).
+    /// Paints the background: the surface in <see cref="BackColor"/> (and the BackgroundImage) inside the border, and the border in
+    /// <see cref="BorderColor"/>, or in <see cref="BorderFocusColor"/> while the control has the focus (over BorderColor when it is
+    /// translucent); the system frame and highlight colors in high contrast mode. As in 1.x, the border fills the whole band between
+    /// the edge of the control and its <see cref="System.Windows.Forms.Control.Padding"/> (at least <see cref="BorderSize"/> wide), so a
+    /// designer file that sets a wider Padding keeps its look. A transparent or translucent surface or border shows the parent's own
+    /// background (a gradient, an image, what its Paint handlers draw); as for a transparent BackColor in WinForms, sibling controls
+    /// that overlap this control are not painted behind it.
     /// </summary>
     /// <param name="e">The paint data.</param>
     protected override void OnPaintBackground(PaintEventArgs e)
     {
+        var graphics = e.Graphics;
+        var backColor = BackColor;
+        var client = ClientRectangle;
+        var rectSurface = GetSurfaceRectangle();
+        var isBand = rectSurface != client;
         var isHighlight = _is_Focus && _borderFocusColor.A > 0;
-        if (!isHighlight || _borderFocusColor.A < 255)
+        var isBorderColor = !isHighlight || _borderFocusColor.A < 255;
+        var isOpaqueBorder = !isBand || (isHighlight && _borderFocusColor.A == 255) || (isBorderColor && _borderColor.A == 255);
+        // what a transparent or translucent surface or border lets through; an opaque control hides it (and the parent's Paint handlers)
+        if ((backColor.A < 255 && !rectSurface.IsEmpty) || !isOpaqueBorder)
         {
-            base.OnPaintBackground(e);
+            PaintParent(this, e);
+        }
+        // the surface inside the border (with the BackgroundImage, if any, as the default background paints it)
+        if (rectSurface.IsEmpty)
+        {
+            // nothing is left inside the border: it covers the whole control
+        }
+        else if (BackgroundImage != null)
+        {
+            var state = graphics.Save();
+            try
+            {
+                graphics.IntersectClip(rectSurface);
+                base.OnPaintBackground(e);
+            }
+            finally
+            {
+                graphics.Restore(state);
+            }
+        }
+        else if (backColor.A > 0)
+        {
+            using var brushBack = new SolidBrush(backColor);
+            graphics.FillRectangle(brushBack, rectSurface);
+        }
+        // the border: the band around the surface, on whole pixels
+        if (!isBand)
+        {
+            return;
+        }
+        using var band = new Region(client);
+        band.Exclude(rectSurface);
+        if (isBorderColor)
+        {
+            FillBand(graphics, band, Contrast(_borderColor, SystemColors.WindowFrame));
         }
         if (isHighlight)
         {
-            using var brush = new SolidBrush(_borderFocusColor);
-            e.Graphics.FillRectangle(brush, ClientRectangle);
+            FillBand(graphics, band, Contrast(_borderFocusColor, SystemColors.Highlight));
         }
     }
 
@@ -453,6 +534,34 @@ public partial class YANDdl : UserControl
     {
         base.OnCreateControl();
         ForwardAccessibility();
+    }
+
+    /// <summary>
+    /// Called when the DPI of the control changes (per-monitor DPI awareness): the border and the arrow of the icon are painted for
+    /// the new DPI (the layout, Padding included, is rescaled by the form).
+    /// </summary>
+    /// <param name="deviceDpiOld">The DPI before the change.</param>
+    /// <param name="deviceDpiNew">The new DPI.</param>
+    protected override void RescaleConstantsForDpi(int deviceDpiOld, int deviceDpiNew)
+    {
+        base.RescaleConstantsForDpi(deviceDpiOld, deviceDpiNew);
+        _border.Reset();
+        Invalidate();
+        _btnIc.Invalidate();
+    }
+
+    /// <summary>
+    /// Releases the resources used by the control; the cached border shape is released after its window is destroyed.
+    /// </summary>
+    /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        // after the window is gone, so that no late paint builds the border again
+        if (disposing)
+        {
+            _border.Dispose();
+        }
     }
     #endregion
 
@@ -469,6 +578,34 @@ public partial class YANDdl : UserControl
         var text = _cmbList.Text;
         _lblText.Text = !string.IsNullOrWhiteSpace(text) ? text : (_is_Focus && _cmbList.DropDownStyle != DropDownList ? null : _string);
     }
+
+    // Get the surface: the client rectangle inside the border and the padding (the label and the icon button cover it; 1.x showed its
+    // background, the border color, around them), empty when nothing is left inside
+    private Rectangle GetSurfaceRectangle()
+    {
+        var size = _border.DeviceSize;
+        var padding = Padding;
+        var client = ClientRectangle;
+        var rect = Rectangle.FromLTRB(Max(size, padding.Left), Max(size, padding.Top), client.Right - Max(size, padding.Right), client.Bottom - Max(size, padding.Bottom));
+        return rect.Width > 0 && rect.Height > 0 ? rect : Rectangle.Empty;
+    }
+
+    // Fill the band of the border with a color (nothing for a fully transparent color)
+    private static void FillBand(Graphics graphics, Region band, Color color)
+    {
+        if (color.A > 0)
+        {
+            using var brush = new SolidBrush(color);
+            graphics.FillRegion(brush, band);
+        }
+    }
+
+    // Get the padding that keeps the label and the icon button inside the border: its width at the DPI of the control (a layout
+    // value in device pixels, which the form's AutoScale rescales like the Padding written by the designer)
+    private Padding GetBorderPadding() => new(LogicalToDevice(this, _border.Size));
+
+    // Get the painted color of the icon: IconFocusColor while the control has the focus (unless it is empty or transparent)
+    private Color GetIconColor() => _is_Focus && _iconFocusColor.A > 0 ? _iconFocusColor : _iconColor;
 
     // Track the focus and repaint the border and the icon, which are highlighted while the control has the focus
     private void SetFocusHighlight(bool isFocus)

@@ -1,22 +1,32 @@
 # YAMI AN NEPHILIM FRAMEWORK
-YANF is based on .NET Framework 4.8.1, YANF use for Windows Forms App project with C# or Visual Basic programming languages.
+YANF is a Windows Forms library for C# and Visual Basic apps: controls, a message box, loading screens, a borderless form and helpers, for .NET Framework 4.8.1, .NET 8 and .NET 10 on Windows.
 
 ### INSTALL
 https://www.nuget.org/packages/Tynab.YANF
 ```
-PM> NuGet\Install-Package Tynab.YANF -Version 1.0.1
+PM> NuGet\Install-Package Tynab.YANF -Version 2.0.0
 ```
 ```
-> dotnet add package Tynab.YANF --version 1.0.1
+> dotnet add package Tynab.YANF --version 2.0.0
 ```
-**Do not use version 1.0.2**: that package has no `YANF.dll` under `lib/`, so it adds no reference. It is currently the latest version on nuget.org, so the commands above pin 1.0.1.
+2.0 has breaking changes: the [upgrade guide in CHANGELOG.md](https://github.com/Tynab/YANF/blob/main/CHANGELOG.md#upgrade-guide-101-to-20) goes through them. Version 1.0.1 remains available for the old API. **Do not use version 1.0.2**: that package has no `YANF.dll` under `lib/`, so it adds no reference.
 Release notes and the versioning policy are in [CHANGELOG.md](https://github.com/Tynab/YANF/blob/main/CHANGELOG.md).
+
+### TARGET FRAMEWORKS
+| Your app | Uses |
+|---|---|
+| .NET Framework 4.8.1 | `lib/net481` |
+| .NET 8 and .NET 9 (`net8.0-windows`, `net9.0-windows`) | `lib/net8.0-windows7.0` |
+| .NET 10 and later (`net10.0-windows`) | `lib/net10.0-windows7.0` |
+| .NET 6 and .NET 7 | `lib/net481`, with warning NU1701 |
+
+The three builds have the same API. On .NET the default font is Segoe UI 9pt, so YANF controls that take their font family from it use Segoe UI; to keep the .NET Framework look, call `Application.SetDefaultFont(new Font("Microsoft Sans Serif", 8.25F))` before creating any window.
 
 ## IMAGE DEMO
 ![Image demo](https://raw.githubusercontent.com/Tynab/YANF/main/pic/1.jpg)
 
 ## CODE DEMO
-Examples marked **Recommended** use APIs that are newer than 1.0.1 (see the Unreleased section of [CHANGELOG.md](https://github.com/Tynab/YANF/blob/main/CHANGELOG.md)). The 1.0 APIs in the other examples keep working.
+Examples marked **Recommended** use APIs added in 2.0 (see [CHANGELOG.md](https://github.com/Tynab/YANF/blob/main/CHANGELOG.md)). The 1.0 APIs in the other examples keep working.
 
 ### MESSAGEBOX
 ```c#
@@ -171,6 +181,38 @@ private void Done()
 ```
 ![Load screen](https://raw.githubusercontent.com/Tynab/YANF/main/pic/8.jpg)
 
+### BORDERLESS FORM
+`YANForm` is a base form for apps that draw their own title bar. It is borderless, and by default it has rounded corners, a drop shadow and resize edges.
+```c#
+/* A borderless form with a custom title bar (Recommended) */
+using System;
+using System.Windows.Forms;
+using YANF.Screen;
+
+// Derive from YANForm instead of Form (or add an Inherited Form based on YANForm)
+public partial class MainFrm : YANForm
+{
+    // Constructor
+    public MainFrm()
+    {
+        InitializeComponent();
+        // The top 32 px move the form like a title bar, and a double-click maximizes or restores it
+        CaptionHeight = 32;
+        // So do the header panel and the title label that cover that band
+        RegisterCaptionControl(pnlHeader);
+        RegisterCaptionControl(lblTitle);
+        // Keep the resize edges (ResizeBorderWidth, 6 px) free of docked panels
+        Padding = new Padding(6);
+    }
+
+    // Title bar buttons
+    private void BtnMinimize_Click(object sender, EventArgs e) => WindowState = FormWindowState.Minimized;
+    private void BtnMaximize_Click(object sender, EventArgs e) => WindowState = WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized;
+    private void BtnClose_Click(object sender, EventArgs e) => Close();
+}
+```
+`RoundedCorners`, `CornerRadius`, `DropShadow`, `Resizable`, `ResizeBorderWidth` and `CaptionHeight` can also be set in the designer (sizes in pixels at 96 dpi, scaled with the DPI). Windows 11 rounds the window itself, with its shadow; older Windows get a region of `CornerRadius`. The taskbar button minimizes and restores the form, and it maximizes to the working area, so the taskbar stays visible. Windows does not apply Aero Snap to a borderless window.
+
 ### FADE & DRAG
 ```c#
 /* Fade and drag a borderless form (Recommended) */
@@ -182,7 +224,7 @@ public LoginFrm()
     InitializeComponent();
     // Fade in each time the form is shown and out when it closes (ms), without blocking the UI thread.
     this.EnableFade(250, 250);
-    // Drag the form by its header panel and title label (Aero Snap and multiple monitors work)
+    // Drag the form by its header panel and title label, through Windows' own move loop (across monitors; ESC cancels)
     pnlHeader.EnableDrag();
     lblTitle.EnableDrag();
 }
@@ -196,7 +238,7 @@ private async void BtnCheck_Click(object sender, EventArgs e)
     await this.FadeToAsync(1, 150);
 }
 ```
-`EnableFade` replaces the 1.0 `FadeIn()` / `FadeOut()` calls in `Shown` and `FormClosing` (do not combine them): the fade no longer blocks the UI thread, a modal form keeps its `DialogResult`, and a cancelled close no longer leaves an invisible form. `EnableDrag` replaces the three handlers `YANEvent.MoveFrm_MouseDown`, `MoveFrm_MouseMove` and `MoveFrm_MouseUp`. A press that drags the form gives the control no `Click`, so use panels, labels or pictures as handles, not buttons.
+`EnableFade` replaces the 1.0 `FadeIn()` / `FadeOut()` calls in `Shown` and `FormClosing` (do not combine them): the fade no longer blocks the UI thread, a modal form keeps its `DialogResult`, and a cancelled close no longer leaves an invisible form. `EnableDrag` replaces the three handlers `YANEvent.MoveFrm_MouseDown`, `MoveFrm_MouseMove` and `MoveFrm_MouseUp`. Aero Snap applies only to a form with a sizable border, not to a borderless one. A press that drags the form gives the control no `Click`, so use panels, labels or pictures as handles, not buttons.
 
 ### FIND CONTROLS
 ```c#
@@ -228,18 +270,50 @@ public LoginFrm()
 ```
 The 1.0 `GetAllObjs(typeof(YANTxt))` still works and matches the exact type only.
 
+### HIGH DPI
+YANF scales with the DPI when the app is DPI aware. At 96 dpi (100 %), and in apps that are not DPI aware (the default for .NET Framework apps, which Windows stretches as a bitmap), nothing is scaled: YANF draws the same pixel sizes as 1.0.1.
+
+What scales: the sizes the controls draw with (`BorderSize`, `BorderRadius`, `YANPrg.ChannelHeight` and `SliderHeight`, the toggle, the radio circle, the arrow and the calendar icon; the property values stay in pixels at 96 dpi), YANTxt and YANNb (with their form), the Load, Wait and Update screens and the message box, and the corners, resize edges and caption band of `YANForm`. In a per-monitor aware app they are scaled again when a window moves to a monitor with another scale. Your own forms must scale too: design them at 96 dpi with `AutoScaleMode.Dpi` (or `Font`).
+
+**.NET Framework 4.8.1**: make the app per-monitor aware (PerMonitorV2) in both files below, with the same value (the manifest wins when they differ). Add the manifest with Add > New Item > Application Manifest File, and declare Windows 10 compatibility in it: the Windows Forms setting needs it. Keep `Application.EnableVisualStyles()` in `Main`.
+```xml
+<!-- app.manifest, inside <assembly> -->
+<compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+  <application>
+    <!-- Windows 10 and 11 -->
+    <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+  </application>
+</compatibility>
+<application xmlns="urn:schemas-microsoft-com:asm.v3">
+  <windowsSettings>
+    <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+  </windowsSettings>
+</application>
+```
+```xml
+<!-- App.config, inside <configuration>: turns on the per-monitor DPI support of Windows Forms -->
+<System.Windows.Forms.ApplicationConfigurationSection>
+  <add key="DpiAwareness" value="PerMonitorV2" />
+</System.Windows.Forms.ApplicationConfigurationSection>
+```
+**.NET 8 and .NET 10**: set the mode in the project file and call `ApplicationConfiguration.Initialize()` first in `Main` (C#), or call `Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)` before the first window is created (Visual Basic with the application framework: set `e.HighDpiMode` in the `ApplyApplicationDefaults` event). Leave DPI settings out of the manifest (analyzer WFAC010).
+```xml
+<PropertyGroup>
+  <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+</PropertyGroup>
+```
+The demo app is set up both ways (see below).
+
 ### DEMO APP
-The demo forms (`MainFrm`, `Demo1`, `Demo2`) are no longer part of the package (earlier versions shipped them inside `YANF.dll`).
-They live in the sample project [samples/YANF.Demo](https://github.com/Tynab/YANF/tree/main/samples/YANF.Demo): open `YANF.sln` and run `YANF.Demo`.
+The demo forms (`MainFrm`, `Demo1`, `Demo2`) are no longer part of the package (1.0.x shipped them inside `YANF.dll`).
+They live in the sample project [samples/YANF.Demo](https://github.com/Tynab/YANF/tree/main/samples/YANF.Demo): open `YANF.sln` and run `YANF.Demo` (.NET Framework 4.8.1 or .NET 10). It is per-monitor DPI aware, and its profile form (`Demo2`) is a `YANForm`.
 
 ![Demo app](https://raw.githubusercontent.com/Tynab/YANF/main/pic/2.jpg)
 
 ### FORM
 - MessageBox new style (support for 3 languages)
-- Loader: Load, Wait or Update screen over a form while async work runs
-- Wait screen
-- Load screen
-- Update screen
+- Loader: Load, Wait or Update screen over a form while async work runs (`YANLoader`, or the screen services)
+- Borderless form with rounded corners, shadow and resize edges (`YANForm`)
 
 ### CONTROL
 - Button new style
@@ -267,15 +341,16 @@ They live in the sample project [samples/YANF.Demo](https://github.com/Tynab/YAN
 - Password
 
 ## BUILD FROM SOURCE
-Requirements: Windows with the .NET Framework 4.8.1 runtime, and Visual Studio 2022 (17.8 or later, workload ".NET desktop development") or Build Tools for Visual Studio with the .NET SDK.
+Requirements: Windows with the .NET Framework 4.8.1 runtime, the .NET 10 SDK, and Visual Studio 2022 17.14 or later (workload ".NET desktop development") or Build Tools for Visual Studio 17.14 or later. The library builds for `net481`, `net8.0-windows` and `net10.0-windows`.
 
 Build in Visual Studio (open `YANF.sln`) or from a Developer Command Prompt. Use Visual Studio's MSBuild: `dotnet build` cannot embed the bitmap resources of the forms for .NET Framework.
 ```
 msbuild YANF.sln -restore -p:Configuration=Release
 ```
-Run the tests (xUnit, `tests/YANF.Tests`) from Test Explorer or after the build. They create and show windows, so they need an interactive desktop.
+Run the tests (xUnit, `tests/YANF.Tests`, for `net481` and `net10.0-windows`) from Test Explorer or after the build. They create and show windows, so they need an interactive desktop.
 ```
-dotnet test tests/YANF.Tests/YANF.Tests.csproj -c Release --no-build
+dotnet test tests/YANF.Tests/YANF.Tests.csproj -c Release --no-build --framework net481
+dotnet test tests/YANF.Tests/YANF.Tests.csproj -c Release --no-build --framework net10.0-windows
 ```
 Run the demo app by setting `samples/YANF.Demo` as the startup project. Create the package (it is validated against 1.0.1 for breaking changes):
 ```

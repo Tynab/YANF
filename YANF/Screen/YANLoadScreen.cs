@@ -1,28 +1,26 @@
 ﻿using System.Drawing;
-using System.Windows.Forms;
+using YANF.Script;
 
 namespace YANF.Screen
 {
-    public partial class YANLoadScreen : YANOverlayScreen
+    /// <summary>
+    /// Loading animation with a percentage, covering the window it is shown over (<see cref="YANLoader"/> and the legacy YANLoadScrService).
+    /// </summary>
+    internal partial class YANLoadScreen : YANOverlayScreen
     {
         #region Constructors
-        public YANLoadScreen(Form pFrm, int corner, bool isTop) : this(pFrm.Bounds, corner, isTop)
-        {
-        }
-
-        // Bounds are passed as a snapshot so the screen can be built on its own thread without touching pFrm
+        // Legacy service: fixed placement from a snapshot of the caller's bounds (the screen is built on its own thread)
         internal YANLoadScreen(Rectangle bounds, int corner, bool isTop) : this() => PlaceAt(bounds, corner, isTop);
 
         // YANLoader: placed over its owner when shown
-        internal YANLoadScreen() => InitializeComponent();
+        internal YANLoadScreen()
+        {
+            InitializeComponent();
+            this.ScaleToDpi();
+        }
         #endregion
 
         #region Overridden
-        /// <summary>
-        /// Fades the screen out, then closes and disposes it (see <see cref="YANOverlayScreen.Frm_Close"/>).
-        /// </summary>
-        public override void Frm_Close() => base.Frm_Close();
-
         /// <summary>
         /// Shows the percentage; the detail text is not shown on this screen.
         /// </summary>

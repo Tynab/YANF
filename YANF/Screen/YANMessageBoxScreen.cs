@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Windows.Forms;
 using YANF.Script;
-using static System.ComponentModel.EditorBrowsableState;
 using static System.Drawing.Color;
+using static System.Drawing.Drawing2D.InterpolationMode;
+using static System.Drawing.Drawing2D.PixelOffsetMode;
+using static System.Drawing.Drawing2D.WrapMode;
 using static System.Windows.Forms.DialogResult;
 using static System.Windows.Forms.MessageBoxButtons;
 using static System.Windows.Forms.MessageBoxIcon;
@@ -16,11 +19,18 @@ using static YANF.Script.YANEvent;
 
 namespace YANF.Screen
 {
-    public partial class YANMessageBoxScreen : SoftScreen
+    /// <summary>
+    /// The message box form that <see cref="YANMessageBox"/> shows (internal since 2.0).
+    /// </summary>
+    internal partial class YANMessageBoxScreen : SoftScreen
     {
         #region Fields
+        // Layout constants in 96-dpi pixels (scaled to the box's DPI where they are used)
         private const int BTN_MARGIN = 10;
         private const int DFLT_BORDER = 2;
+        private const int LINE_HEIGHT = 17;
+        private const int MULTI_LINE_BOTTOM = 15;
+        private const int WM_DPICHANGED = 0x02E0;
 
         // Buttons of each set, left to right
         private static readonly Dictionary<MessageBoxButtons, DialogResult[]> _btnSets = new()
@@ -42,6 +52,7 @@ namespace YANF.Screen
 
         private Font[] _fntsLang; // created for this box only, disposed with it
         private Color _primaryColor = CornflowerBlue;
+        private MessageBoxIcon _icon;
         #endregion
 
         #region Constructors
@@ -63,6 +74,8 @@ namespace YANF.Screen
                 throw new InvalidEnumArgumentException(nameof(options), (int)options.Buttons, typeof(MessageBoxButtons));
             }
             InitializeComponent();
+            // the 96-dpi design at the box's DPI before the layout below reads the sizes
+            this.ScaleToDpi();
             InitializeItems();
             // prop
             var lang = options.Language ?? ENG;
@@ -75,60 +88,12 @@ namespace YANF.Screen
             SetSize(results.Length);
             SetBtns(results, options.Buttons, options.DefaultButton, lang, options.StrictClose);
             SetIcon(options.Icon);
-        }
-
-        [EditorBrowsable(Never)]
-        public YANMessageBoxScreen(string text) : this(new YANMessageBoxOptions { Text = text })
-        {
-        }
-
-        [EditorBrowsable(Never)]
-        public YANMessageBoxScreen(string text, MsgBoxLang lang) : this(new YANMessageBoxOptions { Text = text, Language = lang })
-        {
-        }
-
-        [EditorBrowsable(Never)]
-        public YANMessageBoxScreen(string cap, string text) : this(new YANMessageBoxOptions { Caption = cap, Text = text })
-        {
-        }
-
-        [EditorBrowsable(Never)]
-        public YANMessageBoxScreen(string cap, string text, MsgBoxLang lang) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Language = lang })
-        {
-        }
-
-        [EditorBrowsable(Never)]
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns })
-        {
-        }
-
-        [EditorBrowsable(Never)]
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MsgBoxLang lang) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Language = lang })
-        {
-        }
-
-        [EditorBrowsable(Never)]
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon })
-        {
-        }
-
-        [EditorBrowsable(Never)]
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MsgBoxLang lang) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, Language = lang })
-        {
-        }
-
-        [EditorBrowsable(Never)]
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, DefaultButton = btnDflt })
-        {
-        }
-
-        [EditorBrowsable(Never)]
-        public YANMessageBoxScreen(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt, MsgBoxLang lang) : this(new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, DefaultButton = btnDflt, Language = lang })
-        {
+            ScaleIcon();
         }
         #endregion
 
         #region Properties
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)] // set from the icon, never by the designer
         public Color PrimaryColor
         {
             get => _primaryColor;
@@ -141,6 +106,21 @@ namespace YANF.Screen
         #endregion
 
         #region Overridden
+        /// <summary>
+        /// After WinForms has rescaled the box for the DPI of another monitor (per-monitor DPI awareness), redraws what it does not
+        /// scale: the default-button border and the icon.
+        /// </summary>
+        /// <param name="m">The message.</param>
+        /// <remarks>WM_DPICHANGED rather than an OnDpiChanged override, whose parameter type is missing from mono's WinForms.</remarks>
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+            if (m.Msg == WM_DPICHANGED && !IsDisposed)
+            {
+                RescaleForDpi();
+            }
+        }
+
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
@@ -218,13 +198,13 @@ namespace YANF.Screen
         private void SetSize(int btnCount)
         {
             var w = lblMessage.Width + picIcon.Width + pnlBody.Padding.Left;
-            var min = btn1.Width * btnCount + BTN_MARGIN * (btnCount + 1) + Padding.Left + Padding.Right;
+            var min = btn1.Width * btnCount + this.LogicalToDevice(BTN_MARGIN) * (btnCount + 1) + Padding.Left + Padding.Right;
             w = Math.Max(Math.Max(w, min), lblCaption.Width + btnClose.Width + Padding.Left + Padding.Right);
-            if (lblMessage.Height > 17 + lblMessage.Padding.Top + lblMessage.Padding.Bottom)
+            if (lblMessage.Height > this.LogicalToDevice(LINE_HEIGHT) + lblMessage.Padding.Top + lblMessage.Padding.Bottom)
             {
                 // multi-line: the side padding goes, the wrap width stays (same line breaks, so the text still fits the width above)
                 lblMessage.MaximumSize = new Size(Math.Max(1, lblMessage.MaximumSize.Width - lblMessage.Padding.Horizontal), 0);
-                lblMessage.Padding = new Padding(0, 0, 0, 15);
+                lblMessage.Padding = new Padding(0, 0, 0, this.LogicalToDevice(MULTI_LINE_BOTTOM));
             }
             var h = pnlHeader.Height + lblMessage.Height + pnlFooter.Height + pnlBody.Padding.Top + Padding.Top + Padding.Bottom;
             Size = new Size(w, h);
@@ -235,7 +215,8 @@ namespace YANF.Screen
         {
             var slots = new[] { btn1, btn2, btn3 };
             var n = results.Length;
-            var gap = n == 2 ? BTN_MARGIN * 2 : BTN_MARGIN;
+            var margin = this.LogicalToDevice(BTN_MARGIN);
+            var gap = n == 2 ? margin * 2 : margin;
             var xCtr = (pnlFooter.Width - btn1.Width) / 2;
             var yCtr = (pnlFooter.Height - btn1.Height) / 2;
             var x = xCtr - (n - 1) * (btn1.Width + gap) / 2;
@@ -267,10 +248,11 @@ namespace YANF.Screen
         // Mark btn: a white border on btn, none on the other btns
         private void MarkBtn(object btn)
         {
+            var border = this.LogicalToDevice(DFLT_BORDER);
             foreach (var slot in new[] { btn1, btn2, btn3 })
             {
                 slot.FlatAppearance.BorderColor = White;
-                slot.FlatAppearance.BorderSize = slot == btn ? DFLT_BORDER : 0;
+                slot.FlatAppearance.BorderSize = slot == btn ? border : 0;
             }
         }
 
@@ -283,15 +265,15 @@ namespace YANF.Screen
             _ => SeaGreen
         };
 
-        // Set icon
+        // Set icon: its image and its accent color
         private void SetIcon(MessageBoxIcon icon)
         {
+            _icon = icon;
             switch (icon)
             {
                 case Error:
                 {
                     // error
-                    SetImage(pMessError);
                     PrimaryColor = FromArgb(224, 79, 95);
                     btnClose.FlatAppearance.MouseOverBackColor = Crimson;
                     break;
@@ -299,21 +281,18 @@ namespace YANF.Screen
                 case Information:
                 {
                     // information
-                    SetImage(pMessInfomation);
                     PrimaryColor = FromArgb(38, 191, 166);
                     break;
                 }
                 case Question:
                 {
                     // question
-                    SetImage(pMessQuestion);
                     PrimaryColor = FromArgb(10, 119, 232);
                     break;
                 }
                 case Warning:
                 {
                     // warning
-                    SetImage(pMessWarning);
                     PrimaryColor = FromArgb(255, 140, 0);
                     break;
                 }
@@ -321,10 +300,21 @@ namespace YANF.Screen
                 {
                     // none: the designer's chat image is already shown
                     PrimaryColor = CornflowerBlue;
-                    break;
+                    return;
                 }
             }
+            SetImage(GetIconImage(icon));
         }
+
+        // Get icon image: a new bitmap of the icon at 96 dpi (the chat image without an icon, and for a value that is not an icon)
+        private static Bitmap GetIconImage(MessageBoxIcon icon) => icon switch
+        {
+            Error => pMessError,
+            Information => pMessInfomation,
+            Question => pMessQuestion,
+            Warning => pMessWarning,
+            _ => pMessChat
+        };
 
         // Set image (each resource read is a new bitmap that only this box uses)
         private void SetImage(Image img)
@@ -332,6 +322,46 @@ namespace YANF.Screen
             var old = picIcon.Image;
             picIcon.Image = img;
             old?.Dispose();
+        }
+
+        // Scale icon: the images are drawn for 96 dpi and the picture box shows them at their pixel size (nothing changes at 96 dpi).
+        // Bicubic, with the edge pixels mirrored outwards: a plain resize blends the opaque edges of the images with transparency
+        private void ScaleIcon()
+        {
+            if (picIcon.Image is not { } img)
+            {
+                return;
+            }
+            var size = new Size(this.LogicalToDevice(img.Width), this.LogicalToDevice(img.Height));
+            if (size == img.Size || size.Width <= 0 || size.Height <= 0)
+            {
+                return;
+            }
+            var bmp = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppArgb);
+            try
+            {
+                using var g = Graphics.FromImage(bmp);
+                using var attrs = new ImageAttributes();
+                g.InterpolationMode = HighQualityBicubic;
+                g.PixelOffsetMode = HighQuality;
+                attrs.SetWrapMode(TileFlipXY);
+                g.DrawImage(img, new Rectangle(Point.Empty, size), 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, attrs);
+            }
+            catch
+            {
+                bmp.Dispose();
+                throw;
+            }
+            SetImage(bmp);
+        }
+
+        // Rescale for DPI: WinForms has scaled the sizes, the fonts and the layout; the border of the marked btn and the icon image are
+        // scaled here (the icon again from its 96-dpi image)
+        private void RescaleForDpi()
+        {
+            MarkBtn(Array.Find(new[] { btn1, btn2, btn3 }, b => b.FlatAppearance.BorderSize > 0));
+            SetImage(GetIconImage(_icon));
+            ScaleIcon();
         }
         #endregion
     }

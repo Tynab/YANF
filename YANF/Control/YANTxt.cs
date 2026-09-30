@@ -7,12 +7,10 @@ using System.Windows.Forms;
 using static System.ComponentModel.DesignerSerializationVisibility;
 using static System.ComponentModel.EditorBrowsableState;
 using static System.Drawing.Color;
-using static System.Drawing.Drawing2D.PenAlignment;
-using static System.Drawing.Drawing2D.SmoothingMode;
-using static System.Drawing.Rectangle;
 using static System.Math;
 using static System.Windows.Forms.TextRenderer;
-using static YANF.Script.YANShape;
+using static YANF.Control.YANEditPaint;
+using static YANF.Control.YANPaint;
 
 namespace YANF.Control
 {
@@ -24,22 +22,25 @@ namespace YANF.Control
     {
         #region Fields
         private Color _borderColor = MediumSlateBlue;
+        private Color _borderFocusColor = HotPink;
         private Color _placeholderColor = DarkGray;
         private string _placeholderText = null;
         private string _innerAccessibleName = null;
         private string _innerAccessibleDescription = null;
-        private int _borderSize = 2;
-        private int _borderRadius = 0;
         private bool _is_UnderlinedStyle = false;
         private bool _is_Focus = false;
         private bool _is_Painted = false;
         private readonly CueTextBox _txtText;
+        // BorderSize and BorderRadius (96-dpi pixels), the rounded shape of the control and its border
+        private readonly YANBorder _border;
+        private const int WM_DPICHANGED_AFTERPARENT = 0x02E3;
         #endregion
 
         #region Constructors
         public YANTxt()
         {
             _txtText = new CueTextBox();
+            _border = new YANBorder(this, 2, 0);
             SuspendLayout();
             // textbox text
             _txtText.BackColor = White;
@@ -58,17 +59,20 @@ namespace YANF.Control
             _txtText.KeyPress += Txt_KeyPress;
             _txtText.KeyUp += Txt_KeyUp;
             _txtText.TextChanged += Txt_TextChanged;
-            _txtText.SizeChanged += Txt_SizeChanged;
+            _txtText.SizeChanged += Txt_BoundsChanged;
+            _txtText.LocationChanged += Txt_BoundsChanged;
             // user control
             Controls.Add(_txtText);
             DoubleBuffered = true;
             ResizeRedraw = true;
             ForeColor = DimGray;
             BackColor = White;
-            AutoScaleMode = AutoScaleMode.None;
+            // 2.0: no AutoScaleMode.None, the control scales with its form like any other container (Padding, Size, the inner box)
             Size = new Size(200, 30);
             Padding = new Padding(10, 7, 10, 7);
             Font = new Font(Font.Name, 11f);
+            // the parent is painted behind the rounded corners: repaint when it moves or when the parent changes behind it
+            FollowParent(this);
             // base
             ResumeLayout();
         }
@@ -107,7 +111,18 @@ namespace YANF.Control
 
         [Category("YAN Appearance"), Description("This property specifies the color of the border around the control when the control has the focus.")]
         [DefaultValue(typeof(Color), "HotPink")]
-        public Color BorderFocusColor { get; set; } = HotPink;
+        public Color BorderFocusColor
+        {
+            get => _borderFocusColor;
+            set
+            {
+                if (_borderFocusColor != value)
+                {
+                    _borderFocusColor = value;
+                    Invalidate();
+                }
+            }
+        }
 
         [Category("YAN Appearance"), Description("The color of the placeholder text.")]
         [DefaultValue(typeof(Color), "DarkGray")]
@@ -185,35 +200,44 @@ namespace YANF.Control
             }
         }
 
+        /// <summary>
+        /// Gets or sets the width of the border in 96-dpi pixels: it is scaled to the DPI of the control. In <see cref="UnderlinedStyle"/>
+        /// the underline is BorderSize / 2 + 1 pixels thick at 96 dpi, as in 1.x. A negative value is stored as 0.
+        /// </summary>
         [Category("YAN Appearance"), Description("This property specifies the size, in pixels, of the border around the control.")]
         [DefaultValue(2)]
         public int BorderSize
         {
-            get => _borderSize;
+            get => _border.Size;
             set
             {
                 value = Max(0, value);
-                if (_borderSize != value)
+                if (_border.Size != value)
                 {
-                    _borderSize = value;
+                    _border.Size = value;
                     UpdateTextRegion();
                     Invalidate();
                 }
             }
         }
 
+        /// <summary>
+        /// Gets or sets the radius of the rounded corners in 96-dpi pixels (scaled to the DPI of the control; at most half the
+        /// height or width when painted). The corners are painted anti-aliased over the parent's own background. A negative value
+        /// is stored as 0.
+        /// </summary>
         [Category("YAN Appearance"), Description("This property allows you to add rounded corners to the control.")]
         [DefaultValue(0)]
         public int BorderRadius
         {
-            get => _borderRadius;
+            get => _border.Radius;
             set
             {
                 value = Max(0, value);
-                if (_borderRadius != value)
+                if (_border.Radius != value)
                 {
-                    _borderRadius = value;
-                    UpdateRegion();
+                    _border.Radius = value;
+                    UpdateTextRegion();
                     Invalidate();
                 }
             }
@@ -349,54 +373,34 @@ namespace YANF.Control
             }
         }
 
+        /// <summary>
+        /// Paints the background: the surface in <see cref="BackColor"/> (and the BackgroundImage), with anti-aliased rounded corners
+        /// through which the parent's own background shows (a gradient, an image, what its Paint handlers draw; 1.x painted a ring of
+        /// Parent.BackColor there). As for a transparent BackColor in WinForms, sibling controls that overlap this control are not
+        /// painted behind it.
+        /// </summary>
+        /// <param name="e">The paint data.</param>
+        protected override void OnPaintBackground(PaintEventArgs e)
+        {
+            PaintEditSurface(this, e, _border, base.OnPaintBackground);
+        }
+
+        /// <summary>
+        /// Paints the border (or the underline in <see cref="UnderlinedStyle"/>): <see cref="BorderColor"/>, or
+        /// <see cref="BorderFocusColor"/> while the box has the focus; the system frame and highlight colors in high contrast mode.
+        /// </summary>
+        /// <param name="e">The paint data.</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
             _is_Painted = true;
-            var graphics = e.Graphics;
-            var borderRadius = GetBorderRadius();
-            var borderSize = GetBorderSize();
-            using var penBorder = new Pen(_is_Focus ? BorderFocusColor : _borderColor, borderSize);
-            if (borderRadius > 1)
-            {
-                var rectBorderSmooth = ClientRectangle;
-                using var pathBorderSmooth = RoundedRect(rectBorderSmooth, borderRadius);
-                using var pathBorder = RoundedRect(Inflate(rectBorderSmooth, -borderSize, -borderSize), borderRadius - borderSize);
-                using var penBorderSmooth = new Pen(Parent?.BackColor ?? BackColor, borderSize > 0 ? borderSize : 1);
-                graphics.SmoothingMode = AntiAlias;
-                penBorder.Alignment = Center;
-                // draw border smoothing
-                graphics.DrawPath(penBorderSmooth, pathBorderSmooth);
-                if (_is_UnderlinedStyle)
-                {
-                    // draw border
-                    graphics.SmoothingMode = None;
-                    graphics.DrawLine(penBorder, 0, Height - 1, Width, Height - 1);
-                }
-                else if (borderSize >= 1 && pathBorder != null)
-                {
-                    // draw border
-                    graphics.DrawPath(penBorder, pathBorder);
-                }
-            }
-            else
-            {
-                penBorder.Alignment = Inset;
-                if (_is_UnderlinedStyle)
-                {
-                    graphics.DrawLine(penBorder, 0, Height - 1, Width, Height - 1);
-                }
-                else if (borderSize >= 1)
-                {
-                    graphics.DrawRectangle(penBorder, 0, 0, Width - 0.5f, Height - 0.5f);
-                }
-            }
+            PaintEditBorder(this, e.Graphics, _border, _is_UnderlinedStyle, _is_Focus ? _borderFocusColor : _borderColor, _is_Focus, true);
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-            UpdateRegion();
+            UpdateTextRegion();
             if (DesignMode)
             {
                 UpdateHCtrl();
@@ -423,8 +427,56 @@ namespace YANF.Control
         protected override void OnParentBackColorChanged(EventArgs e)
         {
             base.OnParentBackColorChanged(e);
-            // the border smoothing is drawn with the parent back color
+            // the parent is painted behind the rounded corners
             Invalidate();
+        }
+
+        /// <summary>
+        /// Called when the DPI of the control changes (per-monitor DPI awareness): the rounded shape, the border and the region of the
+        /// inner text box are rebuilt for the new DPI.
+        /// </summary>
+        /// <param name="deviceDpiOld">The DPI before the change.</param>
+        /// <param name="deviceDpiNew">The new DPI.</param>
+        protected override void RescaleConstantsForDpi(int deviceDpiOld, int deviceDpiNew)
+        {
+            base.RescaleConstantsForDpi(deviceDpiOld, deviceDpiNew);
+            _border.Reset();
+            UpdateTextRegion();
+            Invalidate();
+        }
+
+        /// <summary>
+        /// Lets the clicks on the transparent rounded corners through to the parent, as the rounded region of 1.x did, and fits the
+        /// height of a single-line box to its font again once its form has been rescaled for another DPI (per-monitor DPI awareness),
+        /// without recreating the window of the inner text box (its text, selection, undo history and scroll position are kept).
+        /// </summary>
+        /// <param name="m">The message.</param>
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+            if (_border.HitTest(ref m))
+            {
+                return;
+            }
+            if (m.Msg == WM_DPICHANGED_AFTERPARENT && !IsDisposed)
+            {
+                // the box may have the focus and an edited text: keep the window of the text box
+                UpdateHCtrl(false);
+            }
+        }
+
+        /// <summary>
+        /// Releases the resources used by the control; the cached border shapes are released after its window is destroyed.
+        /// </summary>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            // after the window is gone, so that no late message builds the shape again
+            if (disposing)
+            {
+                _border.Dispose();
+            }
         }
         #endregion
 
@@ -475,8 +527,8 @@ namespace YANF.Control
             StringChanged?.Invoke(sender, e);
         }
 
-        // Update the rounded region of the text box when its size changes
-        private void Txt_SizeChanged(object sender, EventArgs e) => UpdateTextRegion();
+        // Update the region of the text box when it moves or changes size (a new size or padding of the control)
+        private void Txt_BoundsChanged(object sender, EventArgs e) => UpdateTextRegion();
         #endregion
 
         #region Methods
@@ -502,56 +554,36 @@ namespace YANF.Control
             }
         }
 
-        // Get the border radius that fits the current size (the configured value is never changed)
-        private int GetBorderRadius() => (int)EffectiveRadius(ClientRectangle, _borderRadius);
-
-        // Get the border size that fits the current size (the configured value is never changed)
-        private int GetBorderSize() => Max(0, Min(_borderSize, Min(Width, Height) / 2));
-
-        // Update the region of the control when its size or radius changes, never while painting
-        private void UpdateRegion()
-        {
-            var borderRadius = GetBorderRadius();
-            if (borderRadius > 1)
-            {
-                using var pathRegion = RoundedRect(ClientRectangle, borderRadius);
-                SetRegion(this, pathRegion);
-            }
-            else
-            {
-                SetRegion(this, (Region)null);
-            }
-            UpdateTextRegion();
-        }
-
-        // Update the rounded region of the text box, only needed when the corners of the control are big enough to cut it
+        // Update the region of the inner text box when the size, the shape, the padding or the DPI changes (see UpdateEditRegion)
         private void UpdateTextRegion()
         {
-            if (_txtText == null)
+            if (_txtText != null && _border != null)
             {
-                return;
-            }
-            var borderRadius = GetBorderRadius();
-            if (borderRadius > 15)
-            {
-                var borderSize = GetBorderSize();
-                using var pathText = RoundedRect(_txtText.ClientRectangle, _txtText.Multiline ? borderRadius - borderSize : borderSize * 2);
-                SetRegion(_txtText, pathText);
-            }
-            else
-            {
-                SetRegion(_txtText, (Region)null);
+                UpdateEditRegion(this, _txtText, _border, _txtText.Multiline);
             }
         }
 
-        // Update the height of control when changed font display
-        private void UpdateHCtrl()
+        // Update the height of control when changed font display (as in 1.x: the text box is made multiline for a moment, which gives
+        // it a new window handle each time, so this is only done before the user types: when the form loads, and in the designer)
+        private void UpdateHCtrl() => UpdateHCtrl(true);
+
+        // Update the height of control when changed font display; without the multiline switch the text box keeps its window (its undo
+        // history, scroll position and caret): a single-line text box takes its preferred height, raised to its minimum size
+        private void UpdateHCtrl(bool isSwitchingMultiline)
         {
             if (!_txtText.Multiline)
             {
-                _txtText.Multiline = true;
-                _txtText.MinimumSize = new Size(0, MeasureText("Text", Font).Height + 1);
-                _txtText.Multiline = false;
+                var minimumSize = new Size(0, MeasureText("Text", Font).Height + 1);
+                if (isSwitchingMultiline)
+                {
+                    _txtText.Multiline = true;
+                    _txtText.MinimumSize = minimumSize;
+                    _txtText.Multiline = false;
+                }
+                else
+                {
+                    _txtText.MinimumSize = minimumSize;
+                }
                 Height = _txtText.Height + Padding.Top + Padding.Bottom;
                 UpdateTextRegion();
             }
@@ -568,6 +600,7 @@ namespace YANF.Control
             private Color _cueColor;
 
             // The placeholder text
+            [DesignerSerializationVisibility(Hidden)]
             internal string Cue
             {
                 get => _cue;
@@ -579,6 +612,7 @@ namespace YANF.Control
             }
 
             // The color of the placeholder text
+            [DesignerSerializationVisibility(Hidden)]
             internal Color CueColor
             {
                 get => _cueColor;

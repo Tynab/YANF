@@ -88,7 +88,7 @@ namespace YANF.Script
         public static void GetItemListFromFilesInFolderAdv(this YANDdl ddl, string path)
         {
             ddl.Items.Clear();
-            if (Exists(path))
+            if (System.IO.Directory.Exists(path)) // qualified: .NET 7+ also has Path.Exists
             {
                 foreach (var file in GetFiles(path))
                 {

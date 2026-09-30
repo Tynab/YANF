@@ -29,6 +29,8 @@ jobs:
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v3
 
+      # The .NET 10 SDK builds every target framework (net481, net8.0-windows, net10.0-windows; it needs MSBuild 17.14
+      # or later) and its runtime runs the net10.0-windows tests
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -36,13 +38,21 @@ jobs:
             8.0.x
             10.0.x
 
-      # Visual Studio MSBuild, not dotnet build: core MSBuild cannot embed the bitmap entries of the .resx files for net481
+      # Visual Studio MSBuild, not dotnet build: core MSBuild cannot embed the bitmap entries of the .resx files for net481.
+      # Builds all target frameworks: the library (net481, net8.0-windows, net10.0-windows), the sample and the tests
+      # (net481, net10.0-windows)
       - name: Build
+        id: build
         run: msbuild YANF.sln -restore -m -nologo -v:minimal -p:Configuration=Release
 
-      # The tests create windows, so they need the interactive desktop of the hosted runner
-      - name: Test
-        run: dotnet test tests/YANF.Tests/YANF.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=YANF.Tests.trx" --results-directory TestResults
+      # The tests create windows, so they need the interactive desktop of the hosted runner. One step per target
+      # framework, so that a failure names its framework and the second run still happens after the first one failed
+      - name: Test (net481)
+        run: dotnet test tests/YANF.Tests/YANF.Tests.csproj --configuration Release --framework net481 --no-build --logger "trx;LogFileName=YANF.Tests.net481.trx" --results-directory TestResults
+
+      - name: Test (net10.0-windows)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: dotnet test tests/YANF.Tests/YANF.Tests.csproj --configuration Release --framework net10.0-windows --no-build --logger "trx;LogFileName=YANF.Tests.net10.0-windows.trx" --results-directory TestResults
 
       # Package validation (EnablePackageValidation, baseline 1.0.1) runs as part of Pack
       - name: Pack
@@ -63,7 +73,14 @@ jobs:
           Write-Host "$($package.Name):"
           $entries | ForEach-Object { Write-Host "  $_" }
           $problems = @()
-          if ($entries -notcontains 'lib/net481/YANF.dll') { $problems += 'lib/net481/YANF.dll is missing' }
+          # One YANF.dll per target framework, in NuGet's folder names (net8.0-windows is packed as net8.0-windows7.0)
+          $expectedLibs = @('lib/net481/YANF.dll', 'lib/net8.0-windows7.0/YANF.dll', 'lib/net10.0-windows7.0/YANF.dll')
+          foreach ($lib in $expectedLibs) {
+            if ($entries -notcontains $lib) { $problems += "$lib is missing" }
+          }
+          foreach ($entry in $entries) {
+            if ($entry -match '^lib/[^/]+/YANF\.dll$' -and $expectedLibs -notcontains $entry) { $problems += "unexpected target framework: $entry" }
+          }
           foreach ($entry in $entries) {
             if ($entry -match '(^|/)nuget\.config$') { $problems += "forbidden file: $entry" }
             elseif ($entry -match '\.exe$') { $problems += "forbidden executable: $entry" }

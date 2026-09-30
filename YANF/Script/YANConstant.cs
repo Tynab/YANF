@@ -5,6 +5,10 @@ namespace YANF.Script
 {
     public static class YANConstant
     {
+        /// <summary>
+        /// Width of the Update screen at 96 dpi: the full progress bar width that <c>YANUpdScrService.PublishValue</c> takes
+        /// (the width is in 96-dpi pixels and is scaled with the screen at other DPIs).
+        /// </summary>
         public const int W_UPDATE_SCR = 360;
 
         [Flags]

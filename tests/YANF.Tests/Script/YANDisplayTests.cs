@@ -13,6 +13,8 @@ using static System.Windows.Forms.DialogResult;
 
 namespace YANF.Tests.Script
 {
+    using YANPaint = YANF.Control.YANPaint;
+
     // HighLightLblLinkByCtrl: 1.0.2 created a new Font on every call (GDI leak on every Enter/Leave), threw for short names,
     // parentless controls and same-named non-Label controls, and dropped the label's other style bits
     public class YANDisplayTests
@@ -604,6 +606,88 @@ namespace YANF.Tests.Script
             frm.SetRoundRegion(30);
             Assert.NotSame(first, frm.Region);
             Assert.True(Gdi.IsDisposed(first), "the replaced region was not disposed");
+        });
+
+        // The internal DPI helper of the screens forwards to the one of the controls (YANPaint): the control's DPI with the rounding of
+        // LogicalToDeviceUnits where the runtime has it (.NET Framework 4.7 and later), the 96-dpi length itself where it has not (mono);
+        // the test override (YANPaint.DpiOverride, shared with the controls) replaces the DPI
+        [Fact]
+        public void LogicalToDevice_UsesTheControlDpi_OrTheOverride() => Sta.Run(() =>
+        {
+            using var frm = new Form();
+            var hasApi = typeof(System.Windows.Forms.Control).GetMethod("LogicalToDeviceUnits", new[] { typeof(int) }) != null;
+            var expected = hasApi ? (int)typeof(System.Windows.Forms.Control).GetMethod("LogicalToDeviceUnits", new[] { typeof(int) }).Invoke(frm, new object[] { 10 }) : 10;
+            Assert.Equal(expected, frm.LogicalToDevice(10));
+            Assert.Equal(YANPaint.LogicalToDevice(frm, 17), frm.LogicalToDevice(17));
+            Assert.Equal(0, frm.LogicalToDevice(0));
+            YANPaint.DpiOverride = 144;
+            try
+            {
+                Assert.Equal(15, frm.LogicalToDevice(10));
+                Assert.Equal(3, frm.LogicalToDevice(2));
+                Assert.Equal(26, frm.LogicalToDevice(17));
+                Assert.Equal(-15, frm.LogicalToDevice(-10));
+            }
+            finally
+            {
+                YANPaint.DpiOverride = null;
+            }
+            // the override is per thread
+            YANPaint.DpiOverride = 192;
+            try
+            {
+                var other = 0;
+                var t = new Thread(() => other = frm.LogicalToDevice(10));
+                t.Start();
+                t.Join();
+                Assert.Equal(expected, other);
+                Assert.Equal(20, frm.LogicalToDevice(10));
+            }
+            finally
+            {
+                YANPaint.DpiOverride = null;
+            }
+        });
+
+        // ScaleToDpi applies AutoScaleMode.Dpi at once: the form and its children are at the (overridden) DPI before any layout, and a
+        // later layout scales nothing more
+        [Fact]
+        public void ScaleToDpi_ScalesADpiFormNow_AndOnlyOnce() => Sta.Run(() =>
+        {
+            Form Build()
+            {
+                var f = new Form { FormBorderStyle = FormBorderStyle.None, ShowInTaskbar = false };
+                f.SuspendLayout();
+                f.AutoScaleDimensions = new SizeF(96F, 96F);
+                f.AutoScaleMode = AutoScaleMode.Dpi;
+                f.ClientSize = new Size(200, 100);
+                f.Controls.Add(new Panel { Bounds = new Rectangle(10, 20, 40, 30) });
+                f.ResumeLayout(false);
+                return f;
+            }
+            using var at96 = Build();
+            at96.ScaleToDpi();
+            var machine = at96.CurrentAutoScaleDimensions.Width / 96f;
+            Assert.Equal(at96.CurrentAutoScaleDimensions, at96.AutoScaleDimensions);
+            Assert.Equal(new Size((int)Math.Round(200 * machine), (int)Math.Round(100 * machine)), at96.ClientSize);
+            YANPaint.DpiOverride = 144;
+            try
+            {
+                using var frm = Build();
+                frm.ScaleToDpi();
+                Assert.Equal(new Size(300, 150), frm.ClientSize);
+                Assert.Equal(new Rectangle(15, 30, 60, 45), frm.Controls[0].Bounds);
+                // the caller's bounds are not scaled again by the next layouts
+                frm.Bounds = new Rectangle(50, 60, 400, 200);
+                frm.PerformLayout();
+                frm.CreateControl();
+                Assert.Equal(new Rectangle(50, 60, 400, 200), frm.Bounds);
+                Assert.Equal(new Rectangle(15, 30, 60, 45), frm.Controls[0].Bounds);
+            }
+            finally
+            {
+                YANPaint.DpiOverride = null;
+            }
         });
 
         // A small form at the top-left corner, not in the taskbar

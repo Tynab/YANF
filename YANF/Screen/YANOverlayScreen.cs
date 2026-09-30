@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -18,10 +19,10 @@ namespace YANF.Screen
     /// rounded corners and an animated close.
     /// </summary>
     /// <remarks>
-    /// Show these screens with <see cref="YANLoader"/> (or the legacy services in <c>YANF.Script.Service</c>).
-    /// The class is public because the public screens derive from it.
+    /// The screens are shown by <see cref="YANLoader"/> and by the legacy services in <c>YANF.Script.Service</c>; they are not part of
+    /// the public API (internal since 2.0).
     /// </remarks>
-    public class YANOverlayScreen : MiddleScreen
+    internal class YANOverlayScreen : MiddleScreen
     {
         #region Fields
         private const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
@@ -50,6 +51,7 @@ namespace YANF.Screen
 
         #region Properties
         // Corner of the rounded window region, kept on every size change (0: no region)
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         internal int Corner
         {
             get => _corner;
@@ -61,6 +63,7 @@ namespace YANF.Screen
         }
 
         // Fade-in and fade-out duration in ms (0: none)
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         internal int FadeDuration
         {
             get => _fadeDuration;

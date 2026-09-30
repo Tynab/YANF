@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -18,6 +19,7 @@ using static YANF.Script.YANConstant;
 namespace YANF.Tests.Script
 {
     using Control = System.Windows.Forms.Control;
+    using YANPaint = YANF.Control.YANPaint;
 
     // YANMessageBox (1.1): the 20 overloads forward to one options path, the three copies of the button code became one table and
     // one layout loop that keeps the 1.0 pixels, Enter/Esc/✕ follow the Windows message box, and the fonts are created once per box
@@ -25,6 +27,8 @@ namespace YANF.Tests.Script
     {
         #region Fields
         private const string TEXT = "Do you want to continue?";
+        // mono's Control.Scale leaves Padding and Margin at their 96-dpi values (.NET's ScaleControl scales them)
+        private static readonly bool _is_Mono = Type.GetType("Mono.Runtime") != null;
         private static readonly string[] PARTS = { "pnlHeader", "btnClose", "lblCaption", "pnlFooter", "btn1", "btn2", "btn3", "pnlBody", "lblMessage", "picIcon" };
         #endregion
 
@@ -129,6 +133,160 @@ namespace YANF.Tests.Script
             Assert.Equal(lbl1.Width - lbl1.Padding.Horizontal, lbl2.Width);
             Assert.Equal(lbl2.Width + 20 + 60, two.Width);
             Assert.Equal(one.Width, two.Width);
+        });
+
+        // 2.0 (AutoScaleMode.Dpi): at 150 % the designed sizes are scaled before the layout runs, and its own pixel constants (the 10 px
+        // button margins, the 2 px default border, the icon) are scaled with LogicalToDeviceUnits, so the box keeps its 96-dpi proportions
+        [Theory]
+        [InlineData(MessageBoxButtons.OK)]
+        [InlineData(MessageBoxButtons.OKCancel)]
+        [InlineData(MessageBoxButtons.YesNoCancel)]
+        public void Layout_At150Percent_ScalesTheSizesAndTheConstants(MessageBoxButtons btns) => Sta.Run(() =>
+        {
+            YANPaint.DpiOverride = 144;
+            try
+            {
+                using var frm = new YANMessageBoxScreen(new YANMessageBoxOptions { Text = "Hi", Buttons = btns, Icon = MessageBoxIcon.Error });
+                var n = Expected(btns).Results.Length;
+                var slots = Slots(frm).Take(n).ToArray();
+                var footer = Priv.Field<Panel>(frm, "pnlFooter");
+                var header = Priv.Field<Panel>(frm, "pnlHeader");
+                var body = Priv.Field<Panel>(frm, "pnlBody");
+                var lbl = Priv.Field<Label>(frm, "lblMessage");
+                // the designed sizes, scaled (the rounding of 52.5 may go either way)
+                if (!_is_Mono)
+                {
+                    Assert.Equal(new Padding(3), frm.Padding);
+                    Assert.Equal(new Padding(15, 15, 0, 0), body.Padding);
+                }
+                Assert.All(slots, b => Assert.Equal(150, b.Width));
+                Assert.All(slots, b => Assert.InRange(b.Height, 52, 53));
+                Assert.InRange(header.Height, 52, 53);
+                Assert.InRange(footer.Height, 82, 83);
+                Assert.Equal(new Size(75, body.ClientSize.Height - body.Padding.Top), Priv.Field<PictureBox>(frm, "picIcon").Size);
+                // the narrowest box: n buttons with a 15 px margin around each, inside the border
+                Assert.Equal(n * 150 + (n + 1) * 15 + frm.Padding.Horizontal, frm.Width);
+                Assert.Equal(frm.Width - frm.Padding.Horizontal, footer.Width);
+                Assert.Equal(header.Height + lbl.Height + footer.Height + body.Padding.Top + frm.Padding.Vertical, frm.Height);
+                // centered, 30 px apart in pairs and 15 px apart in threes, vertically centered in the footer
+                var gap = n == 2 ? 30 : 15;
+                for (var i = 1; i < n; i++)
+                {
+                    Assert.Equal(slots[i - 1].Right + gap, slots[i].Left);
+                }
+                Assert.Equal((footer.Width - 150) / 2 - (n - 1) * (150 + gap) / 2, slots[0].Left);
+                Assert.All(slots, b => Assert.Equal((footer.Height - b.Height) / 2, b.Top));
+                // the default border is 3 px, the 40x40 icon is drawn at 60x60
+                Assert.Equal(3, slots[0].FlatAppearance.BorderSize);
+                Assert.All(slots.Skip(1), b => Assert.Equal(0, b.FlatAppearance.BorderSize));
+                Assert.Equal(new Size(60, 60), Priv.Field<PictureBox>(frm, "picIcon").Image.Size);
+            }
+            finally
+            {
+                YANPaint.DpiOverride = null;
+            }
+        });
+
+        // Multi-line text at 150 %: the single-line height (17 px at 96 dpi) and the bottom padding (15 px) are scaled too, and the scaled
+        // side padding is taken off the wrap width as at 96 dpi
+        [Fact]
+        public void Layout_At150Percent_MultiLineText() => Sta.Run(() =>
+        {
+            YANPaint.DpiOverride = 144;
+            try
+            {
+                using var one = new YANMessageBoxScreen(new YANMessageBoxOptions { Text = "A first line of text" });
+                using var two = new YANMessageBoxScreen(new YANMessageBoxOptions { Text = "A first line of text\nsecond" });
+                var lbl1 = Priv.Field<Label>(one, "lblMessage");
+                var lbl2 = Priv.Field<Label>(two, "lblMessage");
+                var side = _is_Mono ? 10 : 15;
+                // one line of a 96-dpi font (the test DPI does not enlarge the fonts) stays under the scaled 26 px line height
+                Assert.Equal(_is_Mono ? new Padding(10, 5, 10, 25) : new Padding(15, 8, 15, 38), lbl1.Padding);
+                Assert.Equal(new Padding(0, 0, 0, 22), lbl2.Padding);
+                Assert.Equal(new Size(SystemInformation.WorkingArea.Width / 2 - 2 * side, 0), lbl2.MaximumSize);
+                Assert.Equal(lbl1.Width - 2 * side, lbl2.Width);
+                Assert.Equal(one.Width, two.Width);
+            }
+            finally
+            {
+                YANPaint.DpiOverride = null;
+            }
+        });
+
+        // Moved to a monitor with another DPI (per-monitor aware host): once WinForms has handled WM_DPICHANGED, the box scales what
+        // WinForms does not, the border of the marked button (still the same button) and the icon (again from its 96-dpi image)
+        [Theory]
+        [InlineData(-1, "0|4|0")]   // the default button (Button2)
+        [InlineData(2, "0|0|4")]    // btn3 got the focus
+        [InlineData(3, "0|0|0")]    // ✕ got the focus: no button is marked
+        public void DpiChanged_RescalesTheMarkedBorderAndTheIcon(int focused, string borders) => Sta.Run(() =>
+        {
+            using var frm = new YANMessageBoxScreen(new YANMessageBoxOptions
+            {
+                Text = "Hi",
+                Buttons = MessageBoxButtons.YesNoCancel,
+                Icon = MessageBoxIcon.Question,
+                DefaultButton = MessageBoxDefaultButton.Button2
+            });
+            var slots = Slots(frm);
+            var pic = Priv.Field<PictureBox>(frm, "picIcon");
+            if (focused >= 0)
+            {
+                Priv.Call(frm, "MarkBtn", focused < 3 ? slots[focused] : Priv.Field<Button>(frm, "btnClose"));
+            }
+            var dpi = YANPaint.GetDpi(frm);
+            var before = slots.Select(b => b.FlatAppearance.BorderSize).ToArray();
+            YANPaint.DpiOverride = 192;
+            try
+            {
+                // an unrelated message changes nothing
+                SendMessage(frm, 0x0400, IntPtr.Zero, IntPtr.Zero);
+                Assert.Equal(before, slots.Select(b => b.FlatAppearance.BorderSize));
+                // WM_DPICHANGED with the DPI the box already has, so that WinForms rescales nothing and the override is the new DPI
+                var old = pic.Image;
+                var rect = Marshal.AllocHGlobal(16);
+                try
+                {
+                    Marshal.StructureToPtr(new Rect { Left = frm.Left, Top = frm.Top, Right = frm.Right, Bottom = frm.Bottom }, rect, false);
+                    SendMessage(frm, 0x02E0, (IntPtr)(dpi | dpi << 16), rect);
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(rect);
+                }
+                Assert.Equal(borders, string.Join("|", slots.Select(b => b.FlatAppearance.BorderSize)));
+                Assert.Equal(new Size(80, 80), pic.Image.Size);
+                Assert.NotSame(old, pic.Image);
+                Assert.True(Gdi.IsDisposed(old), "the replaced icon image was not disposed");
+            }
+            finally
+            {
+                YANPaint.DpiOverride = null;
+            }
+        });
+
+        // The circle icons reach the left and right edges of their images (alpha 244): scaled for 150 % they keep that edge, where a plain
+        // resize blends it with the transparency outside the image (a soft, half-transparent border). mono's libgdiplus ignores the
+        // interpolation and wrap modes, so only the size is checked there
+        [Fact]
+        public void Icon_At150Percent_KeepsItsEdges() => Sta.Run(() =>
+        {
+            YANPaint.DpiOverride = 144;
+            try
+            {
+                using var frm = new YANMessageBoxScreen(new YANMessageBoxOptions { Text = "Hi", Icon = MessageBoxIcon.Information });
+                var img = (Bitmap)Priv.Field<PictureBox>(frm, "picIcon").Image;
+                Assert.Equal(new Size(60, 60), img.Size);
+                if (!_is_Mono)
+                {
+                    Assert.InRange(img.GetPixel(0, 30).A, 230, 255);
+                    Assert.InRange(img.GetPixel(59, 30).A, 230, 255);
+                }
+            }
+            finally
+            {
+                YANPaint.DpiOverride = null;
+            }
         });
         #endregion
 
@@ -362,45 +520,6 @@ namespace YANF.Tests.Script
             }
         });
 
-        // Each of the 10 1.0 constructors builds the same box as the options it chains to
-        [Fact]
-        public void Screen_LegacyConstructors_EqualTheOptionsConstructor() => Sta.Run(ui =>
-        {
-            const string cap = "Cap";
-            const MessageBoxButtons btns = MessageBoxButtons.AbortRetryIgnore;
-            const MessageBoxIcon icon = MessageBoxIcon.Error;
-            const MessageBoxDefaultButton dflt = MessageBoxDefaultButton.Button3;
-            foreach (var lang in new[] { MsgBoxLang.VIE, MsgBoxLang.JAP, MsgBoxLang.ENG })
-            {
-                var cases = new (string Name, Func<YANMessageBoxScreen> Legacy, YANMessageBoxOptions Options)[]
-                {
-                    ("(text)", () => new YANMessageBoxScreen(TEXT), new YANMessageBoxOptions { Text = TEXT }),
-                    ("(text, lang)", () => new YANMessageBoxScreen(TEXT, lang), new YANMessageBoxOptions { Text = TEXT, Language = lang }),
-                    ("(cap, text)", () => new YANMessageBoxScreen(cap, TEXT), new YANMessageBoxOptions { Caption = cap, Text = TEXT }),
-                    ("(cap, text, lang)", () => new YANMessageBoxScreen(cap, TEXT, lang), new YANMessageBoxOptions { Caption = cap, Text = TEXT, Language = lang }),
-                    ("(cap, text, btns)", () => new YANMessageBoxScreen(cap, TEXT, btns), new YANMessageBoxOptions { Caption = cap, Text = TEXT, Buttons = btns }),
-                    ("(cap, text, btns, lang)", () => new YANMessageBoxScreen(cap, TEXT, btns, lang), new YANMessageBoxOptions { Caption = cap, Text = TEXT, Buttons = btns, Language = lang }),
-                    ("(cap, text, btns, icon)", () => new YANMessageBoxScreen(cap, TEXT, btns, icon), new YANMessageBoxOptions { Caption = cap, Text = TEXT, Buttons = btns, Icon = icon }),
-                    ("(cap, text, btns, icon, lang)", () => new YANMessageBoxScreen(cap, TEXT, btns, icon, lang), new YANMessageBoxOptions { Caption = cap, Text = TEXT, Buttons = btns, Icon = icon, Language = lang }),
-                    ("(cap, text, btns, icon, dflt)", () => new YANMessageBoxScreen(cap, TEXT, btns, icon, dflt), new YANMessageBoxOptions { Caption = cap, Text = TEXT, Buttons = btns, Icon = icon, DefaultButton = dflt }),
-                    ("(cap, text, btns, icon, dflt, lang)", () => new YANMessageBoxScreen(cap, TEXT, btns, icon, dflt, lang), new YANMessageBoxOptions { Caption = cap, Text = TEXT, Buttons = btns, Icon = icon, DefaultButton = dflt, Language = lang })
-                };
-                foreach (var (name, legacy, options) in cases)
-                {
-                    ui.Case($"{name} {lang}", () =>
-                    {
-                        using var a = legacy();
-                        using var b = new YANMessageBoxScreen(options);
-                        Assert.Equal(Snapshot(b), Snapshot(a));
-                    });
-                }
-            }
-            // ENG renders exactly like no language
-            using var eng = new YANMessageBoxScreen(new YANMessageBoxOptions { Caption = cap, Text = TEXT, Buttons = btns, Language = MsgBoxLang.ENG });
-            using var none = new YANMessageBoxScreen(new YANMessageBoxOptions { Caption = cap, Text = TEXT, Buttons = btns });
-            Assert.Equal(Snapshot(none), Snapshot(eng));
-        });
-
         // Icon: image and accent color as in 1.0 (the Error box also reddens the close box's hover color)
         [Theory]
         [InlineData(MessageBoxIcon.None, 100, 149, 237)]
@@ -498,26 +617,33 @@ namespace YANF.Tests.Script
         #endregion
 
         #region Metadata
+        // 2.0: YANMessageBox is a static class with the same 22 Show methods; the form it shows is internal (only its options constructor is left)
         [Fact]
-        public void Metadata_AdditiveApi()
+        public void Metadata_PublicSurface()
         {
-            Assert.True(typeof(YANMessageBox).IsAbstract && !typeof(YANMessageBox).IsSealed, "YANMessageBox stays abstract (not static) in 1.x");
-            Assert.NotNull(typeof(YANMessageBox).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, Type.EmptyTypes, null));
+            Assert.True(typeof(YANMessageBox).IsAbstract && typeof(YANMessageBox).IsSealed, "YANMessageBox is a static class in 2.0");
+            Assert.Empty(typeof(YANMessageBox).GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
             var shows = typeof(YANMessageBox).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == nameof(YANMessageBox.Show)).ToArray();
             Assert.Equal(22, shows.Length);
             Assert.All(shows, m => Assert.Null(m.GetCustomAttribute<EditorBrowsableAttribute>()));
+            Assert.All(shows, m => Assert.Equal(typeof(DialogResult), m.ReturnType));
             Assert.All(shows.SelectMany(m => m.GetParameters()), p => Assert.False(p.IsOptional, "no optional parameters"));
-            // the 1.0 constructors of the screen are hidden in favor of the options
-            var ctors = typeof(YANMessageBoxScreen).GetConstructors();
-            Assert.Equal(11, ctors.Length);
-            foreach (var c in ctors)
+            // the 20 1.0 overloads and the two options overloads, by parameter list
+            var signatures = shows.Select(m => string.Join(",", m.GetParameters().Select(p => p.ParameterType.Name))).ToList();
+            foreach (var tail in new[] { "String", "String,MsgBoxLang", "String,String", "String,String,MsgBoxLang", "String,String,MessageBoxButtons",
+                "String,String,MessageBoxButtons,MsgBoxLang", "String,String,MessageBoxButtons,MessageBoxIcon", "String,String,MessageBoxButtons,MessageBoxIcon,MsgBoxLang",
+                "String,String,MessageBoxButtons,MessageBoxIcon,MessageBoxDefaultButton", "String,String,MessageBoxButtons,MessageBoxIcon,MessageBoxDefaultButton,MsgBoxLang" })
             {
-                var ps = c.GetParameters();
-                var isOptions = ps.Length == 1 && ps[0].ParameterType == typeof(YANMessageBoxOptions);
-                var hidden = c.GetCustomAttribute<EditorBrowsableAttribute>()?.State == EditorBrowsableState.Never;
-                Assert.Equal(!isOptions, hidden);
+                Assert.Contains(tail, signatures);
+                Assert.Contains("IWin32Window," + tail, signatures);
             }
-            // MsgBoxLang: ENG appended, VIE and JAP keep their values
+            Assert.Contains("YANMessageBoxOptions", signatures);
+            Assert.Contains("IWin32Window,YANMessageBoxOptions", signatures);
+            // the form is an implementation detail now
+            Assert.False(typeof(YANMessageBoxScreen).IsPublic, "YANMessageBoxScreen is internal in 2.0");
+            Assert.Equal(typeof(YANMessageBoxOptions), typeof(YANMessageBoxScreen).GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Single().GetParameters().Single().ParameterType);
+            // MsgBoxLang stays nested in YANConstant (consumer code names it): ENG appended, VIE and JAP keep their values
+            Assert.Equal(typeof(YANConstant), typeof(MsgBoxLang).DeclaringType);
             Assert.Equal(0, (int)MsgBoxLang.VIE);
             Assert.Equal(1, (int)MsgBoxLang.JAP);
             Assert.Equal(2, (int)MsgBoxLang.ENG);
@@ -571,6 +697,13 @@ namespace YANF.Tests.Script
 
         private static MsgBoxLang? Lang(string name) => name == null ? null : (MsgBoxLang)Enum.Parse(typeof(MsgBoxLang), name);
 
+        // Passes a message to the box's WndProc, as its window would (the handle is created first)
+        private static void SendMessage(YANMessageBoxScreen frm, int msg, IntPtr wParam, IntPtr lParam)
+        {
+            var args = new object[] { Message.Create(frm.Handle, msg, wParam, lParam) };
+            Priv.Call(frm, "WndProc", args);
+        }
+
         private static Button[] Slots(Form frm) => new[] { Priv.Field<Button>(frm, "btn1"), Priv.Field<Button>(frm, "btn2"), Priv.Field<Button>(frm, "btn3") };
 
         // Everything the box shows (sizes, texts, fonts, colors, icon, buttons and keys) as one comparable string
@@ -620,6 +753,16 @@ namespace YANF.Tests.Script
         #endregion
 
         #region Nested types
+        // The RECT of the WM_DPICHANGED lParam (the suggested bounds)
+        [StructLayout(LayoutKind.Sequential)]
+        private struct Rect
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
         // Runs act on the next message box of this thread once it is on screen (act must close it). A box still open 10 s later is
         // hidden, which ends its ShowDialog, and Check fails the test instead of letting it hang
         private sealed class Watcher : IDisposable

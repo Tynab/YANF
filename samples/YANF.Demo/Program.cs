@@ -14,8 +14,14 @@ namespace YANF.Demo
         [STAThread]
         static void Main()
         {
+#if NET
+            // .NET: PerMonitorV2 (ApplicationHighDpiMode in YANF.Demo.csproj), visual styles and GDI text rendering, before any window
+            ApplicationConfiguration.Initialize();
+#else
+            // .NET Framework: the DPI awareness comes from app.manifest and App.config
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+#endif
             Application.Run(new MainFrm());
         }
     }

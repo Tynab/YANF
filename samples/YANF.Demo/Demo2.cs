@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using YANF.Screen;
 using YANF.Script;
 using static YANF.Demo.Properties.Resources;
 
 namespace YANF.Demo
 {
-    public partial class Demo2 : Form
+    // A YANForm: a borderless window with rounded corners (drawn by Windows 11, a region before) and a drop shadow. It is not
+    // resizable (Resizable = false in the designer: the layout has a fixed size), and its passive surfaces act as its title bar
+    public partial class Demo2 : YANForm
     {
         #region Fields
         private const int FADE_MS = 250;
@@ -29,20 +32,19 @@ namespace YANF.Demo
             _pQI = (Bitmap)btnQuit.BackgroundImage;
             // dispose cached images with frm
             Disposed += Demo2_Disposed;
-            // move frm by pnl (yangradpnl too: GetAllObjs<T> also finds the types derived from T)
+            // move frm by pnl, pic and lbl: YANForm caption controls, which move the form like a title bar (yangradpnl and yancirpic
+            // too: GetAllObjs<T> also finds the types derived from T)
             foreach (var pnl in this.GetAllObjs<Panel>())
             {
-                pnl.EnableDrag();
+                RegisterCaptionControl(pnl);
             }
-            // move frm by pic (yancirpic too)
             foreach (var pic in this.GetAllObjs<PictureBox>())
             {
-                pic.EnableDrag();
+                RegisterCaptionControl(pic);
             }
-            // move frm by lbl
             foreach (var lbl in this.GetAllObjs<Label>())
             {
-                lbl.EnableDrag();
+                RegisterCaptionControl(lbl);
             }
         }
         #endregion

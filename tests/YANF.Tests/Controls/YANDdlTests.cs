@@ -33,6 +33,9 @@ namespace YANF.Tests.Controls
         [InlineData(nameof(YANDdl.DropDownStyle))]
         [InlineData(nameof(YANDdl.BorderFocusColor))]
         [InlineData(nameof(YANDdl.IconFocusColor))]
+        [InlineData(nameof(YANDdl.BackColor))]
+        [InlineData(nameof(YANDdl.BorderColor))]
+        [InlineData(nameof(YANDdl.BorderSize))]
         public void DefaultValue_MatchesConstructor(string name) => Sta.Run(() =>
         {
             using var d = new YANDdl();
@@ -305,7 +308,7 @@ namespace YANF.Tests.Controls
         });
 
         // The border and the icon are highlighted while the control has the focus, without changing BorderColor, IconColor or
-        // Control.BackColor (which holds the border color)
+        // BackColor (2.0: Control.BackColor is the surface, it no longer holds the border color)
         [Fact]
         public void Focus_HighlightsBorderAndIcon() => Sta.Run(ui =>
         {
@@ -315,10 +318,11 @@ namespace YANF.Tests.Controls
             Assert.Equal(0, PinkIconPixels(d));
             Priv.Call(d, "Ddl_Enter", d, EventArgs.Empty);
             Assert.Equal(Color.HotPink.ToArgb(), BorderPixel(d));
+            Assert.Equal(Color.WhiteSmoke.ToArgb(), SurfacePixel(d));
             Assert.True(PinkIconPixels(d) > 0, "icon not highlighted");
             Assert.Equal(Color.MediumSlateBlue, d.BorderColor);
             Assert.Equal(Color.MediumSlateBlue, d.IconColor);
-            Assert.Equal(Color.MediumSlateBlue, ((System.Windows.Forms.Control)d).BackColor);
+            Assert.Equal(Color.WhiteSmoke, ((System.Windows.Forms.Control)d).BackColor);
             Priv.Call(d, "Ddl_Leave", d, EventArgs.Empty);
             Assert.Equal(Color.MediumSlateBlue.ToArgb(), BorderPixel(d));
             Assert.Equal(0, PinkIconPixels(d));
@@ -364,18 +368,316 @@ namespace YANF.Tests.Controls
             ui.DrawAndDispose(d);
         });
 
+        #region 2.0 painting and BackColor
+        // 2.0 (breaking): BackColor overrides Control.BackColor and is the surface. Code that colors controls through a Control
+        // reference (a theme loop) colors the surface, not the border, and BorderColor no longer changes Control.BackColor
+        [Fact]
+        public void BackColor_IsTheSurface_AlsoThroughAControlReference() => Sta.Run(ui =>
+        {
+            var d = new YANDdl { BorderSize = 3 };
+            ui.Draw(d);
+            var lbl = Priv.Field<Label>(d, "_lblText");
+            var btn = Priv.Field<Button>(d, "_btnIc");
+            var changes = 0;
+            d.BackColorChanged += (s, e) => changes++;
+            System.Windows.Forms.Control c = d;
+            c.BackColor = Color.Red;
+            Assert.Equal(Color.Red, d.BackColor);
+            Assert.Equal((Color.Red, Color.Red), (lbl.BackColor, btn.BackColor));
+            Assert.Equal(Color.MediumSlateBlue, d.BorderColor);
+            Assert.Equal(1, changes);
+            Assert.Equal(Color.Red.ToArgb(), SurfacePixel(d));
+            Assert.Equal(Color.MediumSlateBlue.ToArgb(), BorderPixel(d));
+            // the typed property is the same property
+            d.BackColor = Color.Blue;
+            Assert.Equal(Color.Blue, c.BackColor);
+            Assert.Equal(Color.Blue, lbl.BackColor);
+            d.BorderColor = Color.Lime;
+            Assert.Equal(Color.Blue, c.BackColor);
+            Assert.Equal(2, changes);
+            Assert.Equal(Color.Lime.ToArgb(), BorderPixel(d));
+            Assert.Equal(Color.Blue.ToArgb(), SurfacePixel(d));
+            // the designer writes BackColor only when it differs from WhiteSmoke, as in 1.x
+            var p = TypeDescriptor.GetProperties(d)[nameof(YANDdl.BackColor)];
+            Assert.True(p.ShouldSerializeValue(d));
+            p.ResetValue(d);
+            Assert.Equal(Color.WhiteSmoke, d.BackColor);
+            Assert.False(p.ShouldSerializeValue(d));
+        });
+
+        // What a 1.x designer file writes keeps its look at 96 dpi: the border in BorderColor, BorderSize wide, and the surface in BackColor
+        [Fact]
+        public void DesignerFile_KeepsItsLook() => Sta.Run(ui =>
+        {
+            var d = new YANDdl();
+            var pnl = new PaintingTests.LimePanel();
+            ui.Host.Controls.Add(pnl);
+            // MainFrm.Designer.cs (yanDdl2), in the designer's order
+            d.BackColor = Color.FromArgb(37, 42, 64);
+            d.BorderColor = Color.MediumSlateBlue;
+            d.BorderSize = 1;
+            d.Location = new Point(12, 58);
+            d.MinimumSize = new Size(200, 30);
+            d.Padding = new Padding(1);
+            d.Size = new Size(200, 35);
+            pnl.Controls.Add(d);
+            using var bmp = ui.Render(d);
+            foreach (var p in new[] { new Point(0, 0), new Point(100, 0), new Point(0, 17), new Point(199, 17), new Point(100, 34), new Point(199, 34) })
+            {
+                PaintingTests.AssertColor(Color.MediumSlateBlue, bmp.GetPixel(p.X, p.Y), $"border at {p}");
+            }
+            Assert.Equal(Color.FromArgb(37, 42, 64).ToArgb(), SurfacePixel(d, new Point(3, 3)));
+            Assert.Equal(Color.FromArgb(37, 42, 64), Priv.Field<Label>(d, "_lblText").BackColor);
+            Assert.Equal(new Padding(1), d.Padding);
+        });
+
+        // A transparent surface and border show the parent's own background (Demo1's yanDdl1: both Transparent, Padding(25, 0, 0, 0))
+        [Fact]
+        public void Transparent_ShowsTheParent() => Sta.Run(ui =>
+        {
+            var pnl = new PaintingTests.LimePanel();
+            var paints = 0;
+            pnl.Paint += (s, e) => paints++;
+            ui.Host.Controls.Add(pnl);
+            var d = new YANDdl { Location = new Point(10, 10) };
+            pnl.Controls.Add(d);
+            using (ui.Render(d))
+            {
+            }
+            // an opaque control hides the parent: it is not painted behind it
+            Assert.Equal(0, paints);
+            d.BackColor = Color.Transparent;
+            d.BorderColor = Color.Transparent;
+            d.BorderSize = 0;
+            d.Padding = new Padding(25, 0, 0, 0);
+            using (var bmp = ui.Render(d))
+            {
+                PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(0, 0), "corner");
+                PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(12, d.Height / 2), "left padding");
+            }
+            Assert.True(paints > 0, "the parent is not painted behind the transparent surface");
+            // a transparent border over an opaque surface
+            d.BackColor = Color.Blue;
+            d.BorderSize = 2;
+            using (var bmp = ui.Render(d))
+            {
+                PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(0, d.Height / 2), "transparent border");
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(12, d.Height / 2), "surface");
+            }
+        });
+
+        // As in 1.x, the border fills the whole band outside the Padding (the label and the icon cover the rest), also when a designer file
+        // sets a Padding wider than BorderSize (Demo1's yanDdl1: Padding(25, 0, 0, 0)); 1.1's focus color covers the whole band too
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public void WiderPadding_IsPaintedAsTheBorder_AsIn1x(int border) => Sta.Run(ui =>
+        {
+            var pnl = new PaintingTests.LimePanel();
+            ui.Host.Controls.Add(pnl);
+            // in the designer's order: BorderSize sets the Padding, then the designer file sets its own
+            var d = new YANDdl { BackColor = Color.Blue, BorderColor = Color.Red, BorderSize = border, Location = new Point(10, 10) };
+            d.Padding = new Padding(25, 0, 0, 0);
+            pnl.Controls.Add(d);
+            var y = d.Height / 2;
+            using (var bmp = ui.Render(d))
+            {
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(12, y), "left padding");
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(24, y), "last column of the left padding");
+            }
+            Assert.Equal(Color.Red.ToArgb(), BackgroundPixel(d, new Point(12, y)));
+            Assert.Equal(Color.Blue.ToArgb(), BackgroundPixel(d, new Point(25, y)));
+            // the label covers the rest from the Padding on (Padding.Top is 0: no border shows at the top, as in 1.x)
+            Assert.Equal(new Rectangle(25, 0, d.Width - 25 - 30, d.Height), Priv.Field<Label>(d, "_lblText").Bounds);
+            Priv.Call(d, "Ddl_Enter", d, EventArgs.Empty);
+            using (var bmp = ui.Render(d))
+            {
+                PaintingTests.AssertColor(Color.HotPink, bmp.GetPixel(12, y), "left padding with the focus");
+            }
+            Assert.Equal(Color.HotPink.ToArgb(), BackgroundPixel(d, new Point(12, y)));
+            Assert.Equal(Color.Blue.ToArgb(), BackgroundPixel(d, new Point(25, y)));
+            Priv.Call(d, "Ddl_Leave", d, EventArgs.Empty);
+            // Demo1's yanDdl1: a transparent border shows the parent, the focus color covers it
+            d.BackColor = Color.Transparent;
+            d.BorderColor = Color.Transparent;
+            using (var bmp = ui.Render(d))
+            {
+                PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(12, y), "transparent left padding");
+            }
+            Priv.Call(d, "Ddl_Enter", d, EventArgs.Empty);
+            using (var bmp = ui.Render(d))
+            {
+                PaintingTests.AssertColor(Color.HotPink, bmp.GetPixel(12, y), "transparent left padding with the focus");
+            }
+        });
+
+        // A Padding wider than the control leaves no surface: the border covers everything, nothing throws
+        [Fact]
+        public void PaddingWiderThanTheControl_IsAllBorder() => Sta.Run(ui =>
+        {
+            var d = new YANDdl { BackColor = Color.Blue, BorderColor = Color.Red };
+            ui.Draw(d);
+            d.Padding = new Padding(d.Width, 0, 0, 0);
+            Assert.Equal(Color.Red.ToArgb(), BackgroundPixel(d, new Point(d.Width / 2, d.Height / 2)));
+            d.BorderColor = Color.Transparent;
+            ui.DrawAndDispose(d);
+        });
+
+        // A BackgroundImage is painted on the surface, inside the border
+        [Fact]
+        public void BackgroundImage_IsPaintedInsideTheBorder() => Sta.Run(ui =>
+        {
+            using var img = new Bitmap(8, 8);
+            using (var g = Graphics.FromImage(img))
+            {
+                g.Clear(Color.Yellow);
+            }
+            var d = new YANDdl { BorderSize = 3, BorderColor = Color.Red, BackgroundImage = img };
+            ui.Draw(d);
+            Assert.Equal(Color.Red.ToArgb(), BorderPixel(d));
+            Assert.Equal(Color.Yellow.ToArgb(), SurfacePixel(d, new Point(5, 5)));
+        });
+
+        // A translucent focus color is painted over BorderColor, as in 1.x
+        [Fact]
+        public void TranslucentFocusColor_OverTheBorderColor() => Sta.Run(ui =>
+        {
+            var d = new YANDdl { BorderSize = 3, BorderColor = Color.Blue, BorderFocusColor = Color.FromArgb(128, Color.Red) };
+            ui.Draw(d);
+            Priv.Call(d, "Ddl_Enter", d, EventArgs.Empty);
+            var px = Color.FromArgb(BorderPixel(d));
+            Assert.True(px.R > 100 && px.B > 100 && px.G < 30, $"expected red over blue, got {px}");
+        });
+
+        // BorderSize is in 96-dpi pixels: at 192 dpi the border and the padding that keeps the text and the icon inside it are twice as
+        // wide, and so is the arrow of the icon
+        [Fact]
+        public void Dpi_ScalesTheBorderThePaddingAndTheArrow() => Sta.Run(ui =>
+        {
+            var d = new YANDdl { BorderColor = Color.Red };
+            ui.Draw(d);
+            var arrow96 = PinkIconPixels(d, true);
+            Assert.Equal(new Padding(1), d.Padding);
+            YANPaint.DpiOverride = 192;
+            try
+            {
+                d.BorderSize = 1;
+                Assert.Equal(new Padding(2), d.Padding);
+                Assert.Equal(1, d.BorderSize);
+                Assert.Equal(Color.Red.ToArgb(), BorderPixel(d));
+                Assert.Equal(Color.Red.ToArgb(), BackgroundPixel(d, new Point(d.Width / 2, 1)));
+                Assert.Equal(Color.WhiteSmoke.ToArgb(), SurfacePixel(d, new Point(4, 4)));
+                Assert.True(PinkIconPixels(d, true) > arrow96 * 2, $"arrow not scaled ({PinkIconPixels(d, true)} vs {arrow96} pixels)");
+            }
+            finally
+            {
+                YANPaint.DpiOverride = null;
+            }
+        });
+
+        // High contrast mode paints the border with the system frame color (the highlight color while the control has the focus)
+        [Fact]
+        public void HighContrast_BorderUsesSystemColors() => Sta.Run(ui =>
+        {
+            YANPaint.HighContrastOverride = true;
+            try
+            {
+                var d = new YANDdl { BorderSize = 3, BorderColor = Color.Red };
+                ui.Draw(d);
+                Assert.Equal(SystemColors.WindowFrame.ToArgb(), BorderPixel(d));
+                Priv.Call(d, "Ddl_Enter", d, EventArgs.Empty);
+                Assert.Equal(SystemColors.Highlight.ToArgb(), BorderPixel(d));
+                Assert.Equal(Color.Red, d.BorderColor);
+            }
+            finally
+            {
+                YANPaint.HighContrastOverride = null;
+            }
+        });
+
+        // Zero, tiny and huge sizes and borders, transparent or not, on a painted parent; a new parent and a new window handle
+        [Fact]
+        public void Sizes_ParentChange_AndHandleRecreation_Draw() => Sta.Run(ui =>
+        {
+            foreach (var size in new[] { new Size(0, 0), new Size(1, 1), new Size(3, 1), new Size(2000, 2000) })
+            {
+                foreach (var border in new[] { 0, 1, 49, 1000 })
+                {
+                    foreach (var back in new[] { Color.WhiteSmoke, Color.Transparent })
+                    {
+                        ui.Case($"YANDdl {size.Width}x{size.Height} b={border} back={back.Name}", () =>
+                        {
+                            var d = Sweep.Sized(new YANDdl { BorderSize = border, BackColor = back, BorderColor = back }, size);
+                            var pnl = new PaintingTests.LimePanel();
+                            ui.Host.Controls.Add(pnl);
+                            pnl.Controls.Add(d);
+                            ui.DrawAndDispose(d);
+                        });
+                    }
+                }
+            }
+            var t = new YANDdl { BackColor = Color.Transparent, BorderColor = Color.Transparent };
+            var lime = new PaintingTests.LimePanel();
+            ui.Host.Controls.Add(lime);
+            lime.Controls.Add(t);
+            using (var bmp = ui.Render(t))
+            {
+                PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(0, 0), "first parent");
+            }
+            var red = new PaintingTests.ColorPanel(Color.Red);
+            ui.Host.Controls.Add(red);
+            red.Controls.Add(t);
+            using (var bmp = ui.Render(t))
+            {
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(0, 0), "second parent");
+            }
+            var handle = t.Handle;
+            Priv.Call(t, "RecreateHandle");
+            Assert.NotEqual(handle, t.Handle);
+            using (var bmp = ui.Render(t))
+            {
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(0, 0), "after RecreateHandle");
+            }
+            red.Controls.Remove(t);
+            ui.DrawDetached(t);
+            t.Dispose();
+        });
+        #endregion
+
         // The inner combo box
         private static ComboBox Inner(YANDdl d) => Priv.Field<ComboBox>(d, "_cmbList");
 
         // The color of the background (the border) at a border pixel, painted through the control's own OnPaintBackground
-        private static int BorderPixel(YANDdl d)
+        private static int BorderPixel(YANDdl d) => BackgroundPixel(d, new Point(1, 1));
+
+        // The color of the surface (inside the border), painted through the control's own OnPaintBackground (the inner controls cover it)
+        private static int SurfacePixel(YANDdl d) => BackgroundPixel(d, new Point(d.Width / 2, d.Height / 2));
+
+        private static int SurfacePixel(YANDdl d, Point p) => BackgroundPixel(d, p);
+
+        private static int BackgroundPixel(YANDdl d, Point p)
         {
             using var bmp = new Bitmap(d.Width, d.Height);
             using (var g = Graphics.FromImage(bmp))
             {
                 Priv.Call(d, "OnPaintBackground", new PaintEventArgs(g, d.ClientRectangle));
             }
-            return bmp.GetPixel(1, 1).ToArgb();
+            return bmp.GetPixel(p.X, p.Y).ToArgb();
+        }
+
+        // The number of hot pink pixels of the arrow icon, painted through the icon button's Paint handler (focused, when asked)
+        private static int PinkIconPixels(YANDdl d, bool focused)
+        {
+            var isFocus = Priv.Field<bool>(d, "_is_Focus");
+            Priv.Call(d, focused ? "Ddl_Enter" : "Ddl_Leave", d, EventArgs.Empty);
+            try
+            {
+                return PinkIconPixels(d);
+            }
+            finally
+            {
+                Priv.Call(d, isFocus ? "Ddl_Enter" : "Ddl_Leave", d, EventArgs.Empty);
+            }
         }
 
         // The number of hot pink pixels of the arrow icon, painted through the icon button's Paint handler
