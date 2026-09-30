@@ -148,23 +148,27 @@ namespace YANF.Tests.Controls
             Assert.True(invalidated > 0, "not repainted when the parent was invalidated behind it");
         });
 
-        // The border is a band of BorderSize 96-dpi pixels along the edges; at 192 dpi it is twice as wide
+        // The border is a band of BorderSize 96-dpi pixels along the edges of the client area (on Windows the date picker's 2-pixel
+        // client edge is around it); at 192 dpi it is twice as wide
         [Fact]
         public void Border_BandScalesWithTheDpi() => Sta.Run(ui =>
         {
             var d = new YANDp { Size = new Size(200, 35), SkinColor = Color.Blue, BorderColor = Color.Red, BorderSize = 3, Value = new DateTime(2026, 9, 29) };
             using (var bmp = ui.Render(d))
             {
-                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(1, 17), "border");
-                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(4, 17), "skin");
-                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(100, 1), "top border");
+                var o = Ui.ClientOrigin(d);
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(o.X + 1, 17), "border");
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(o.X + 4, 17), "skin");
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(100, o.Y + 1), "top border");
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(o.X + d.ClientSize.Width - 2, 17), "right border");
             }
             YANPaint.DpiOverride = 192;
             try
             {
                 using var bmp = ui.Render(d);
-                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(4, 17), "192 dpi border");
-                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(7, 17), "192 dpi skin");
+                var o = Ui.ClientOrigin(d);
+                PaintingTests.AssertColor(Color.Red, bmp.GetPixel(o.X + 4, 17), "192 dpi border");
+                PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(o.X + 7, 17), "192 dpi skin");
                 Assert.Equal(3, d.BorderSize);
             }
             finally
@@ -233,8 +237,9 @@ namespace YANF.Tests.Controls
             try
             {
                 using var bmp = ui.Render(d);
-                PaintingTests.AssertColor(SystemColors.Window, bmp.GetPixel(5, 17), "skin");
-                PaintingTests.AssertColor(SystemColors.WindowFrame, bmp.GetPixel(1, 17), "border");
+                var o = Ui.ClientOrigin(d);
+                PaintingTests.AssertColor(SystemColors.Window, bmp.GetPixel(o.X + 5, 17), "skin");
+                PaintingTests.AssertColor(SystemColors.WindowFrame, bmp.GetPixel(o.X + 1, 17), "border");
                 Assert.Equal(Color.Blue, d.SkinColor);
             }
             finally

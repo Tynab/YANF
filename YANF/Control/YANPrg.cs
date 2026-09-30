@@ -192,10 +192,11 @@ namespace YANF.Control
             var graphics = e.Graphics;
             // painting surface: the parent's own pixels (a gradient, an image), not a block of Parent.BackColor
             PaintParent(this, e);
-            // channel
+            // channel, at the bottom of the client area (a progress bar without visual styles has a 1-pixel frame around it)
             var (channelHeight, sliderHeight) = GetBarHeights();
-            var rectChannel = new Rectangle(0, 0, Width, channelHeight);
-            rectChannel.Y = channelHeight >= sliderHeight ? Height - channelHeight : Height - (channelHeight + sliderHeight) / 2;
+            var client = ClientSize;
+            var rectChannel = new Rectangle(0, 0, client.Width, channelHeight);
+            rectChannel.Y = channelHeight >= sliderHeight ? client.Height - channelHeight : client.Height - (channelHeight + sliderHeight) / 2;
             using var brushChannel = new SolidBrush(Contrast(_channelColor, SystemColors.ControlText));
             graphics.FillRectangle(brushChannel, rectChannel);
         }
@@ -204,11 +205,12 @@ namespace YANF.Control
         {
             var graphics = e.Graphics;
             // an empty range (Minimum == Maximum) has no progress to show
-            var wSlider = Maximum > Minimum ? (int)(Width * ((double)Value - Minimum) / ((double)Maximum - Minimum)) : 0;
+            var client = ClientSize;
+            var wSlider = Maximum > Minimum ? (int)(client.Width * ((double)Value - Minimum) / ((double)Maximum - Minimum)) : 0;
             var (channelHeight, sliderHeight) = GetBarHeights();
             var rectSlider = new Rectangle(0, 0, wSlider, sliderHeight);
             using var brushSlider = new SolidBrush(Contrast(_sliderColor, SystemColors.Highlight));
-            rectSlider.Y = sliderHeight >= channelHeight ? Height - sliderHeight : Height - (sliderHeight + channelHeight) / 2;
+            rectSlider.Y = sliderHeight >= channelHeight ? client.Height - sliderHeight : client.Height - (sliderHeight + channelHeight) / 2;
             // painting slider
             if (wSlider > 1)
             {
@@ -249,12 +251,12 @@ namespace YANF.Control
                 }
                 case PrgTextPosition.Right:
                 {
-                    rectText.X = Width - textSize.Width;
+                    rectText.X = ClientSize.Width - textSize.Width;
                     break;
                 }
                 case PrgTextPosition.Center:
                 {
-                    rectText.X = (Width - textSize.Width) / 2;
+                    rectText.X = (ClientSize.Width - textSize.Width) / 2;
                     break;
                 }
                 case Sliding:

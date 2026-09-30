@@ -161,6 +161,10 @@ public partial class YANDdl : UserControl
     /// <summary>
     /// Gets or sets the color of the icon while the control has the focus. <see cref="Color.Empty"/> or a transparent color keeps <see cref="IconColor"/>.
     /// </summary>
+    /// <remarks>
+    /// It only replaces an arrow that can be seen: while <see cref="IconColor"/> is fully transparent (a 1.x designer file that hides
+    /// the arrow), the arrow stays hidden when the control has the focus.
+    /// </remarks>
     [Category("YAN Appearance"), Description("The color of the icon when the control has the focus.")]
     [DefaultValue(typeof(Color), "HotPink")]
     public Color IconFocusColor
@@ -224,6 +228,11 @@ public partial class YANDdl : UserControl
     /// <summary>
     /// Gets or sets the color of the border while the control has the focus. <see cref="Color.Empty"/> or a transparent color keeps <see cref="BorderColor"/>.
     /// </summary>
+    /// <remarks>
+    /// It only replaces a border that can be seen: while <see cref="BorderColor"/> is fully transparent (a 1.x designer file that uses
+    /// <see cref="System.Windows.Forms.Control.Padding"/> as a text indent without a border), the band stays transparent when the
+    /// control has the focus, also in high contrast mode.
+    /// </remarks>
     [Category("YAN Appearance"), Description("This property specifies the color of the border around the control when the control has the focus.")]
     [DefaultValue(typeof(Color), "HotPink")]
     public Color BorderFocusColor
@@ -464,11 +473,12 @@ public partial class YANDdl : UserControl
     /// <summary>
     /// Paints the background: the surface in <see cref="BackColor"/> (and the BackgroundImage) inside the border, and the border in
     /// <see cref="BorderColor"/>, or in <see cref="BorderFocusColor"/> while the control has the focus (over BorderColor when it is
-    /// translucent); the system frame and highlight colors in high contrast mode. As in 1.x, the border fills the whole band between
-    /// the edge of the control and its <see cref="System.Windows.Forms.Control.Padding"/> (at least <see cref="BorderSize"/> wide), so a
-    /// designer file that sets a wider Padding keeps its look. A transparent or translucent surface or border shows the parent's own
-    /// background (a gradient, an image, what its Paint handlers draw); as for a transparent BackColor in WinForms, sibling controls
-    /// that overlap this control are not painted behind it.
+    /// translucent; never over a fully transparent BorderColor, which stays transparent); in high contrast mode the border is painted
+    /// in the system frame and highlight colors (the surface, the text and the arrow keep theirs). As in 1.x, the border fills the
+    /// whole band between the edge of the control and its <see cref="System.Windows.Forms.Control.Padding"/> (at least
+    /// <see cref="BorderSize"/> wide), so a designer file that sets a wider Padding keeps its look. A transparent or translucent
+    /// surface or border shows the parent's own background (a gradient, an image, what its Paint handlers draw); as for a transparent
+    /// BackColor in WinForms, sibling controls that overlap this control are not painted behind it.
     /// </summary>
     /// <param name="e">The paint data.</param>
     protected override void OnPaintBackground(PaintEventArgs e)
@@ -478,7 +488,9 @@ public partial class YANDdl : UserControl
         var client = ClientRectangle;
         var rectSurface = GetSurfaceRectangle();
         var isBand = rectSurface != client;
-        var isHighlight = _is_Focus && _borderFocusColor.A > 0;
+        // the focus color replaces a border that can be seen: a transparent one (1.x designer files use the Padding as a text indent
+        // without a border) stays transparent
+        var isHighlight = _is_Focus && _borderFocusColor.A > 0 && _borderColor.A > 0;
         var isBorderColor = !isHighlight || _borderFocusColor.A < 255;
         var isOpaqueBorder = !isBand || (isHighlight && _borderFocusColor.A == 255) || (isBorderColor && _borderColor.A == 255);
         // what a transparent or translucent surface or border lets through; an opaque control hides it (and the parent's Paint handlers)
@@ -516,7 +528,8 @@ public partial class YANDdl : UserControl
         }
         using var band = new Region(client);
         band.Exclude(rectSurface);
-        if (isBorderColor)
+        // a transparent border stays transparent in high contrast mode too (the band can be a wide Padding, not a frame)
+        if (isBorderColor && _borderColor.A > 0)
         {
             FillBand(graphics, band, Contrast(_borderColor, SystemColors.WindowFrame));
         }
@@ -604,8 +617,9 @@ public partial class YANDdl : UserControl
     // value in device pixels, which the form's AutoScale rescales like the Padding written by the designer)
     private Padding GetBorderPadding() => new(LogicalToDevice(this, _border.Size));
 
-    // Get the painted color of the icon: IconFocusColor while the control has the focus (unless it is empty or transparent)
-    private Color GetIconColor() => _is_Focus && _iconFocusColor.A > 0 ? _iconFocusColor : _iconColor;
+    // Get the painted color of the icon: IconFocusColor while the control has the focus (unless it is empty or transparent, or the
+    // arrow is hidden by a transparent IconColor)
+    private Color GetIconColor() => _is_Focus && _iconFocusColor.A > 0 && _iconColor.A > 0 ? _iconFocusColor : _iconColor;
 
     // Track the focus and repaint the border and the icon, which are highlighted while the control has the focus
     private void SetFocusHighlight(bool isFocus)

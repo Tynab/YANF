@@ -87,27 +87,33 @@ namespace YANF.Tests.Controls
             p.Location = new Point(10, 10);
             pnl.Controls.Add(p);
             using var bmp = ui.Render(p);
-            PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(2, 2), "band over the progress, left of the value");
-            PaintingTests.AssertColor(Color.Red, bmp.GetPixel(150, 2), "channel right of the progress");
-            PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(2, 19), "slider below the band");
+            // in the client area: without visual styles (the test process) Windows puts a 1-pixel frame around a progress bar
+            var o = Ui.ClientOrigin(p);
+            PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(o.X + 2, o.Y + 2), "band over the progress, left of the value");
+            PaintingTests.AssertColor(Color.Red, bmp.GetPixel(o.X + 150, o.Y + 2), "channel right of the progress");
+            PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(o.X + 2, o.Y + p.ClientSize.Height - 1), "slider below the band");
         });
 
-        // ChannelHeight and SliderHeight are 96-dpi pixels: they double at 192 dpi (a DPI-unaware application stays at 96 dpi)
+        // ChannelHeight and SliderHeight are 96-dpi pixels: they double at 192 dpi (a DPI-unaware application stays at 96 dpi). The
+        // bars lie at the bottom of the client area, whole: without visual styles (the test process) Windows puts a 1-pixel frame
+        // around a progress bar
         [Fact]
         public void Dpi_ScalesTheBars() => Sta.Run(ui =>
         {
-            Bitmap Render() => ui.Render(new YANPrg { Size = new Size(200, 40), TextAlign = PrgTextPosition.None, ChannelColor = Color.Red, SliderColor = Color.Blue });
-            using (var bmp = Render())
+            var p = new YANPrg { Size = new Size(200, 40), TextAlign = PrgTextPosition.None, ChannelColor = Color.Red, SliderColor = Color.Blue };
+            // the row below the client area in the bitmap
+            int Bottom() => Ui.ClientOrigin(p).Y + p.ClientSize.Height;
+            using (var bmp = ui.Render(p))
             {
-                Assert.True(Gdi.Same(bmp.GetPixel(100, 34), Color.Red), "96 dpi: 6 px channel");
-                Assert.False(Gdi.Same(bmp.GetPixel(100, 33), Color.Red), "96 dpi: 6 px channel");
+                Assert.True(Gdi.Same(bmp.GetPixel(100, Bottom() - 6), Color.Red), "96 dpi: 6 px channel");
+                Assert.False(Gdi.Same(bmp.GetPixel(100, Bottom() - 7), Color.Red), "96 dpi: 6 px channel");
             }
             YANPaint.DpiOverride = 192;
             try
             {
-                using var bmp = Render();
-                Assert.True(Gdi.Same(bmp.GetPixel(100, 28), Color.Red), "192 dpi: 12 px channel");
-                Assert.False(Gdi.Same(bmp.GetPixel(100, 27), Color.Red), "192 dpi: 12 px channel");
+                using var bmp = ui.Render(p);
+                Assert.True(Gdi.Same(bmp.GetPixel(100, Bottom() - 12), Color.Red), "192 dpi: 12 px channel");
+                Assert.False(Gdi.Same(bmp.GetPixel(100, Bottom() - 13), Color.Red), "192 dpi: 12 px channel");
             }
             finally
             {
@@ -130,7 +136,8 @@ namespace YANF.Tests.Controls
             };
             using var bmp = ui.Render(p);
             var width = TextRenderer.MeasureText("0&/100&", p.Font, Size.Empty, TextFormatFlags.NoPrefix).Width;
-            var inside = Gdi.Count(bmp, Gdi.IsLime, p.Width - width);
+            // at the right of the client area (inside the 1-pixel frame of a progress bar without visual styles)
+            var inside = Gdi.Count(bmp, Gdi.IsLime, Ui.ClientOrigin(p).X + p.ClientSize.Width - width);
             Assert.True(inside > 0, "no value drawn");
             Assert.Equal(inside, Gdi.Count(bmp, Gdi.IsLime));
         });

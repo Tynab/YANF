@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Threading;
 using System.Windows.Forms;
 using Xunit;
 using YANF.Control;
@@ -211,6 +212,50 @@ namespace YANF.Tests.Controls
             Assert.Equal(0, invalidated);
             pnlOther.Invalidate();
             Assert.True(invalidated > 0, "not following the new parent");
+        });
+
+        // WinForms lets another thread invalidate a control (it raises Invalidated on that thread) and its transparent children never
+        // touch a window handle then. A followed control with a non-client border (a YANCirPic with a BorderStyle) needs its handle to
+        // map the invalidated rectangle: from another thread it repaints whole instead, so nothing throws when cross-thread calls are
+        // checked (the default under a debugger)
+        [Fact]
+        public void FollowParent_ParentInvalidatedFromAnotherThread_DoesNotThrow() => Sta.Run(ui =>
+        {
+            var pnl = new LimePanel { Size = new Size(300, 200) };
+            ui.Show(pnl);
+            var pic = new YANCirPic { BorderStyle = BorderStyle.FixedSingle, Location = new Point(5, 5), Size = new Size(60, 60) };
+            pnl.Controls.Add(pic);
+            ui.Pump();
+            Assert.True(pic.IsHandleCreated && pnl.IsHandleCreated, "no window handles");
+            Assert.NotEqual(pic.Size, pic.ClientSize);
+            var invalidated = 0;
+            pic.Invalidated += (s, e) => Interlocked.Increment(ref invalidated);
+            Exception error = null;
+            var check = Control.CheckForIllegalCrossThreadCalls;
+            Control.CheckForIllegalCrossThreadCalls = true;
+            try
+            {
+                var worker = new Thread(() =>
+                {
+                    try
+                    {
+                        pnl.Invalidate(new Rectangle(0, 0, 20, 20));
+                    }
+                    catch (Exception ex)
+                    {
+                        error = ex;
+                    }
+                });
+                worker.Start();
+                Assert.True(worker.Join(TimeSpan.FromSeconds(30)), "the worker thread did not finish");
+            }
+            finally
+            {
+                Control.CheckForIllegalCrossThreadCalls = check;
+            }
+            Assert.Null(error);
+            Assert.True(invalidated > 0, "not repainted when the parent was invalidated behind it");
+            ui.Pump();
         });
 
         // GDI drawing of the parent (TextRenderer with the default flags, which ignores the transform and the clip of a Graphics) is
@@ -766,7 +811,8 @@ namespace YANF.Tests.Controls
         }
 
         /// <summary>
-        /// A plain panel of one color.
+        /// A plain panel of one color, which it paints over its ClientRectangle itself: Control.OnPaintBackground fills the client
+        /// rectangle of the window (GetClientRect), which is empty for a panel of the hidden host form, as it has no window.
         /// </summary>
         internal sealed class ColorPanel : Panel
         {
@@ -774,6 +820,12 @@ namespace YANF.Tests.Controls
             {
                 BackColor = color;
                 Size = new Size(300, 200);
+            }
+
+            protected override void OnPaintBackground(PaintEventArgs e)
+            {
+                using var brush = new SolidBrush(BackColor);
+                e.Graphics.FillRectangle(brush, ClientRectangle);
             }
         }
 

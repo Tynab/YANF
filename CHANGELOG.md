@@ -48,6 +48,9 @@ with 1.0.1 keep compiling and keep their look at 96 dpi, except where an entry b
   unchanged, so calls keep working, also from 1.x binaries. Affects classes derived from it (CS0709; `TypeLoadException`
   in 1.x binaries) and code that uses it as a type (CS0718, CS0721 to CS0723): call `YANMessageBox.Show` directly, and
   turn a derived helper into your own static class.
+- **`YANMessageBox.Show(null)` and `Show(owner, null)` no longer compile:** a literal `null` or `default` text is
+  ambiguous between the `string` overloads and the new `YANMessageBoxOptions` ones (CS0121; BC30521 with `Nothing` in
+  Visual Basic). Write `(string)null`, or pass a variable. 1.x binaries keep calling the `string` overloads.
 - **`YANBtn.Focusable` is true by default, and YANBtn, YANTg, YANRdo and YANDp no longer force `TabStop = false`** (nor
   YANBtn `TabIndex = 0`). A 1.0.1 button never took the focus; now a click moves the focus to it, so the focused control
   raises `Leave` and `Validating` first and a cancelled validation cancels the click, SPACE and ENTER click it, and it
@@ -80,6 +83,9 @@ with 1.0.1 keep compiling and keep their look at 96 dpi, except where an entry b
   non-opaque YANTxt or YANNb, or a YANDdl or YANDp with non-opaque colours repaints (every YANPrg value, about 10 frames
   per YANTg slide, YANBtn hover and press), with `ClipRectangle` set to that control's area. Keep Paint handlers free of
   side effects and honour `ClipRectangle`.
+- **`YANMath.Min` and `Max` compare with `Comparer<T>.Default`** (1.x: the `<` and `>` operators at run time through
+  `dynamic`), so a type with `<` and `>` operators but no `IComparable` throws `ArgumentException`: implement
+  `IComparable<T>` on it. Null and NaN arguments give the same results as in 1.x.
 
 ### Added
 
@@ -95,17 +101,18 @@ with 1.0.1 keep compiling and keep their look at 96 dpi, except where an entry b
 - **`YANLoader`** (`YANF.Script`) shows a Load, Wait or Update screen over a form, on its UI thread, while async work
   runs: `Show(owner)`, `Show(owner, options)` and `RunWithLoaderAsync(this Form, work)`, with overloads for options and
   a `CancellationToken` and for work that returns a result. The owned screen appears only after `ShowDelay`, follows the
-  form and never covers a dialog the work opened; the form takes no input meanwhile and always gets it back, whatever
-  happens. `YANLoaderScope` (`IDisposable`, `IProgress<int>`, also the progress given to the work): `Report(int)` and
+  form (an MDI child or embedded form also when its parents move) and never covers a dialog the work opened; the form
+  takes no input meanwhile (no clicks, keys or wheel turns, also before the screen appears) and always gets it back,
+  whatever happens: with several loaders on one form it gets it back when the last one closes, and not while a modal
+  dialog opened meanwhile is still open. The user cannot close the screen (Alt+F4). `YANLoaderScope` (`IDisposable`, `IProgress<int>`, also the progress given to the work): `Report(int)` and
   `SetProgress(int percent, string detail)` from any thread, `Dispose()` on the UI thread. `YANLoaderOptions`: `Kind`
   (`YANLoaderKind.Load`, `Wait`, `Update`), `ShowDelay` (250 ms), `Corner` (0), `FadeDuration` (200 ms).
 - **Message box options:** `YANMessageBoxOptions` (`Caption`, `Text`, `Buttons`, `Icon`, `DefaultButton`, `Language`
   (null: English), `TopMost` (true), `StrictClose` (false; true makes ✕ give the ESC result, or hides it when there is
   none)), `YANMessageBox.Show(options)` and `Show(owner, options)` (shown on the owner's UI thread),
-  `YANConstant.MsgBoxLang.ENG` (= 2), `[Flags]` on `YANConstant.AnimateWindowFlags`. A literal `null` argument
-  (`Show(null)`, `Show(owner, null)`) is now ambiguous: write `(string)null`.
-- **Forms and helpers:** `YANDisplay.FadeToAsync(this Form, double opacity, int duration)` (ease-out, non-blocking, instant when
-  Windows animation effects are off);
+  `YANConstant.MsgBoxLang.ENG` (= 2), `[Flags]` on `YANConstant.AnimateWindowFlags`.
+- **Forms and helpers:** `YANDisplay.FadeToAsync(this Form, double opacity, int duration)` (ease-out, non-blocking,
+  instant when Windows animation effects are off);
   `YANDisplay.EnableFade(this Form, int fadeInDuration, int fadeOutDuration)` (fades in when shown and out when closed,
   keeps a modal `DialogResult`, survives a cancelled close); `YANDisplay.SetRoundRegion(this Control, int corner)` (no
   GDI leak); `YANEvent.EnableDrag(this Control)` and `DisableDrag` (drag the form through Windows' own move loop);
@@ -123,7 +130,9 @@ with 1.0.1 keep compiling and keep their look at 96 dpi, except where an entry b
   - YANTg slides its knob in about 150 ms (ease-out, blended colours). It jumps when Windows animation effects are off
     (`UIEffectsEnabled`, or Settings > Accessibility > Visual effects > Animation effects) or the toggle cannot be seen.
   - Focus cues on YANBtn, YANTg, YANRdo and YANDp; `AccessibleName` and `AccessibleDescription` of YANTxt, YANNb and
-    YANDdl reach their inner control; in high contrast mode every control but YANGradPnl uses system colours.
+    YANDdl reach their inner control; in high contrast mode YANTg, YANRdo, YANPrg and YANDp paint with system colours,
+    and YANBtn, YANCirPic, YANTxt, YANNb and YANDdl draw their borders in them (YANBtn also its focus cue); their other
+    colours are kept, and a transparent YANDdl `BorderColor` stays transparent.
   - `YANNb.OnValueChanged` and `YANDdl.OnSelectedValueChanged` (protected virtual; they raise the events), and protected
     overrides that derived controls extend: `Dispose(bool)`, `RescaleConstantsForDpi`, `OnPaintBackground`, `WndProc`,
     `OnParentBackColorChanged`, `OnCreateControl`, `DefaultCursor`, `OnSizeChanged`, `OnHandleCreated`, YANBtn's
@@ -161,7 +170,8 @@ with 1.0.1 keep compiling and keep their look at 96 dpi, except where an entry b
   border for odd sizes too.
 - **Controls:** `YANTxt.Text` and `YANDdl.Text` are the content (1.x: the unused `Text` of `UserControl`). YANTxt
   suppresses ENTER only in a single-line box without `AcceptsReturn`. A focused YANDdl draws its border and arrow in
-  HotPink (`Color.Empty` in `BorderFocusColor` and `IconFocusColor` turns it off). YANDdl's `AutoCompleteMode`,
+  HotPink, unless `BorderColor` or `IconColor` is fully transparent (a border or arrow that a 1.x designer file hid that
+  way stays hidden); `Color.Empty` in `BorderFocusColor` and `IconFocusColor` turns it off. YANDdl's `AutoCompleteMode`,
   `AutoCompleteSource` and `DropDownStyle` defaults match the constructor, so a value such as `AutoCompleteMode.None` is
   now kept. Some property categories and descriptions are corrected.
 - **Message box:** ENTER presses the default button and ESC presses Cancel (OK in an OK box), as in Windows; Yes/No and
@@ -170,8 +180,8 @@ with 1.0.1 keep compiling and keep their look at 96 dpi, except where an entry b
   shows the box on that thread; an invalid `MessageBoxButtons` throws `InvalidEnumArgumentException`, an invalid
   `MsgBoxLang` gives English buttons.
 - **Helpers:** `YANMath.Min` / `Max` use `Comparer<T>.Default` (strings and any `IComparable` work; an empty or null
-  array throws `ArgumentException` / `ArgumentNullException`). The hidden `MoveFrm_*` handlers react to the left button
-  only and restore the form's previous opacity.
+  array throws `ArgumentException` / `ArgumentNullException`; null and NaN behave as in 1.x). The hidden
+  `MoveFrm_*` handlers react to the left button only and restore the form's previous opacity.
 - **On .NET** the default font is Segoe UI 9pt, so YANBtn, YANTxt, YANNb, YANDdl, YANDp and YANRdo, which take their
   font family from it, use Segoe UI, as 1.0.1 did on .NET. For the .NET Framework look, call
   `Application.SetDefaultFont(new Font("Microsoft Sans Serif", 8.25F))` before creating any window.
@@ -190,7 +200,9 @@ with 1.0.1 keep compiling and keep their look at 96 dpi, except where an entry b
   its own STA thread, `OnLoader` returns once it is up (or rethrows its failure), and `PublishValue` and `OffLoader`
   work from any thread, at any time and more than once (the latest value wins). The process no longer outlives the app,
   the update box is centred on its form, and region handles are freed. `MiddleScreen.Frm_Close()` closes the form (1.x
-  threw `NotImplementedException`), and resized screens rebuild their rounded corners.
+  threw `NotImplementedException`), and resized screens rebuild their rounded corners. The Load, Wait and Update
+  screens dispose their animated GIF (over a megabyte of native memory each) instead of leaving it to the finalizer, and
+  refuse a close by the user (Alt+F4), which left the form blocked without a screen.
 - **Message box:** an OK box with `Button2` or `Button3` as default focused a hidden button; the ✕ handler ran twice;
   every box leaked six or seven fonts and a bitmap.
 - **Controls:** no exceptions from `AddArc` or `LinearGradientBrush` at small sizes or with a border larger than the
@@ -202,7 +214,12 @@ with 1.0.1 keep compiling and keep their look at 96 dpi, except where an entry b
   designer order, and `String` follows the value. YANTxt draws its placeholder instead of writing it into the text.
   YANDdl: `DropDownStyle` tested the old value; clearing the text or the selection shows the prompt again; `TextAlign`
   applies at once. `BorderFocusColor` of YANTxt and YANNb repaints at once.
-- **Helpers:** `HighLightLblLinkByCtrl` leaked a `Font` on every call and threw for a control that is not on a form;
+- **YANPrg without visual styles:** the channel, the slider and the value are laid out in the client area, so the
+  1-pixel frame Windows gives an unthemed progress bar no longer cuts the bars at the bottom and the value at the right.
+  Apps with visual styles look the same.
+- **Helpers:** `HighLightLblLinkByCtrl` leaked a `Font` on every call, and threw for a control that is not on a form,
+  whose name is shorter than `typeName`, or when the first control with the label's name is not a `Label` (it now looks
+  for a `Label` with that name); as in 1.0.1, the label becomes exactly Bold or Regular;
   `YANMath` threw `RuntimeBinderException` for strings; `MoveFrm_*` left the form dimmed and following the mouse when
   the MouseUp was lost.
 
@@ -232,13 +249,14 @@ they run the screen on its own thread) are not deprecated.
 1. **Package:** update to 2.0.0 (never 1.0.2). In a packages.config project that uses `ic.ico`, copy it first. Remove
    any use of `MainFrm`, `Demo1` or `Demo2`.
 2. **Designer files** need no edits; the designer rewrites them on the next save (lines at their default, such as
-   `FlatStyle = Flat`, go, and `YANTxt.String` becomes `Text`). Build: expect CS0122 on the screen types and CS0709 or
-   CS0718 to CS0723 on `YANMessageBox`.
+   `FlatStyle = Flat`, go, and `YANTxt.String` becomes `Text`). Build: expect CS0122 on the screen types, CS0709 or
+   CS0718 to CS0723 on `YANMessageBox`, and CS0121 on `YANMessageBox.Show(null)` and `Show(owner, null)`.
 3. **Screens now internal:** replace the screen forms and their fields with `YANLoader`
    (`await this.RunWithLoaderAsync(work)`, or `using var scope = YANLoader.Show(this, options)` with
    `scope.SetProgress(percent, detail)`) or keep the screen services; show message boxes with
    `YANMessageBox.Show(owner, options)`.
-4. **Message box static:** stop deriving from `YANMessageBox` or using it as a type; call `YANMessageBox.Show`.
+4. **Message box static:** stop deriving from `YANMessageBox` or using it as a type; call `YANMessageBox.Show`. Write a
+   literal null text as `(string)null`.
 5. **String → Text:** use `YANTxt.Text` and `TextChanged`. For YANDdl, `Text` and `TextChanged` are the content and
    `SelectedIndexChanged` replaces `OnSelectedIndexChanged`; `YANDdl.String` stays the prompt.
 6. **Event senders:** the new events and `YANNb.ValueChanged` pass the YAN control: fix handlers that cast `sender` to

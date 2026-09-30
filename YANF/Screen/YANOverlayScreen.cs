@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.InteropServices;
@@ -31,10 +32,13 @@ namespace YANF.Screen
         [ThreadStatic]
         private static bool? _canAnimateOverride;
         private Form _owner;
+        // The parents of an MDI child or embedded owner, up to its top-level form: moving them moves the owner on screen
+        private readonly List<System.Windows.Forms.Control> _ancestors = new();
         private int _corner;
         private int _fadeDuration = YANLoaderOptions.DEFAULT_FADE_DURATION;
         private bool _is_ShowRequested;
         private bool _is_AsyncFade;
+        private bool _is_ClosingByOwner;
         private Task _fadeIn;
         private Task _closing;
         private Action _beforeClose;
@@ -76,8 +80,8 @@ namespace YANF.Screen
         // YANLoader has started closing the screen (CloseAnimatedAsync)
         internal bool IsClosing => _closing != null;
 
-        // The tracked owner cannot show an overlay right now (hidden or minimized)
-        private bool IsOwnerHidden => _owner.IsDisposed || !_owner.Visible || _owner.WindowState == Minimized;
+        // The tracked owner cannot show an overlay right now (hidden or minimized, or its top-level form is minimized)
+        private bool IsOwnerHidden => _owner.IsDisposed || !_owner.Visible || _owner.WindowState == Minimized || _owner.TopLevelControl is Form { WindowState: Minimized };
 
         // Tests: the thread's synchronization context brings continuations back to it although it is not a
         // WindowsFormsSynchronizationContext (per thread; null checks the context)
@@ -103,10 +107,24 @@ namespace YANF.Screen
                 return;
             }
             // 1.0.x behaviour kept (the legacy services' own thread may block here); YANLoader closes with CloseAnimatedAsync
+            _is_ClosingByOwner = true;
             Untrack();
             DialogResult = OK;
             this.FadeOut();
             Dispose();
+        }
+
+        /// <summary>
+        /// Refuses a close by the user (Alt+F4, the system menu): only the service or loader that shows the screen closes it,
+        /// otherwise the owner would stay blocked without a screen until the work ends.
+        /// </summary>
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            if (!_is_ClosingByOwner && e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+            }
+            base.OnFormClosing(e);
         }
 
         /// <summary>
@@ -155,15 +173,22 @@ namespace YANF.Screen
         }
 
         /// <summary>
-        /// Stops following the owner, then releases the screen.
+        /// Stops following the owner, then releases the screen and its animated images.
         /// </summary>
         protected override void Dispose(bool disposing)
         {
+            List<Image> images = null;
             if (disposing)
             {
                 Untrack();
+                // Read before the picture boxes are disposed: each is a new Bitmap from the resources (a large GIF) that only this
+                // screen uses, and PictureBox.Dispose does not dispose its image
+                images = new List<Image>();
+                CollectImages(this, images);
             }
             base.Dispose(disposing);
+            // Once the picture boxes have stopped animating them
+            images?.ForEach(i => i.Dispose());
         }
         #endregion
 
@@ -201,7 +226,8 @@ namespace YANF.Screen
             Corner = corner;
         }
 
-        // YANLoader (same thread only): follow the owner's bounds, visibility and minimized state until this screen closes; fade without blocking
+        // YANLoader (same thread only): follow the owner's bounds, visibility and minimized state until this screen closes; fade without blocking.
+        // An MDI child or embedded owner is followed when its parents move too (its own bounds are relative to its parent)
         internal void Track(Form owner)
         {
             Untrack();
@@ -212,6 +238,12 @@ namespace YANF.Screen
             owner.SizeChanged += Owner_Changed;
             owner.Resize += Owner_Changed;
             owner.VisibleChanged += Owner_Changed;
+            for (var c = owner.Parent; c != null; c = c.Parent)
+            {
+                c.LocationChanged += Owner_Changed;
+                c.SizeChanged += Owner_Changed;
+                _ancestors.Add(c);
+            }
             Follow();
         }
 
@@ -285,13 +317,14 @@ namespace YANF.Screen
             {
                 if (!IsDisposed)
                 {
+                    _is_ClosingByOwner = true;
                     Close();
                     Dispose();
                 }
             }
         }
 
-        // Owner moved, resized, minimized, restored, hidden or shown
+        // Owner (or a parent of it) moved, resized, minimized, restored, hidden or shown
         private void Owner_Changed(object sender, EventArgs e) => Follow();
 
         // Match the owner: bounds while it can be seen, hidden while it is minimized or hidden
@@ -361,6 +394,19 @@ namespace YANF.Screen
             }
         }
 
+        // The images of the picture boxes in the control, at any depth
+        private static void CollectImages(System.Windows.Forms.Control parent, List<Image> images)
+        {
+            foreach (System.Windows.Forms.Control c in parent.Controls)
+            {
+                if (c is PictureBox { Image: { } image } && !images.Contains(image))
+                {
+                    images.Add(image);
+                }
+                CollectImages(c, images);
+            }
+        }
+
         // Stop following the owner
         private void Untrack()
         {
@@ -374,6 +420,12 @@ namespace YANF.Screen
             owner.SizeChanged -= Owner_Changed;
             owner.Resize -= Owner_Changed;
             owner.VisibleChanged -= Owner_Changed;
+            foreach (var c in _ancestors)
+            {
+                c.LocationChanged -= Owner_Changed;
+                c.SizeChanged -= Owner_Changed;
+            }
+            _ancestors.Clear();
         }
 
         [DllImport("dwmapi.dll")]

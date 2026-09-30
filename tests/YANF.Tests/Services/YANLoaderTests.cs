@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -132,7 +134,8 @@ namespace YANF.Tests.Services
             Assert.Equal(Expected(Load, owner, scr), scr.Bounds);
         });
 
-        // The corner region is rebuilt for every size
+        // The corner region is rebuilt for every size (the screen covers the owner's visible frame: on Windows 10 and later a sizable
+        // owner is wider and taller than that by its invisible resize borders)
         [Fact]
         public void Corner_IsKeptWhenTheScreenIsResized() => Run(() =>
         {
@@ -141,8 +144,10 @@ namespace YANF.Tests.Services
             var scr = scope.Screen;
             Assert.True(PumpUntil(() => scr.Visible));
             AssertRegionFits(scr);
+            var before = scr.Size;
             owner.Size = new Size(430, 330);
-            Assert.True(PumpUntil(() => scr.Size == owner.Size));
+            Assert.True(PumpUntil(() => scr.Bounds == Expected(Load, owner, scr)), "did not follow the resize: " + scr.Bounds);
+            Assert.NotEqual(before, scr.Size);
             AssertRegionFits(scr);
         });
 
@@ -402,7 +407,8 @@ namespace YANF.Tests.Services
             Assert.Null(scope.Screen.Region);
         });
 
-        // Only the scope that blocked the owner gives it back (nested scopes, an owner disabled by someone else)
+        // Nested scopes share the owner's block (the owner is given back when the last one closes); an owner disabled by someone else
+        // is left as it is
         [Fact]
         public void OwnerBlockedAlready_IsLeftAsItIs() => Run(() =>
         {
@@ -411,7 +417,7 @@ namespace YANF.Tests.Services
             var outer = YANLoader.Show(owner, none);
             var inner = YANLoader.Show(owner, new YANLoaderOptions { Kind = Wait, ShowDelay = 0, FadeDuration = 0 });
             Assert.True(outer.IsOwnerBlocked);
-            Assert.False(inner.IsOwnerBlocked);
+            Assert.True(inner.IsOwnerBlocked);
             inner.Dispose();
             Assert.False(IsEnabled(owner), "the inner scope gave the owner back while the outer one is open");
             outer.Dispose();
@@ -578,6 +584,226 @@ namespace YANF.Tests.Services
             Assert.True(IsEnabled(owner));
         });
 
+        // Scopes that overlap on one owner (two loads started together, a second click) share its block: the owner is given back when
+        // the last one closes, whichever closes first
+        [Fact]
+        public void OverlappingScopes_TheOwnerIsGivenBackByTheLastOne() => Run(() =>
+        {
+            using var owner = ShowOwner();
+            var none = new YANLoaderOptions { ShowDelay = 0, FadeDuration = 0 };
+            var first = YANLoader.Show(owner, none);
+            var second = YANLoader.Show(owner, new YANLoaderOptions { Kind = Wait, ShowDelay = 0, FadeDuration = 0 });
+            Assert.True(first.IsOwnerBlocked && second.IsOwnerBlocked);
+            first.Dispose();
+            Assert.False(first.IsOwnerBlocked);
+            Assert.False(IsEnabled(owner), "the first scope to close gave the owner back while the second one is open");
+            Assert.True(PumpUntil(() => first.Screen.IsDisposed));
+            Assert.False(IsEnabled(owner));
+            second.Dispose();
+            Assert.True(IsEnabled(owner), "the last scope did not give the owner back");
+            // RunWithLoaderAsync twice at once (Task.WhenAll): the first work to end does not give the owner back
+            var gateA = new TaskCompletionSource<bool>();
+            var gateB = new TaskCompletionSource<bool>();
+            var options = new YANLoaderOptions { ShowDelay = 50, FadeDuration = 0 };
+            var a = owner.RunWithLoaderAsync((p, ct) => gateA.Task, options, CancellationToken.None);
+            var b = owner.RunWithLoaderAsync((p, ct) => gateB.Task, options, CancellationToken.None);
+            gateA.SetResult(true);
+            Complete(a);
+            PumpFor(100);
+            Assert.False(IsEnabled(owner), "the owner took input while the second work was running");
+            gateB.SetResult(true);
+            Complete(b);
+            Assert.True(IsEnabled(owner));
+        });
+
+        // A modal dialog opened while a scope holds the owner (by a timer, from another form) leaves the owner alone, as it is disabled
+        // already, and will not enable it when it closes: a scope that closes during the dialog keeps the owner disabled until the
+        // dialog is gone, so that the owner takes no input behind it
+        [Fact]
+        public void ScopeClosedDuringAModalDialog_TheOwnerWaitsForTheDialog() => Run(() =>
+        {
+            using var owner = ShowOwner();
+            var scope = YANLoader.Show(owner, new YANLoaderOptions { ShowDelay = 5000 });
+            bool? isEnabledUnderTheDialog = null;
+            using var dlg = new Form { ShowInTaskbar = false, StartPosition = Manual, Bounds = new Rectangle(owner.Left + 150, owner.Top + 120, 300, 200) };
+            using var timer = new System.Windows.Forms.Timer { Interval = 100 };
+            timer.Tick += (s, e) =>
+            {
+                if (isEnabledUnderTheDialog == null)
+                {
+                    scope.Dispose();
+                    isEnabledUnderTheDialog = IsEnabled(owner);
+                }
+                else
+                {
+                    timer.Stop();
+                    dlg.Close();
+                }
+            };
+            dlg.Shown += (s, e) => timer.Start();
+            _ = dlg.ShowDialog();
+            Assert.False(isEnabledUnderTheDialog ?? true, "the scope enabled the owner behind the modal dialog");
+            Assert.False(scope.IsOwnerBlocked);
+            Assert.True(PumpUntil(() => IsEnabled(owner)), "the owner was not given back when the dialog closed");
+            // a dialog open before the scope does not hold the owner back (it is the dialog's own owner here)
+            using var dlg2 = new Form { ShowInTaskbar = false, StartPosition = Manual, Bounds = new Rectangle(owner.Left + 150, owner.Top + 120, 300, 200) };
+            bool? isGivenBack = null;
+            dlg2.Shown += (s, e) =>
+            {
+                var inner = YANLoader.Show(dlg2, new YANLoaderOptions { ShowDelay = 5000 });
+                inner.Dispose();
+                isGivenBack = IsEnabled(dlg2);
+                dlg2.Close();
+            };
+            _ = dlg2.ShowDialog(owner);
+            Assert.True(isGivenBack ?? false, "a scope on a modal dialog waited for that dialog");
+        });
+
+        // The owner takes no keys and no wheel turns while the scope is open, also before the screen appears: a disabled window keeps
+        // its focused child, and WinForms would still turn the keys into clicks (AcceptButton, the focused button) or text. The keys
+        // of other windows are not touched, and the owner takes keys again once the scope is closed
+        [Fact]
+        public void Keys_DoNotReachTheOwner_WhileTheScopeIsOpen() => Run(() =>
+        {
+            const int WM_KEYDOWN = 0x0100, WM_KEYUP = 0x0101, WM_CHAR = 0x0102, WM_SYSKEYDOWN = 0x0104, WM_MOUSEWHEEL = 0x020A;
+            const int VK_RETURN = 0x0D, VK_SPACE = 0x20, VK_A = 0x41, VK_F4 = 0x73;
+            using var owner = ShowOwner();
+            using var other = ShowOwner();
+            var btn = new Button { Text = "Load", Location = new Point(10, 10) };
+            var txt = new TextBox { Location = new Point(10, 50) };
+            var otherTxt = new TextBox { Location = new Point(10, 10) };
+            owner.Controls.Add(btn);
+            owner.Controls.Add(txt);
+            other.Controls.Add(otherTxt);
+            owner.AcceptButton = btn;
+            var seen = new List<string>();
+            var clicks = 0;
+            var closings = 0;
+            btn.Click += (s, e) => clicks++;
+            btn.KeyDown += (s, e) => seen.Add("button " + e.KeyCode);
+            txt.KeyDown += (s, e) => seen.Add("text box " + e.KeyCode);
+            txt.KeyPress += (s, e) => seen.Add("text box char");
+            txt.MouseWheel += (s, e) => seen.Add("text box wheel");
+            owner.KeyDown += (s, e) => seen.Add("form " + e.KeyCode);
+            owner.FormClosing += (s, e) =>
+            {
+                closings++;
+                e.Cancel = true;
+            };
+            var otherKeys = 0;
+            otherTxt.KeyDown += (s, e) => otherKeys++;
+            PumpFor(50);
+            var scope = YANLoader.Show(owner, new YANLoaderOptions { ShowDelay = 5000 });
+            PostKey(btn, WM_KEYDOWN, VK_RETURN, 1);
+            PostKey(btn, WM_KEYUP, VK_RETURN, unchecked((int)0xC0000001));
+            PostKey(btn, WM_KEYDOWN, VK_SPACE, 1);
+            PostKey(btn, WM_KEYUP, VK_SPACE, unchecked((int)0xC0000001));
+            PostKey(txt, WM_KEYDOWN, VK_A, 1);
+            PostKey(txt, WM_CHAR, 'a', 1);
+            PostKey(txt, WM_MOUSEWHEEL, -120 << 16, 0);
+            // Alt+F4 to the owner itself (its keys when it is active without a focus)
+            PostKey(owner, WM_SYSKEYDOWN, VK_F4, 0x20000001);
+            PostKey(otherTxt, WM_KEYDOWN, VK_A, 1);
+            Assert.True(PumpUntil(() => otherKeys == 1), "a key of another form was dropped");
+            PumpFor(100);
+            Assert.True(seen.Count == 0, "keys reached the blocked owner: " + string.Join(", ", seen));
+            Assert.Equal(0, clicks);
+            Assert.Equal(0, closings);
+            Assert.Equal("", txt.Text);
+            Assert.False(scope.Screen.Visible);
+            scope.Dispose();
+            Assert.True(IsEnabled(owner));
+            // given back: the keys reach the owner again
+            PostKey(txt, WM_KEYDOWN, VK_A, 1);
+            Assert.True(PumpUntil(() => seen.Contains("text box A")), "the owner took no keys after the scope: " + string.Join(", ", seen));
+            if (IsNativeInput)
+            {
+                // Windows: Enter clicks the AcceptButton (Form.ProcessDialogKey)
+                PostKey(btn, WM_KEYDOWN, VK_RETURN, 1);
+                PostKey(btn, WM_KEYUP, VK_RETURN, unchecked((int)0xC0000001));
+                Assert.True(PumpUntil(() => clicks == 1), "Enter did not click the AcceptButton after the scope");
+            }
+        });
+
+        // A scope opened in Load disables the form before Windows first shows and activates it (a disabled window takes no focus and
+        // may not be activated at all). When the work ends before the screen appears, the form still ends up active and focused, as it
+        // does without a scope
+        [Fact]
+        public void ScopeOpenedInLoad_FastWork_LeavesTheFormActiveAndFocused() => Run(() =>
+        {
+            using var main = ShowOwner();
+            main.Activate();
+            PumpFor(50);
+            // whether this session can activate a window at all (a desktop without input may not)
+            var canActivate = Form.ActiveForm == main;
+            using var owner = NewOwner();
+            var txt = new TextBox { Location = new Point(10, 10) };
+            owner.Controls.Add(txt);
+            Task task = null;
+            var isBlocked = false;
+            owner.Load += (s, e) => task = owner.RunWithLoaderAsync((p, ct) =>
+            {
+                isBlocked = !IsEnabled(owner) && ((YANLoaderScope)p).IsOwnerBlocked;
+                return Task.Delay(10, ct);
+            });
+            owner.Show();
+            Assert.NotNull(task);
+            Complete(task);
+            Assert.Equal(TaskStatus.RanToCompletion, task.Status);
+            Assert.True(isBlocked, "the form took input while the work ran");
+            Assert.True(IsEnabled(owner), "the form was not given back");
+            if (IsNativeInput && canActivate)
+            {
+                Assert.True(PumpUntil(() => Form.ActiveForm == owner), "the form was not activated: the active form is " + Form.ActiveForm?.Text);
+                Assert.True(PumpUntil(() => txt.Focused), "the form's first control has no keyboard focus");
+            }
+        });
+
+        // An MDI child: the screen follows it when the MDI parent moves (the child's own Location does not change then)
+        [Fact]
+        public void Screen_FollowsTheParentOfAnMdiChild() => Run(() =>
+        {
+            using var parent = ShowOwner();
+            parent.IsMdiContainer = true;
+            using var child = new Form { MdiParent = parent, StartPosition = Manual, Bounds = new Rectangle(20, 10, 300, 200) };
+            child.Show();
+            PumpFor(50);
+            var scope = YANLoader.Show(child, new YANLoaderOptions { ShowDelay = 0, FadeDuration = 0 });
+            var scr = scope.Screen;
+            Assert.True(PumpUntil(() => scr.Visible), "not shown over the MDI child");
+            Assert.Equal(YANOverlayScreen.ScreenBoundsOf(child), scr.Bounds);
+            parent.Location = new Point(parent.Left + 50, parent.Top + 30);
+            Assert.True(PumpUntil(() => scr.Bounds == YANOverlayScreen.ScreenBoundsOf(child)), $"did not follow the MDI parent: {scr.Bounds} for {YANOverlayScreen.ScreenBoundsOf(child)}");
+            scope.Dispose();
+            Assert.True(PumpUntil(() => scr.IsDisposed));
+            // no longer follows
+            parent.Location = new Point(parent.Left - 50, parent.Top - 30);
+            PumpFor(50);
+        });
+
+        // A form embedded in another (TopLevel = false): the screen follows it when its parent control or the host form moves
+        [Fact]
+        public void Screen_FollowsTheParentsOfAnEmbeddedForm() => Run(() =>
+        {
+            using var host = ShowOwner();
+            var panel = new Panel { Bounds = new Rectangle(30, 20, 400, 300) };
+            host.Controls.Add(panel);
+            var inner = new Form { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Bounds = new Rectangle(10, 10, 200, 150) };
+            panel.Controls.Add(inner);
+            inner.Show();
+            PumpFor(50);
+            var scope = YANLoader.Show(inner, new YANLoaderOptions { ShowDelay = 0, FadeDuration = 0 });
+            var scr = scope.Screen;
+            Assert.True(PumpUntil(() => scr.Visible), "not shown over the embedded form");
+            Assert.Equal(YANOverlayScreen.ScreenBoundsOf(inner), scr.Bounds);
+            panel.Location = new Point(panel.Left + 25, panel.Top + 15);
+            Assert.True(PumpUntil(() => scr.Bounds == YANOverlayScreen.ScreenBoundsOf(inner)), $"did not follow the panel: {scr.Bounds} for {YANOverlayScreen.ScreenBoundsOf(inner)}");
+            host.Location = new Point(host.Left + 40, host.Top + 20);
+            Assert.True(PumpUntil(() => scr.Bounds == YANOverlayScreen.ScreenBoundsOf(inner)), $"did not follow the host form: {scr.Bounds} for {YANOverlayScreen.ScreenBoundsOf(inner)}");
+            scope.Dispose();
+            Assert.True(PumpUntil(() => scr.IsDisposed));
+        });
+
         // The bounds covered: the whole form, or on Windows its visible frame (without the invisible resize borders)
         [Fact]
         public void ScreenBounds_AreTheVisibleFrameOfTheOwner() => Run(() =>
@@ -599,6 +825,14 @@ namespace YANF.Tests.Services
         #region Fields
         private const string OWNER_TEXT = "YANLoader owner";
         private static readonly bool _is_Mono = Type.GetType("Mono.Runtime") != null;
+        private static bool _is_NativeInput;
+        #endregion
+
+        #region Properties
+        /// <summary>
+        /// The test runs with the real user32 input calls (Windows), not with their stand-in.
+        /// </summary>
+        public static bool IsNativeInput => _is_NativeInput;
         #endregion
 
         #region Methods
@@ -615,7 +849,8 @@ namespace YANF.Tests.Services
             Control marshal = null;
             try
             {
-                if (!HasUser32(oldInput))
+                _is_NativeInput = HasUser32(oldInput);
+                if (!_is_NativeInput)
                 {
                     YANLoaderScope.Native = new FakeInput();
                 }
@@ -657,17 +892,22 @@ namespace YANF.Tests.Services
         });
 
         /// <summary>
+        /// A normal owner form (not top-most) at a known place, not shown yet.
+        /// </summary>
+        public static Form NewOwner() => new()
+        {
+            ShowInTaskbar = false,
+            StartPosition = Manual,
+            Bounds = new Rectangle(100, 80, 640, 480),
+            Text = OWNER_TEXT
+        };
+
+        /// <summary>
         /// A shown, normal owner form (not top-most) at a known place.
         /// </summary>
         public static Form ShowOwner()
         {
-            var frm = new Form
-            {
-                ShowInTaskbar = false,
-                StartPosition = Manual,
-                Bounds = new Rectangle(100, 80, 640, 480),
-                Text = OWNER_TEXT
-            };
+            var frm = NewOwner();
             try
             {
                 frm.Show();
@@ -754,6 +994,24 @@ namespace YANF.Tests.Services
         public static void Complete(Task task) => Assert.True(PumpUntil(() => task.IsCompleted), "the loader task did not end");
 
         /// <summary>
+        /// Posts an input message to a window of this thread, as the keyboard or the mouse wheel does: through user32, or through mono's
+        /// own message queue where there is none. It goes through the message filters and WinForms' key processing when pumped.
+        /// </summary>
+        public static void PostKey(Control target, int msg, int wParam, int lParam)
+        {
+            if (!_is_Mono)
+            {
+                Assert.True(PostMessageW(target.Handle, msg, (IntPtr)wParam, (IntPtr)lParam), "PostMessage failed");
+                return;
+            }
+            var swf = typeof(Control).Assembly;
+            var msgType = swf.GetType("System.Windows.Forms.Msg", true);
+            var post = swf.GetType("System.Windows.Forms.XplatUI", true).GetMethod("PostMessage", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic,
+                null, new[] { typeof(IntPtr), msgType, typeof(IntPtr), typeof(IntPtr) }, null);
+            _ = post.Invoke(null, new object[] { target.Handle, Enum.ToObject(msgType, msg), (IntPtr)wParam, (IntPtr)lParam });
+        }
+
+        /// <summary>
         /// Runs the action on a worker thread while this (UI) thread keeps pumping messages.
         /// </summary>
         public static void OnWorker(Action action)
@@ -799,6 +1057,10 @@ namespace YANF.Tests.Services
                 return ex;
             }
         }
+
+        [DllImport("user32.dll", EntryPoint = "PostMessageW")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool PostMessageW(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
         // user32 is there (Windows) when the real calls work
         private static bool HasUser32(YANLoaderScope.IWindowInput input)
@@ -854,12 +1116,23 @@ namespace YANF.Tests.Services
             {
             }
 
-            public bool IsChild(IntPtr hWndParent, IntPtr hWnd) => false;
+            // Through the WinForms parents (every window of the tests is a control)
+            public bool IsChild(IntPtr hWndParent, IntPtr hWnd)
+            {
+                for (var c = Control.FromHandle(hWnd)?.Parent; c != null; c = c.Parent)
+                {
+                    if (c.IsHandleCreated && c.Handle == hWndParent)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
 
             // Forms are found through Application.OpenForms; there are no other windows
             public IntPtr[] GetThreadWindows() => new IntPtr[0];
 
-            public bool IsWindowVisible(IntPtr hWnd) => false;
+            public bool IsWindowVisible(IntPtr hWnd) => Control.FromHandle(hWnd) is { Visible: true };
 
             public IntPtr GetOwner(IntPtr hWnd) => IntPtr.Zero;
 

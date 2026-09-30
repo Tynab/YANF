@@ -319,7 +319,7 @@ They live in the sample project [samples/YANF.Demo](https://github.com/Tynab/YAN
 - Button new style
 - ProgressBar new style
 - RadioButton new style
-- TextBox new style
+- TextBox new style (placeholder, password)
 - CirclePictureBox
 - DropdownList
 - GradientPanel
@@ -327,21 +327,15 @@ They live in the sample project [samples/YANF.Demo](https://github.com/Tynab/YAN
 - ToggleButton
 
 ### EXTENSION
-- Numeric
-- Text
-- List
-- Random
-- Process
-- Task
-- Display
-- Timer
-- Event
-
-### OTHER
-- Password
+- Numeric: `YANMath.Min` / `Max`
+- Text: `YANString.ParseDouble`, `ParseInt`, `TryParseDouble`, `TryParseInt`
+- Controls: `YANController.GetAllObjs`, `GetItemListFromFilesInFolderAdv`
+- Display: `YANDisplay.FadeToAsync`, `EnableFade`, `FadeIn` / `FadeOut`, `SetRoundRegion`, `HighLightLblLinkByCtrl`
+- Timer: `YANTimer.StartAdv` / `StopAdv`
+- Event: `YANEvent.EnableDrag` / `DisableDrag`
 
 ## BUILD FROM SOURCE
-Requirements: Windows with the .NET Framework 4.8.1 runtime, the .NET 10 SDK, and Visual Studio 2022 17.14 or later (workload ".NET desktop development") or Build Tools for Visual Studio 17.14 or later. The library builds for `net481`, `net8.0-windows` and `net10.0-windows`.
+Requirements: Windows with the .NET Framework 4.8.1 runtime, the .NET 10 SDK, and Visual Studio 2026 (18.0) or later (workload ".NET desktop development") or Build Tools for Visual Studio 2026. The library builds for `net481`, `net8.0-windows` and `net10.0-windows`. Visual Studio 2022 17.14 still builds the solution, with warning NETSDK1233: targeting .NET 10 is not supported there, so neither are the `net10.0-windows` builds of the library, the demo app and the tests.
 
 Build in Visual Studio (open `YANF.sln`) or from a Developer Command Prompt. Use Visual Studio's MSBuild: `dotnet build` cannot embed the bitmap resources of the forms for .NET Framework.
 ```

@@ -35,6 +35,12 @@ namespace YANF.Tests
         /// <summary>
         /// Hidden form (never shown) that parentless controls are added to, like a form under construction in the designer.
         /// </summary>
+        /// <remarks>
+        /// Neither this form nor a panel put on it gets a window unless the test asks for one: <see cref="Render"/> creates the window
+        /// of the rendered control only (parked by WinForms while its parent has none). On Windows Control.OnPaintBackground fills
+        /// the client rectangle of the window (GetClientRect), so a parent without a window paints no BackColor behind a transparent
+        /// control (Mono fills ClientRectangle): a test parent paints its ClientRectangle itself, as PaintingTests.LimePanel does.
+        /// </remarks>
         public Form Host => _host ??= Track(new Form
         {
             ShowInTaskbar = false
@@ -128,7 +134,8 @@ namespace YANF.Tests
         }
 
         /// <summary>
-        /// Like <see cref="Draw"/>, but returns the rendered bitmap (the caller disposes it).
+        /// Like <see cref="Draw"/>, but returns the rendered bitmap (the caller disposes it). It is the whole window, with its
+        /// non-client edge: the pixels the control paints start at <see cref="ClientOrigin"/>.
         /// </summary>
         public Bitmap Render(Control c)
         {
@@ -149,6 +156,16 @@ namespace YANF.Tests
                 throw;
             }
         }
+
+        /// <summary>
+        /// Where the client area of the control starts in a bitmap from <see cref="Render"/>. DrawToBitmap (WM_PRINT) draws the
+        /// non-client edge of the window too, and on Windows the edge moves the client area in: 2 pixels for the WS_EX_CLIENTEDGE
+        /// of a DateTimePicker (always there), 1 for the WS_EX_STATICEDGE that a progress bar gives itself when it is not themed
+        /// (the test process does not enable visual styles). Mono's managed controls draw no such edge: (0, 0) there. The edges
+        /// are as wide on every side (not so a scroll bar). Ask once the window exists (after <see cref="Render"/>): a progress bar
+        /// adds its edge when its window is created.
+        /// </summary>
+        public static Point ClientOrigin(Control c) => new((c.Width - c.ClientSize.Width) / 2, (c.Height - c.ClientSize.Height) / 2);
 
         /// <summary>
         /// Shows a form at the top-left of the screen with the controls stacked in it, so focus and on-screen painting are real.

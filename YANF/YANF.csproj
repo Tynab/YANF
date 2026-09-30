@@ -62,10 +62,10 @@
     <InternalsVisibleTo Include="YANF.Tests" />
   </ItemGroup>
 
+  <!-- No System.Design reference: YANDdl and YANTxt name its editors by assembly-qualified string, which needs none, and
+       NuGet would pack one as a frameworkAssembly that adds System.Design to every .NET Framework consumer project (1.0.1
+       added nothing). A compile-time need would take <Reference Include="System.Design" Pack="false" />. -->
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
-    <!-- YANDdl and YANTxt name System.Design editors by string; reference it explicitly for the net481 build (the .NET
-         targets get System.Design and System.Windows.Forms.Design from the Windows Desktop framework reference) -->
-    <Reference Include="System.Design" />
     <!-- Lets the .NET SDK build net481 without a targeting pack installed (CI, non-Windows); build-time only -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>

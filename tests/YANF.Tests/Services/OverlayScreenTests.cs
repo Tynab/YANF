@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -67,6 +68,23 @@ namespace YANF.Tests.Services
             bare.SetProgress(10, "ignored");
             bare.Frm_Close();
             Assert.True(bare.IsDisposed);
+        });
+
+        // Alt+F4 or the system menu (a close by the user) must not take the screen away from the service or loader showing it
+        [Fact]
+        public void UserClose_IsRefused_OwnerCloseWorks() => Sta.Run(() =>
+        {
+            using var p = NewParent();
+            var load = new YANLoadScreen(p.Bounds, 0, false)
+            {
+                ShowInTaskbar = false
+            };
+            load.Show();
+            load.Close();
+            Assert.True(load.Visible, "a close by the user (Form.Close, Alt+F4) closed the screen");
+            Assert.False(load.IsDisposed);
+            load.Frm_Close();
+            Assert.True(load.IsDisposed, "the owner's Frm_Close did not close the screen");
         });
 
         // 1.0.x threw NotImplementedException from MiddleScreen.Frm_Close
@@ -200,6 +218,58 @@ namespace YANF.Tests.Services
                 Assert.Equal(YANConstant.W_UPDATE_SCR / 2, at96.pnlProgressBar.Width);
             }
         });
+
+        // Every screen reads its animated GIF from the resources (a new Bitmap per screen: over a megabyte of native memory once
+        // decoded) and disposes it with itself, shown or not; PictureBox.Dispose leaves its image alone
+        [Fact]
+        public void Screens_DisposeTheirAnimatedImages() => Sta.Run(() =>
+        {
+            using var p = NewParent();
+            foreach (var isShown in new[] { false, true })
+            {
+                foreach (var scr in new YANOverlayScreen[] { new YANLoadScreen(p.Bounds, 0, false), new YANWaitScreen(p.Bounds, 0, false), new YANUpdateScreen() })
+                {
+                    var images = ImagesOf(scr);
+                    Assert.True(images.Count == 1, scr.GetType().Name + " images: " + images.Count);
+                    Assert.False(Gdi.IsDisposed(images[0]));
+                    if (isShown)
+                    {
+                        scr.ShowInTaskbar = false;
+                        scr.Opacity = 1;
+                        scr.Show();
+                        Application.DoEvents();
+                        scr.Frm_Close();
+                    }
+                    else
+                    {
+                        scr.Dispose();
+                    }
+                    Assert.True(scr.IsDisposed);
+                    Assert.True(Gdi.IsDisposed(images[0]), scr.GetType().Name + " left its image to the finalizer");
+                }
+            }
+            // a second read of the resources is a new image: disposing one screen's image never touches another screen's
+            using var first = new YANWaitScreen(p.Bounds, 0, false);
+            var second = new YANWaitScreen(p.Bounds, 0, false);
+            Assert.NotSame(ImagesOf(first)[0], ImagesOf(second)[0]);
+            second.Dispose();
+            Assert.False(Gdi.IsDisposed(ImagesOf(first)[0]));
+        });
+
+        // The images of the picture boxes of a screen
+        private static List<Image> ImagesOf(Control parent)
+        {
+            var images = new List<Image>();
+            foreach (Control c in parent.Controls)
+            {
+                if (c is PictureBox { Image: { } image })
+                {
+                    images.Add(image);
+                }
+                images.AddRange(ImagesOf(c));
+            }
+            return images;
+        }
     }
 
 }

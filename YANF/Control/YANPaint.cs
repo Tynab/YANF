@@ -423,7 +423,7 @@ namespace YANF.Control
         }
 
         // Get the client origin of the control in the client coordinates of its parent: its Location, moved by its non-client border
-        // when it has one (a BorderStyle, a scroll bar on the left)
+        // when it has one (a BorderStyle, a scroll bar on the left). On the thread of the control only: that reads the window handles
         private static Point GetClientOrigin(WinControl ctrl, WinControl parent)
         {
             if (ctrl.ClientSize != ctrl.Size && ctrl.IsHandleCreated && parent.IsHandleCreated)
@@ -545,6 +545,15 @@ namespace YANF.Control
             {
                 if (!_ctrl.IsHandleCreated)
                 {
+                    return;
+                }
+                // Control.Invalidate may be called from another thread, which raises Invalidated on that thread: the client origin of a
+                // control with a non-client border needs its window handle (PointToScreen), which throws there when cross-thread calls are
+                // checked (under a debugger), so the whole control is repainted instead (Invalidate itself is safe on any thread, as for
+                // the parent). InvokeRequired is only asked for such a control: the usual path makes no extra call into Windows
+                if (_ctrl.ClientSize != _ctrl.Size && _ctrl.InvokeRequired)
+                {
+                    _ctrl.Invalidate();
                     return;
                 }
                 var rect = e.InvalidRect;

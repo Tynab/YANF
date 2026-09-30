@@ -32,6 +32,19 @@ namespace YANF.Tests.Script
             Assert.Equal(2.5m, YANMath.Max(1m, 2.5m, 2.4m));
         }
 
+        // As in 1.x (the < and > operators are false for null and NaN): such a value never replaces the result
+        [Fact]
+        public void NullAndNaN_BehaveAs1x()
+        {
+            Assert.Equal(1d, YANMath.Min(1.0, double.NaN));
+            Assert.True(double.IsNaN(YANMath.Max(double.NaN, 1.0)));
+            Assert.Equal(1d, YANMath.Max(1.0, double.NaN, 0.5));
+            Assert.Equal(1f, YANMath.Min(1f, float.NaN));
+            Assert.Equal(1, YANMath.Min<int?>(1, null, 3));
+            Assert.Null(YANMath.Max<int?>(null, 1));
+            Assert.Equal(3, YANMath.Max<int?>(1, null, 3));
+        }
+
         [Fact]
         public void Strings()
         {

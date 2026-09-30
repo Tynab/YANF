@@ -497,7 +497,8 @@ namespace YANF.Tests.Controls
             Assert.Equal(Color.HotPink.ToArgb(), BackgroundPixel(d, new Point(12, y)));
             Assert.Equal(Color.Blue.ToArgb(), BackgroundPixel(d, new Point(25, y)));
             Priv.Call(d, "Ddl_Leave", d, EventArgs.Empty);
-            // Demo1's yanDdl1: a transparent border shows the parent, the focus color covers it
+            // Demo1's yanDdl1: a transparent border shows the parent, also with the focus (the focus color only replaces a border that
+            // can be seen: 1.x painted nothing there)
             d.BackColor = Color.Transparent;
             d.BorderColor = Color.Transparent;
             using (var bmp = ui.Render(d))
@@ -507,8 +508,72 @@ namespace YANF.Tests.Controls
             Priv.Call(d, "Ddl_Enter", d, EventArgs.Empty);
             using (var bmp = ui.Render(d))
             {
-                PaintingTests.AssertColor(Color.HotPink, bmp.GetPixel(12, y), "transparent left padding with the focus");
+                PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(12, y), "transparent left padding with the focus");
             }
+        });
+
+        // Demo1's yanDdl1 (a 1.0.1 designer file, in the designer's order): the Padding is a text indent without a border (BorderSize 0,
+        // BorderColor Transparent) and the arrow is hidden (IconColor Transparent). 1.x had no focus highlight, so the focus must show
+        // neither a HotPink band nor a HotPink arrow; the focus colors apply again once the border and the arrow can be seen
+        [Fact]
+        public void Focus_KeepsAHiddenBorderAndArrowHidden() => Sta.Run(ui =>
+        {
+            var pnl = new PaintingTests.LimePanel();
+            ui.Host.Controls.Add(pnl);
+            var d = new YANDdl();
+            d.BackColor = Color.Transparent;
+            d.BorderColor = Color.Transparent;
+            d.BorderSize = 0;
+            d.DropDownStyle = ComboBoxStyle.DropDownList;
+            d.ForeColor = Color.White;
+            d.IconColor = Color.Transparent;
+            d.Items.AddRange(new object[] { "Trial", "Permanent" });
+            d.Location = new Point(0, 10);
+            d.MinimumSize = new Size(200, 30);
+            d.Padding = new Padding(25, 0, 0, 0);
+            d.Size = new Size(260, 40);
+            d.String = "Employee status...";
+            d.TabStop = false;
+            d.TextAlign = ContentAlignment.MiddleCenter;
+            pnl.Controls.Add(d);
+            var btn = Priv.Field<Button>(d, "_btnIc");
+            var band = new[] { new Point(0, 0), new Point(12, 20), new Point(24, 0), new Point(24, 39), new Point(0, 39) };
+            using var before = ui.Render(d);
+            foreach (var p in band)
+            {
+                PaintingTests.AssertColor(Color.Lime, before.GetPixel(p.X, p.Y), $"left padding at {p}");
+            }
+            Priv.Call(d, "Ddl_Enter", d, EventArgs.Empty);
+            using (var after = ui.Render(d))
+            {
+                foreach (var p in band)
+                {
+                    PaintingTests.AssertColor(Color.Lime, after.GetPixel(p.X, p.Y), $"left padding at {p} with the focus");
+                }
+                // the icon button: the same pixels as before the focus (no arrow)
+                var changed = 0;
+                for (var x = btn.Left; x < btn.Right; x++)
+                {
+                    for (var y = btn.Top; y < btn.Bottom; y++)
+                    {
+                        if (before.GetPixel(x, y).ToArgb() != after.GetPixel(x, y).ToArgb())
+                        {
+                            changed++;
+                        }
+                    }
+                }
+                Assert.True(changed == 0, $"{changed} pixels of the icon changed with the focus");
+            }
+            Assert.Equal(0, PinkIconPixels(d));
+            Assert.Equal((Color.Transparent, Color.Transparent), (d.BorderColor, d.IconColor));
+            // a border and an arrow that can be seen are highlighted
+            d.BorderColor = Color.Red;
+            d.IconColor = Color.Blue;
+            using (var bmp = ui.Render(d))
+            {
+                PaintingTests.AssertColor(Color.HotPink, bmp.GetPixel(12, 20), "visible left padding with the focus");
+            }
+            Assert.True(PinkIconPixels(d) > 0, "visible icon not highlighted");
         });
 
         // A Padding wider than the control leaves no surface: the border covers everything, nothing throws
@@ -588,6 +653,21 @@ namespace YANF.Tests.Controls
                 Priv.Call(d, "Ddl_Enter", d, EventArgs.Empty);
                 Assert.Equal(SystemColors.Highlight.ToArgb(), BorderPixel(d));
                 Assert.Equal(Color.Red, d.BorderColor);
+                // a transparent border (a Padding used as a text indent) stays transparent: no frame-colored block, focused or not
+                var pnl = new PaintingTests.LimePanel();
+                ui.Host.Controls.Add(pnl);
+                var t = new YANDdl { BackColor = Color.Transparent, BorderColor = Color.Transparent, BorderSize = 0 };
+                t.Padding = new Padding(25, 0, 0, 0);
+                pnl.Controls.Add(t);
+                using (var bmp = ui.Render(t))
+                {
+                    PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(12, t.Height / 2), "transparent left padding");
+                }
+                Priv.Call(t, "Ddl_Enter", t, EventArgs.Empty);
+                using (var bmp = ui.Render(t))
+                {
+                    PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(12, t.Height / 2), "transparent left padding with the focus");
+                }
             }
             finally
             {

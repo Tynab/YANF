@@ -15,15 +15,15 @@ namespace YANF.Tests.Script
 {
     using YANPaint = YANF.Control.YANPaint;
 
-    // HighLightLblLinkByCtrl: 1.0.2 created a new Font on every call (GDI leak on every Enter/Leave), threw for short names,
-    // parentless controls and same-named non-Label controls, and dropped the label's other style bits
+    // HighLightLblLinkByCtrl: 1.0.2 created a new Font on every call (GDI leak on every Enter/Leave) and threw for short names,
+    // parentless controls and same-named non-Label controls. The label style it sets is exactly Bold or Regular, as in 1.0.1
     public class YANDisplayTests
     {
         [Fact]
-        public void HighLight_AllocatesFontOnlyWhenBoldChanges() => Sta.Run(ui =>
+        public void HighLight_AllocatesFontOnlyWhenTheStyleChanges() => Sta.Run(ui =>
         {
             using var frm = new Form();
-            using var consumerFont = new Font("Arial", 10f, FontStyle.Italic);
+            using var consumerFont = new Font("Arial", 10f, FontStyle.Regular);
             var txt = new TextBox { Name = "txtName" };
             var lbl = new Label { Name = "lblName", Font = consumerFont };
             frm.Controls.Add(txt);
@@ -35,11 +35,11 @@ namespace YANF.Tests.Script
                 Assert.Same(consumerFont, lbl.Font);
             }
             Assert.Equal(Color.WhiteSmoke, lbl.ForeColor);
-            // bold on: one new font, other style bits kept, consumer font untouched
+            // bold on: one new font, consumer font untouched
             txt.HighLightLblLinkByCtrl("txt", Color.Red, true);
             var bold = lbl.Font;
             Assert.NotSame(consumerFont, bold);
-            Assert.True(bold.Bold && bold.Italic, "style bits lost: " + bold.Style);
+            Assert.Equal(FontStyle.Bold, bold.Style);
             Assert.Equal(consumerFont.Name, bold.Name);
             Assert.Equal(consumerFont.Size, bold.Size);
             Assert.False(Gdi.IsDisposed(consumerFont), "consumer font disposed");
@@ -50,15 +50,44 @@ namespace YANF.Tests.Script
                 txt.HighLightLblLinkByCtrl("txt", Color.Red, true);
                 Assert.Same(bold, lbl.Font);
             }
-            // bold off: italic kept, the library-created bold font released, the consumer font still alive
+            // bold off: regular again, the library-created bold font released, the consumer font still alive
             txt.HighLightLblLinkByCtrl("txt", Color.WhiteSmoke, false);
             var regular = lbl.Font;
-            Assert.True(!regular.Bold && regular.Italic, "unbold style: " + regular.Style);
+            Assert.Equal(FontStyle.Regular, regular.Style);
             Assert.NotSame(consumerFont, regular);
             Assert.True(Gdi.IsDisposed(bold), "the library-created bold font was not disposed when replaced");
             Assert.False(Gdi.IsDisposed(consumerFont), "consumer font disposed");
             Assert.False(Gdi.IsDisposed(regular), "current font disposed");
+            txt.HighLightLblLinkByCtrl("txt", Color.WhiteSmoke, false);
+            Assert.Same(regular, lbl.Font);
             ui.Draw(lbl);
+        });
+
+        // As in 1.0.1 the style becomes exactly Bold or Regular: italic, underline and strikeout are dropped (1.0.1 replaced the font
+        // with new Font(font, Bold) or new Font(font, Regular) on every call)
+        [Fact]
+        public void HighLight_SetsExactlyBoldOrRegular_As101() => Sta.Run(() =>
+        {
+            using var frm = new Form();
+            using var italic = new Font("Arial", 11f, FontStyle.Italic | FontStyle.Underline);
+            var txt = new TextBox { Name = "txtMail" };
+            var lbl = new Label { Name = "lblMail", Font = italic };
+            frm.Controls.Add(txt);
+            frm.Controls.Add(lbl);
+            txt.HighLightLblLinkByCtrl("txt", Color.Red, true);
+            Assert.Equal(FontStyle.Bold, lbl.Font.Style);
+            Assert.Equal(11f, lbl.Font.Size);
+            Assert.False(Gdi.IsDisposed(italic), "consumer font disposed");
+            lbl.Font = italic;
+            txt.HighLightLblLinkByCtrl("txt", Color.Red, false);
+            Assert.Equal(FontStyle.Regular, lbl.Font.Style);
+            Assert.False(Gdi.IsDisposed(italic), "consumer font disposed");
+            using var boldStrike = new Font("Arial", 11f, FontStyle.Bold | FontStyle.Strikeout);
+            lbl.Font = boldStrike;
+            txt.HighLightLblLinkByCtrl("txt", Color.Red, true);
+            Assert.Equal(FontStyle.Bold, lbl.Font.Style);
+            Assert.NotSame(boldStrike, lbl.Font);
+            Assert.False(Gdi.IsDisposed(boldStrike), "consumer font disposed");
         });
 
         [Fact]
@@ -73,10 +102,16 @@ namespace YANF.Tests.Script
             frm.Controls.Add(pnl);
             frm.Controls.Add(dp);
             Assert.Same(formFont, lbl.Font);
+            // the inherited underlined font becomes a regular font of the label (1.0.1); the form keeps its own
             dp.HighLightLblLinkByCtrl("dp", Color.Yellow, false);
-            Assert.Same(formFont, lbl.Font);
+            var regular = lbl.Font;
+            Assert.Equal(FontStyle.Regular, regular.Style);
+            Assert.Equal(9f, regular.Size);
+            Assert.Same(formFont, frm.Font);
+            Assert.False(Gdi.IsDisposed(formFont), "inherited form font disposed");
             dp.HighLightLblLinkByCtrl("dp", Color.Yellow, true);
-            Assert.True(lbl.Font.Bold && lbl.Font.Underline, "bold + underline expected: " + lbl.Font.Style);
+            Assert.Equal(FontStyle.Bold, lbl.Font.Style);
+            Assert.True(Gdi.IsDisposed(regular), "the library-created regular font was not disposed when replaced");
             Assert.False(Gdi.IsDisposed(formFont), "inherited form font disposed");
             Assert.Same(formFont, frm.Font);
             // a consumer font set between the calls is never disposed either

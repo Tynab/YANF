@@ -11,9 +11,10 @@ namespace YANF.Script
     /// </summary>
     /// <remarks>
     /// <para>The screen is an owned, non-modal window: it stays above its owner (and only above it), follows it when it is moved or
-    /// resized, and hides while it is minimized. The owner takes no mouse or keyboard input while the screen is up, like the owner of a
-    /// modal dialog; its controls are not greyed out. The screen appears only when the work is still running after
-    /// <see cref="YANLoaderOptions.ShowDelay"/>, so short work shows nothing.</para>
+    /// resized (an MDI child or embedded form also when its parents move), and hides while it is minimized. The owner takes no mouse
+    /// or keyboard input from the start, also while the screen waits for its delay, like the owner of a modal dialog; its controls are
+    /// not greyed out. When several loaders are open on one form, it gets its input back when the last one closes. The screen appears
+    /// only when the work is still running after <see cref="YANLoaderOptions.ShowDelay"/>, so short work shows nothing.</para>
     /// <para>Use <see cref="RunWithLoaderAsync(Form, Func{IProgress{int}, CancellationToken, Task})"/> from an async event handler, with the
     /// work on the thread pool; or <see cref="Show(Form)"/> in a <c>using</c> block around awaited work. The legacy services in
     /// <c>YANF.Script.Service</c> remain for code that blocks the UI thread (they run the screen on a thread of its own).</para>

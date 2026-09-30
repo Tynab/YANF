@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using YANF.Screen;
 using static System.Math;
+using static System.Windows.Forms.FormWindowState;
 using static YANF.Script.YANLoaderKind;
 using Timer = System.Windows.Forms.Timer;
 using WinControl = System.Windows.Forms.Control;
@@ -16,7 +18,8 @@ namespace YANF.Script
     /// <summary>
     /// A Load, Wait or Update screen shown over a form by <see cref="YANLoader.Show(Form, YANLoaderOptions)"/>.
     /// While the scope is open the owner form takes no mouse or keyboard input; dispose the scope (a <c>using</c> block)
-    /// to close the screen and give the owner its input back.
+    /// to close the screen and give the owner its input back. When several scopes are open on one form, it gets its input back
+    /// when the last one is disposed.
     /// </summary>
     /// <remarks>
     /// <para>Create and dispose the scope on the owner form's UI thread. <see cref="Report"/> and <see cref="SetProgress"/> can be called
@@ -35,8 +38,9 @@ namespace YANF.Script
         private HashSet<IntPtr> _windowsBefore;
         private Timer _timer;
         private IntPtr _hwnd;
-        private IntPtr _focus;
-        private bool _is_OwnerBlocked;
+        // This scope's hold on the owner (shared with the other scopes open on it), null when it holds none
+        private OwnerBlock _block;
+        private OwnerInputFilter _filter;
         private bool _is_OwnerGone;
         private bool _is_DialogSeen;
         private Task _closing;
@@ -107,8 +111,8 @@ namespace YANF.Script
         // The screen of this scope (shown after the delay, disposed when the scope closes)
         internal YANOverlayScreen Screen => _scr;
 
-        // This scope has disabled the owner window and has not given it back yet
-        internal bool IsOwnerBlocked => _is_OwnerBlocked;
+        // This scope holds the owner window disabled (alone or with other scopes) and has not let go yet
+        internal bool IsOwnerBlocked => _block != null;
         #endregion
 
         #region Methods
@@ -451,46 +455,95 @@ namespace YANF.Script
             timer.Dispose();
         }
 
-        // Disable the owner window like a modal dialog does (Control.Enabled would grey out every control). An owner that is disabled
-        // already (a modal dialog, an outer scope) is left to whoever disabled it
+        // Disable the owner window like a modal dialog does (Control.Enabled would grey out every control), and drop the keys and wheel
+        // turns sent to it: a disabled window keeps its focused child, and while it is the active window without a focus Windows sends
+        // it the keys, which WinForms would still turn into clicks (AcceptButton, CancelButton, the focused button). The scopes open on
+        // one owner share its block; an owner disabled by someone else (a modal dialog, the app) is left to them
         private void BlockOwner()
         {
-            if (!Native.IsWindowEnabled(_hwnd))
+            _block = OwnerBlock.Enter(this);
+            if (_block != null)
             {
-                return;
+                Application.AddMessageFilter(_filter ??= new OwnerInputFilter(this));
             }
-            var focus = Native.GetFocus();
-            _focus = focus != IntPtr.Zero && (focus == _hwnd || Native.IsChild(_hwnd, focus)) ? focus : IntPtr.Zero;
-            _ = Native.EnableWindow(_hwnd, false);
-            _is_OwnerBlocked = true;
         }
 
-        // Enable the owner window again, and give the keyboard focus back when the owner is still the active window
+        // Let go of the owner. The last scope to hold it enables the window again (at once, or once a modal dialog opened meanwhile is
+        // gone) and gives the keyboard focus back
         private void UnblockOwner()
         {
-            if (!_is_OwnerBlocked)
+            var block = _block;
+            if (block == null)
             {
                 return;
             }
-            _is_OwnerBlocked = false;
-            if (_is_OwnerGone || _owner.IsDisposed || !_owner.IsHandleCreated)
+            _block = null;
+            Application.RemoveMessageFilter(_filter);
+            var isGone = _is_OwnerGone || _owner.IsDisposed || !_owner.IsHandleCreated;
+            if (!block.Leave(isGone) || isGone)
             {
                 return;
             }
             _ = Native.EnableWindow(_hwnd, true);
-            if (_focus != IntPtr.Zero && Native.GetFocus() == IntPtr.Zero && Form.ActiveForm == _owner && (_focus == _hwnd || Native.IsChild(_hwnd, _focus)))
+            RestoreFocus(block);
+        }
+
+        // Right after the owner is enabled again: give the keyboard focus back when the owner is the active window without it (a
+        // disabled window takes no focus). A top-level owner blocked before it was first on screen (a scope opened in Load) whose screen
+        // never appeared may not have been activated at all: activate it now, as showing it would have
+        private void RestoreFocus(OwnerBlock block)
+        {
+            var focus = Native.GetFocus();
+            if (IsInOwner(focus))
             {
-                Native.SetFocus(_focus);
+                return;
+            }
+            if (Native.GetActiveWindow() == _hwnd)
+            {
+                if (focus != IntPtr.Zero)
+                {
+                    return;
+                }
+                if (IsInOwner(block.Focus))
+                {
+                    Native.SetFocus(block.Focus);
+                }
+                else if (_owner.TopLevel && _owner.WindowState != Minimized)
+                {
+                    FocusOwner();
+                }
+            }
+            else if (!block.IsShown && _owner.TopLevel && !_scr.IsHandleCreated && _owner.Visible && _owner.WindowState != Minimized && Native.IsWindowVisible(_hwnd))
+            {
+                // Form.Active then focuses its active control
+                _owner.Activate();
             }
         }
+
+        // Focus the active owner as WinForms does when a form is activated: its active control, else its first control, else the form
+        private void FocusOwner()
+        {
+            if (_owner.ActiveControl == null)
+            {
+                _ = _owner.SelectNextControl(null, true, true, true, false);
+            }
+            if (!IsInOwner(Native.GetFocus()))
+            {
+                // WM_SETFOCUS: the form passes the focus on to its active control
+                Native.SetFocus(_hwnd);
+            }
+        }
+
+        // The window is the owner window or one of its child windows (at any depth)
+        private bool IsInOwner(IntPtr hwnd) => hwnd != IntPtr.Zero && (hwnd == _hwnd || Native.IsChild(_hwnd, hwnd));
 
         // The owner window was recreated (RecreateHandle): the new window starts enabled, so block it again
         private void Owner_HandleCreated(object sender, EventArgs e)
         {
             _hwnd = _owner.Handle;
-            _focus = IntPtr.Zero;
-            if (_is_OwnerBlocked)
+            if (_block != null)
             {
+                _block.Focus = IntPtr.Zero;
                 _ = Native.EnableWindow(_hwnd, false);
             }
         }
@@ -503,7 +556,8 @@ namespace YANF.Script
                 return;
             }
             _is_OwnerGone = true;
-            _is_OwnerBlocked = false;
+            // Nothing to enable: only this scope's hold and input filter go
+            UnblockOwner();
             StopTimer();
             if (!_scr.IsDisposed)
             {
@@ -513,6 +567,166 @@ namespace YANF.Script
         #endregion
 
         #region Nested types
+        /// <summary>
+        /// The hold of the open scopes of one owner form on its window: the first scope disables it, the last one enables it again.
+        /// Used on the owner's UI thread only.
+        /// </summary>
+        private sealed class OwnerBlock
+        {
+            // Per owner form, by reference
+            private static readonly ConditionalWeakTable<Form, OwnerBlock> _blocks = new();
+            private readonly Form _owner;
+            private readonly List<Form> _modalsBefore;
+            private int _count;
+            private Form _modal;
+
+            private OwnerBlock(Form owner, IntPtr focus, bool isShown)
+            {
+                _owner = owner;
+                Focus = focus;
+                IsShown = isShown;
+                // Modal dialogs open now disabled the other windows themselves and enable them again when they close
+                _modalsBefore = ThreadForms().Where(f => f.Modal && f.Visible).ToList();
+            }
+
+            // The focused window inside the owner when the block began (zero: none, or the window was recreated since)
+            internal IntPtr Focus { get; set; }
+
+            // The owner window was on screen when the block began; not while Load runs: Windows shows and activates the window after it
+            internal bool IsShown { get; }
+
+            // Hold the scope's owner; the first hold disables its window. Null when someone else has disabled it (a modal dialog, the app)
+            internal static OwnerBlock Enter(YANLoaderScope scope)
+            {
+                if (_blocks.TryGetValue(scope._owner, out var block))
+                {
+                    // Held already (by open scopes, or waiting for a dialog): the window stays disabled, also a window recreated meanwhile
+                    if (Native.IsWindowEnabled(scope._hwnd))
+                    {
+                        _ = Native.EnableWindow(scope._hwnd, false);
+                    }
+                }
+                else
+                {
+                    if (!Native.IsWindowEnabled(scope._hwnd))
+                    {
+                        return null;
+                    }
+                    var focus = Native.GetFocus();
+                    block = new OwnerBlock(scope._owner, scope.IsInOwner(focus) ? focus : IntPtr.Zero, Native.IsWindowVisible(scope._hwnd));
+                    _ = Native.EnableWindow(scope._hwnd, false);
+                    _blocks.Add(scope._owner, block);
+                }
+                block._count++;
+                return block;
+            }
+
+            // Let go of the owner; true when this was the last hold and the window is to be enabled now. While a modal dialog opened
+            // since the block began is open, the owner stays disabled: the dialog left it alone (it was disabled already), so it would
+            // not enable it again either, and the owner would take input behind the dialog. It is enabled once the dialog is gone
+            internal bool Leave(bool isOwnerGone)
+            {
+                if (--_count > 0 || (!isOwnerGone && WaitsForModal(null)))
+                {
+                    return false;
+                }
+                StopWaiting();
+                _ = _blocks.Remove(_owner);
+                return true;
+            }
+
+            // A modal dialog opened since the block began is open (other than the one closing): wait until it is gone
+            private bool WaitsForModal(Form closing)
+            {
+                if (_modal != null)
+                {
+                    return true;
+                }
+                var modal = ThreadForms().FirstOrDefault(f => f != _owner && f != closing && f.Modal && f.Visible && !_modalsBefore.Contains(f));
+                if (modal == null)
+                {
+                    return false;
+                }
+                _modal = modal;
+                modal.FormClosed += Modal_FormClosed;
+                modal.VisibleChanged += Modal_VisibleChanged;
+                modal.HandleDestroyed += Modal_HandleDestroyed;
+                return true;
+            }
+
+            // Stop waiting for a modal dialog
+            private void StopWaiting()
+            {
+                var modal = _modal;
+                if (modal == null)
+                {
+                    return;
+                }
+                _modal = null;
+                modal.FormClosed -= Modal_FormClosed;
+                modal.VisibleChanged -= Modal_VisibleChanged;
+                modal.HandleDestroyed -= Modal_HandleDestroyed;
+            }
+
+            // The awaited dialog closed (before it is hidden, so that the owner can be activated when it goes)
+            private void Modal_FormClosed(object sender, FormClosedEventArgs e) => ModalGone(sender);
+
+            // The awaited dialog was hidden (which also ends ShowDialog)
+            private void Modal_VisibleChanged(object sender, EventArgs e)
+            {
+                if (sender is Form { Visible: false })
+                {
+                    ModalGone(sender);
+                }
+            }
+
+            // The awaited dialog's window was destroyed
+            private void Modal_HandleDestroyed(object sender, EventArgs e)
+            {
+                if (sender is Form { RecreatingHandle: false })
+                {
+                    ModalGone(sender);
+                }
+            }
+
+            // Enable the owner again, unless a scope holds it again (the last one enables it) or another dialog opened meanwhile is open
+            private void ModalGone(object sender)
+            {
+                var modal = _modal;
+                if (modal == null || sender != modal)
+                {
+                    return;
+                }
+                StopWaiting();
+                if (_count > 0 || WaitsForModal(modal))
+                {
+                    return;
+                }
+                _ = _blocks.Remove(_owner);
+                if (!_owner.IsDisposed && _owner.IsHandleCreated)
+                {
+                    _ = Native.EnableWindow(_owner.Handle, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Drops the keyboard and mouse wheel messages sent to the owner window or its child windows while the scope holds the owner.
+        /// </summary>
+        private sealed class OwnerInputFilter : IMessageFilter
+        {
+            private const int WM_KEYFIRST = 0x0100;
+            private const int WM_KEYLAST = 0x0109;
+            private const int WM_MOUSEWHEEL = 0x020A;
+            private const int WM_MOUSEHWHEEL = 0x020E;
+            private readonly YANLoaderScope _scope;
+
+            internal OwnerInputFilter(YANLoaderScope scope) => _scope = scope;
+
+            public bool PreFilterMessage(ref Message m) => (m.Msg is (>= WM_KEYFIRST and <= WM_KEYLAST) or WM_MOUSEWHEEL or WM_MOUSEHWHEEL)
+                && _scope._block != null && Thread.CurrentThread == _scope._thread && _scope.IsInOwner(m.HWnd);
+        }
+
         /// <summary>
         /// The user32 calls that block and unblock the owner window and find the dialogs in front of it.
         /// </summary>

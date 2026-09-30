@@ -234,7 +234,7 @@ namespace YANF.Script
         /// <param name="isBold">In đậm hoặc không.</param>
         /// <remarks>
         /// Does nothing when the control is not on a form, its name is shorter than <paramref name="typeName"/>, or no <see cref="Label"/> with that name exists.
-        /// The label font is replaced only when its Bold state changes, keeping its other style bits (italic, underline, strikeout).
+        /// The label font becomes exactly Bold or Regular, as in 1.0.1; a Font is created only when the style changes.
         /// </remarks>
         public static void HighLightLblLinkByCtrl(this System.Windows.Forms.Control ctrl, string typeName, Color color, bool isBold)
         {
@@ -250,15 +250,16 @@ namespace YANF.Script
             SetBold(lbl, isBold);
         }
 
-        // Toggle only the Bold bit of the label font, creating a Font only when it actually changes
+        // Set the label font to exactly Bold or Regular (the 1.0.1 result), creating a Font only when the style actually changes
         private static void SetBold(Label lbl, bool isBold)
         {
             var font = lbl.Font;
-            if (font.Bold == isBold)
+            var style = isBold ? Bold : Regular;
+            if (font.Style == style)
             {
                 return;
             }
-            var newFont = new Font(font, isBold ? font.Style | Bold : font.Style & ~Bold);
+            var newFont = new Font(font, style);
             lbl.Font = newFont;
             // dispose the replaced font only if this helper created it for this label (never a consumer's or an inherited font)
             if (_highLightFonts.TryGetValue(lbl, out var created) && ReferenceEquals(created, font) && ReferenceEquals(lbl.Font, newFont))

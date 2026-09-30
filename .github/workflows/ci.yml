@@ -29,8 +29,9 @@ jobs:
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v3
 
-      # The .NET 10 SDK builds every target framework (net481, net8.0-windows, net10.0-windows; it needs MSBuild 17.14
-      # or later) and its runtime runs the net10.0-windows tests
+      # The .NET 10 SDK builds every target framework (net481, net8.0-windows, net10.0-windows) and its runtime runs the
+      # net10.0-windows tests. It needs MSBuild 18.0 (Visual Studio 2026) or later for net10.0: 17.14 builds only with
+      # warning NETSDK1233. windows-latest has Visual Studio 2026, which setup-msbuild picks
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -69,7 +70,15 @@ jobs:
           if ($symbols.Count -ne 1) { throw "Expected exactly one .snupkg in artifacts, found $($symbols.Count)" }
           $package = $packages[0]
           $zip = [System.IO.Compression.ZipFile]::OpenRead($package.FullName)
-          try { $entries = @($zip.Entries | ForEach-Object { $_.FullName }) } finally { $zip.Dispose() }
+          try {
+            $entries = @($zip.Entries | ForEach-Object { $_.FullName })
+            $nuspecEntry = @($zip.Entries | Where-Object { $_.FullName -match '^[^/]+\.nuspec$' })[0]
+            $nuspec = $null
+            if ($nuspecEntry) {
+              $reader = New-Object System.IO.StreamReader($nuspecEntry.Open())
+              try { $nuspec = [xml]$reader.ReadToEnd() } finally { $reader.Dispose() }
+            }
+          } finally { $zip.Dispose() }
           Write-Host "$($package.Name):"
           $entries | ForEach-Object { Write-Host "  $_" }
           $problems = @()
@@ -87,6 +96,14 @@ jobs:
             elseif ($entry -match '\.cs$') { $problems += "forbidden source file: $entry" }
             elseif ($entry -match '(^|/)(obj|bin)/') { $problems += "forbidden build output: $entry" }
             elseif ($entry -match '^content(Files)?/') { $problems += "forbidden content: $entry" }
+          }
+          # Like 1.0.1, no package dependencies and no .NET Framework assembly references, which NuGet would add to every
+          # consumer project (a <Reference> without Pack="false" is packed as a frameworkAssembly)
+          if ($null -eq $nuspec) { $problems += "no .nuspec in the package" }
+          else {
+            foreach ($tag in 'dependency', 'frameworkAssembly') {
+              foreach ($node in $nuspec.GetElementsByTagName($tag)) { $problems += "unexpected $($tag) in the nuspec: $($node.OuterXml)" }
+            }
           }
           if ($env:GITHUB_REF_TYPE -eq 'tag') {
             $expected = "Tynab.YANF.$($env:GITHUB_REF_NAME.TrimStart('v')).nupkg"
