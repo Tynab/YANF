@@ -21,7 +21,7 @@ names, types and default values) are therefore the compatibility contract.
   must be listed here and in `YANF/CompatibilitySuppressions.xml`.
 - A `vX.Y.Z` tag builds, tests and publishes the package from CI; the tag must match the project version.
 
-## [2.0.0] - Unreleased
+## [2.0.0] - 2026-10-03
 
 The first release since 1.0.1 (1.0.2 is broken; the planned 1.1 additions ship here). It adds .NET 8 and .NET 10 builds,
 a borderless base form (`YANForm`), an async loader (`YANLoader`), message box options, non-blocking fades and native
