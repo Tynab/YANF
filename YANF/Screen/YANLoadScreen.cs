@@ -1,41 +1,30 @@
-﻿using System;
-using System.Drawing;
-using System.Windows.Forms;
+﻿using System.Drawing;
 using YANF.Script;
-using static System.Drawing.Region;
-using static System.Windows.Forms.DialogResult;
-using static System.Windows.Forms.FormStartPosition;
-using static YANF.Script.YANDisplay;
 
 namespace YANF.Screen
 {
-    public partial class YANLoadScreen : MiddleScreen
+    /// <summary>
+    /// Loading animation with a percentage, covering the window it is shown over (<see cref="YANLoader"/> and the legacy YANLoadScrService).
+    /// </summary>
+    internal partial class YANLoadScreen : YANOverlayScreen
     {
         #region Constructors
-        public YANLoadScreen(Form pFrm, int corner, bool isTop)
+        // Legacy service: fixed placement from a snapshot of the caller's bounds (the screen is built on its own thread)
+        internal YANLoadScreen(Rectangle bounds, int corner, bool isTop) : this() => PlaceAt(bounds, corner, isTop);
+
+        // YANLoader: placed over its owner when shown
+        internal YANLoadScreen()
         {
             InitializeComponent();
-            StartPosition = Manual;
-            Location = new Point(pFrm.Location.X, pFrm.Location.Y);
-            Width = pFrm.Width;
-            Height = pFrm.Height;
-            TopMost = isTop;
-            Region = FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, corner, corner));
+            this.ScaleToDpi();
         }
         #endregion
 
         #region Overridden
-        public override void Frm_Close()
-        {
-            DialogResult = OK;
-            this.FadeOut();
-            Dispose();
-        }
-        #endregion
-
-        #region Events
-        // Shown frm
-        private void YANLoadScreen_Shown(object sender, EventArgs e) => this.FadeIn();
+        /// <summary>
+        /// Shows the percentage; the detail text is not shown on this screen.
+        /// </summary>
+        protected internal override void SetProgress(int percent, string detail) => lblPercent.Text = $"{percent}%";
         #endregion
     }
 }

@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(YANLoadScreen));
             this.panel1 = new System.Windows.Forms.Panel();
             this.lblPercent = new System.Windows.Forms.Label();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
@@ -73,14 +72,14 @@
             // 
             // YANLoadScreen
             // 
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(800, 600);
             this.ControlBox = false;
             this.Controls.Add(this.panel1);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "YANLoadScreen";
@@ -89,7 +88,6 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Loading...";
             this.TopMost = true;
-            this.Shown += new System.EventHandler(this.YANLoadScreen_Shown);
             this.panel1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
@@ -99,7 +97,7 @@
         #endregion
 
         private System.Windows.Forms.Panel panel1;
-        public System.Windows.Forms.Label lblPercent;
+        internal System.Windows.Forms.Label lblPercent;
         private System.Windows.Forms.PictureBox pictureBox1;
     }
 }

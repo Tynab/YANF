@@ -1,211 +1,95 @@
-﻿using System.Windows.Forms;
+﻿using System;
+using System.Windows.Forms;
 using YANF.Screen;
 using static YANF.Script.YANConstant;
 
 namespace YANF.Script
 {
-    public abstract class YANMessageBox
+    /// <summary>
+    /// Shows a YAN message box: a borderless box with an accent color per icon, button texts in English, Vietnamese or Japanese,
+    /// and the Enter, Esc and default-button rules of the Windows message box.
+    /// </summary>
+    /// <remarks>
+    /// A static class since 2.0 (it was an abstract class with only static members in 1.x; every <c>Show</c> signature is unchanged).
+    /// </remarks>
+    public static class YANMessageBox
     {
-        public static DialogResult Show(string text)
+        /// <summary>
+        /// Shows the message box that <paramref name="options"/> describes, with no explicit owner: WinForms makes the active window of
+        /// the calling thread, if there is one, its owner (as the overloads without an owner always did). Call it from an STA UI thread.
+        /// </summary>
+        /// <param name="options">What the box shows.</param>
+        /// <returns>The result of the button that closed the box.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="options"/> is null.</exception>
+        /// <exception cref="System.ComponentModel.InvalidEnumArgumentException"><see cref="YANMessageBoxOptions.Buttons"/> is not a <see cref="MessageBoxButtons"/> value.</exception>
+        public static DialogResult Show(YANMessageBoxOptions options) => Show(null, options);
+
+        /// <summary>
+        /// Shows the message box that <paramref name="options"/> describes, modal to <paramref name="owner"/>. When <paramref name="owner"/>
+        /// is a <see cref="System.Windows.Forms.Control"/> whose window belongs to another UI thread, the box is shown on that thread (which
+        /// must be pumping messages, not waiting for this call) and this call blocks until the box closes. Without such an owner, call it
+        /// from an STA UI thread.
+        /// </summary>
+        /// <param name="owner">The window that owns the box, or null.</param>
+        /// <param name="options">What the box shows.</param>
+        /// <returns>The result of the button that closed the box.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="options"/> is null.</exception>
+        /// <exception cref="System.ComponentModel.InvalidEnumArgumentException"><see cref="YANMessageBoxOptions.Buttons"/> is not a <see cref="MessageBoxButtons"/> value.</exception>
+        public static DialogResult Show(IWin32Window owner, YANMessageBoxOptions options)
         {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(text))
+            if (options == null)
             {
-                res = msgFrm.ShowDialog();
+                throw new ArgumentNullException(nameof(options));
             }
-            return res;
+            // the box belongs on the owner's UI thread
+            if (owner is System.Windows.Forms.Control ctrl && ctrl.InvokeRequired)
+            {
+                return (DialogResult)ctrl.Invoke(new Func<DialogResult>(() => Show(owner, options)));
+            }
+            using var msgFrm = new YANMessageBoxScreen(options);
+            return msgFrm.ShowDialog(owner);
         }
 
-        public static DialogResult Show(string text, MsgBoxLang lang)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(text, lang))
-            {
-                res = msgFrm.ShowDialog();
-            }
-            return res;
-        }
+        public static DialogResult Show(string text) => Show(null, new YANMessageBoxOptions { Text = text });
 
-        public static DialogResult Show(string cap, string text)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text))
-            {
-                res = msgFrm.ShowDialog();
-            }
-            return res;
-        }
+        public static DialogResult Show(string text, MsgBoxLang lang) => Show(null, new YANMessageBoxOptions { Text = text, Language = lang });
 
-        public static DialogResult Show(string cap, string text, MsgBoxLang lang)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, lang))
-            {
-                res = msgFrm.ShowDialog();
-            }
-            return res;
-        }
+        public static DialogResult Show(string cap, string text) => Show(null, new YANMessageBoxOptions { Caption = cap, Text = text });
 
-        public static DialogResult Show(string cap, string text, MessageBoxButtons btns)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns))
-            {
-                res = msgFrm.ShowDialog();
-            }
-            return res;
-        }
+        public static DialogResult Show(string cap, string text, MsgBoxLang lang) => Show(null, new YANMessageBoxOptions { Caption = cap, Text = text, Language = lang });
 
-        public static DialogResult Show(string cap, string text, MessageBoxButtons btns, MsgBoxLang lang)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns, lang))
-            {
-                res = msgFrm.ShowDialog();
-            }
-            return res;
-        }
+        public static DialogResult Show(string cap, string text, MessageBoxButtons btns) => Show(null, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns });
 
-        public static DialogResult Show(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns, icon))
-            {
-                res = msgFrm.ShowDialog();
-            }
-            return res;
-        }
+        public static DialogResult Show(string cap, string text, MessageBoxButtons btns, MsgBoxLang lang) => Show(null, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Language = lang });
 
-        public static DialogResult Show(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MsgBoxLang lang)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns, icon, lang))
-            {
-                res = msgFrm.ShowDialog();
-            }
-            return res;
-        }
+        public static DialogResult Show(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon) => Show(null, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon });
 
-        public static DialogResult Show(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns, icon, btnDflt))
-            {
-                res = msgFrm.ShowDialog();
-            }
-            return res;
-        }
+        public static DialogResult Show(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MsgBoxLang lang) => Show(null, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, Language = lang });
 
-        public static DialogResult Show(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt, MsgBoxLang lang)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns, icon, btnDflt, lang))
-            {
-                res = msgFrm.ShowDialog();
-            }
-            return res;
-        }
+        public static DialogResult Show(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt) => Show(null, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, DefaultButton = btnDflt });
+
+        public static DialogResult Show(string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt, MsgBoxLang lang) => Show(null, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, DefaultButton = btnDflt, Language = lang });
 
         /* IWin32Window Owner */
 
-        public static DialogResult Show(IWin32Window owner, string text)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(text))
-            {
-                res = msgFrm.ShowDialog(owner);
-            }
-            return res;
-        }
+        public static DialogResult Show(IWin32Window owner, string text) => Show(owner, new YANMessageBoxOptions { Text = text });
 
-        public static DialogResult Show(IWin32Window owner, string text, MsgBoxLang lang)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(text, lang))
-            {
-                res = msgFrm.ShowDialog(owner);
-            }
-            return res;
-        }
+        public static DialogResult Show(IWin32Window owner, string text, MsgBoxLang lang) => Show(owner, new YANMessageBoxOptions { Text = text, Language = lang });
 
-        public static DialogResult Show(IWin32Window owner, string cap, string text)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text))
-            {
-                res = msgFrm.ShowDialog(owner);
-            }
-            return res;
-        }
+        public static DialogResult Show(IWin32Window owner, string cap, string text) => Show(owner, new YANMessageBoxOptions { Caption = cap, Text = text });
 
-        public static DialogResult Show(IWin32Window owner, string cap, string text, MsgBoxLang lang)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, lang))
-            {
-                res = msgFrm.ShowDialog(owner);
-            }
-            return res;
-        }
+        public static DialogResult Show(IWin32Window owner, string cap, string text, MsgBoxLang lang) => Show(owner, new YANMessageBoxOptions { Caption = cap, Text = text, Language = lang });
 
-        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns))
-            {
-                res = msgFrm.ShowDialog(owner);
-            }
-            return res;
-        }
+        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns) => Show(owner, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns });
 
-        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns, MsgBoxLang lang)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns, lang))
-            {
-                res = msgFrm.ShowDialog(owner);
-            }
-            return res;
-        }
+        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns, MsgBoxLang lang) => Show(owner, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Language = lang });
 
-        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns, icon))
-            {
-                res = msgFrm.ShowDialog(owner);
-            }
-            return res;
-        }
+        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon) => Show(owner, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon });
 
-        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MsgBoxLang lang)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns, icon, lang))
-            {
-                res = msgFrm.ShowDialog(owner);
-            }
-            return res;
-        }
+        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MsgBoxLang lang) => Show(owner, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, Language = lang });
 
-        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns, icon, btnDflt))
-            {
-                res = msgFrm.ShowDialog(owner);
-            }
-            return res;
-        }
+        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt) => Show(owner, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, DefaultButton = btnDflt });
 
-        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt, MsgBoxLang lang)
-        {
-            DialogResult res;
-            using (var msgFrm = new YANMessageBoxScreen(cap, text, btns, icon, btnDflt, lang))
-            {
-                res = msgFrm.ShowDialog(owner);
-            }
-            return res;
-        }
+        public static DialogResult Show(IWin32Window owner, string cap, string text, MessageBoxButtons btns, MessageBoxIcon icon, MessageBoxDefaultButton btnDflt, MsgBoxLang lang) => Show(owner, new YANMessageBoxOptions { Caption = cap, Text = text, Buttons = btns, Icon = icon, DefaultButton = btnDflt, Language = lang });
     }
 }

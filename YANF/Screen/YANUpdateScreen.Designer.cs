@@ -28,7 +28,6 @@ partial class YANUpdateScreen
     /// </summary>
     private void InitializeComponent()
     {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(YANUpdateScreen));
             this.panelMain = new System.Windows.Forms.Panel();
             this.pnlProgressBar = new System.Windows.Forms.Panel();
             this.lblPercent = new System.Windows.Forms.Label();
@@ -120,14 +119,14 @@ partial class YANUpdateScreen
             // 
             // YANUpdateScreen
             // 
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(360, 240);
             this.ControlBox = false;
             this.Controls.Add(this.panelMain);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "YANUpdateScreen";
@@ -136,7 +135,6 @@ partial class YANUpdateScreen
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Updating...";
             this.TopMost = true;
-            this.Shown += new System.EventHandler(this.YANUpdateScreen_Shown);
             this.panelMain.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxUpdating)).EndInit();
             this.ResumeLayout(false);
@@ -146,9 +144,9 @@ partial class YANUpdateScreen
     #endregion
 
     private System.Windows.Forms.Panel panelMain;
-    public System.Windows.Forms.Panel pnlProgressBar;
-    public System.Windows.Forms.Label lblPercent;
+    internal System.Windows.Forms.Panel pnlProgressBar;
+    internal System.Windows.Forms.Label lblPercent;
     private System.Windows.Forms.Label label1;
     private System.Windows.Forms.PictureBox pictureBoxUpdating;
-    public System.Windows.Forms.Label lblCapacity;
+    internal System.Windows.Forms.Label lblCapacity;
 }

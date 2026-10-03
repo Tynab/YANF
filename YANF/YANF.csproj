@@ -1,284 +1,87 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{40C18CF6-ADC1-4B18-804D-7E42EE7D6DB3}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <!-- net481: .NET Framework apps. net8.0-windows: .NET 8 and 9 apps, which would otherwise get the net481 DLL through
+         NuGet's .NET Framework fallback (warning NU1701). net10.0-windows: .NET 10 and later. The three builds have the
+         same public API. A library gets no NETSDK1138 warning for net8.0 after .NET 8 support ends (10 Nov 2026);
+         dropping it later is a package change that package validation reports (PKV006). -->
+    <TargetFrameworks>net481;net8.0-windows;net10.0-windows</TargetFrameworks>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>12</LangVersion>
     <RootNamespace>YANF</RootNamespace>
     <AssemblyName>YANF</AssemblyName>
-    <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
-    <LangVersion>preview</LangVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.2.0</ApplicationVersion>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Existing public members are documented in Vietnamese or not at all; missing docs are not build noise -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
+  <!-- Assembly and package metadata (formerly Properties/AssemblyInfo.cs and YANF.nuspec) -->
   <PropertyGroup>
-    <ApplicationIcon>ic.ico</ApplicationIcon>
+    <!-- 2.0.0: a major version, with the breaking changes listed in CHANGELOG.md; the accepted differences from the 1.0.1
+         baseline are listed in CompatibilitySuppressions.xml -->
+    <Version>2.0.0</Version>
+    <Title>YANF</Title>
+    <Product>YANF</Product>
+    <Company>YAN</Company>
+    <Authors>Yami An</Authors>
+    <Description>Yami An Nephilim Framework: custom controls, message box and loading screens for Windows Forms (C# and VB).</Description>
+    <Copyright>Copyright © 2022 Yami An</Copyright>
+    <PackageId>Tynab.YANF</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Tynab/YANF</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Tynab/YANF</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>C# VB .NET WinForms WindowsForms controls MessageBox</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>See https://github.com/Tynab/YANF/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <!-- Source Link comes with the .NET SDK (8.0.100 and later), no package needed: the Microsoft.SourceLink.GitHub 8.0.0
+         package pulled in Microsoft.Build.Tasks.Git 8.0.0, which has a known vulnerability (NU1902) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <!-- Breaking changes against the last usable package are reported at pack time -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>1.0.1</PackageValidationBaselineVersion>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject>
-    </StartupObject>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Deployment" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
+    <AssemblyAttribute Include="System.Runtime.InteropServices.ComVisibleAttribute">
+      <_Parameter1>false</_Parameter1>
+      <_Parameter1_IsLiteral>true</_Parameter1_IsLiteral>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.InteropServices.GuidAttribute">
+      <_Parameter1>40c18cf6-adc1-4b18-804d-7e42ee7d6db3</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyTrademarkAttribute">
+      <_Parameter1>Yami An</_Parameter1>
+    </AssemblyAttribute>
+    <InternalsVisibleTo Include="YANF.Tests" />
   </ItemGroup>
+
+  <!-- No System.Design reference: YANDdl and YANTxt name its editors by assembly-qualified string, which needs none, and
+       NuGet would pack one as a frameworkAssembly that adds System.Design to every .NET Framework consumer project (1.0.1
+       added nothing). A compile-time need would take <Reference Include="System.Design" Pack="false" />. -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <!-- Lets the .NET SDK build net481 without a targeting pack installed (CI, non-Windows); build-time only -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Control\YANBtn.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Control\YANBtn.EventHandler.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Control\YANCirPic.EventHandler.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Control\YANDdl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Control\YANDdl.EventHandler.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Control\YANDp.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Control\YANNb.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Control\YANCirPic.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Control\YANGradPnl.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Control\YANPrg.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Control\YANRdo.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Control\YANTg.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Control\YANTxt.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="MainFrm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MainFrm.Designer.cs">
-      <DependentUpon>MainFrm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Screen\Demo1.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Screen\Demo1.Designer.cs">
-      <DependentUpon>Demo1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Screen\Demo2.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Screen\Demo2.Designer.cs">
-      <DependentUpon>Demo2.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Screen\MiddleScreen.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Screen\SoftScreen.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Screen\AnonScreen.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Screen\HardScreen.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Screen\YANLoadScreen.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Screen\YANLoadScreen.Designer.cs">
-      <DependentUpon>YANLoadScreen.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Screen\YANMessageBoxScreen.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Screen\YANMessageBoxScreen.Designer.cs">
-      <DependentUpon>YANMessageBoxScreen.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Screen\YANUpdateScreen.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Screen\YANUpdateScreen.Designer.cs">
-      <DependentUpon>YANUpdateScreen.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Screen\YANWaitScreen.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Screen\YANWaitScreen.Designer.cs">
-      <DependentUpon>YANWaitScreen.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Script\IYANSrcService.cs" />
-    <Compile Include="Script\IYANDlvScrService.cs" />
-    <Compile Include="Script\Service\YANLoadScrService.cs" />
-    <Compile Include="Script\Service\YANUpdScrService.cs" />
-    <Compile Include="Script\Service\YANWaitScrService.cs" />
-    <Compile Include="Script\YANController.cs" />
-    <Compile Include="Script\YANDisplay.cs" />
-    <Compile Include="Script\YANEvent.cs" />
-    <Compile Include="Script\YANMessageBox.cs" />
-    <Compile Include="Script\YANString.cs" />
-    <Compile Include="Script\YANTimer.cs" />
-    <Compile Include="Script\YANConstant.cs" />
-    <Compile Include="Script\YANMath.cs" />
-    <EmbeddedResource Include="MainFrm.resx">
-      <DependentUpon>MainFrm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
+    <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="Screen\Demo1.resx">
-      <DependentUpon>Demo1.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Screen\Demo2.resx">
-      <DependentUpon>Demo2.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Screen\YANLoadScreen.resx">
-      <DependentUpon>YANLoadScreen.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Screen\YANMessageBoxScreen.resx">
-      <DependentUpon>YANMessageBoxScreen.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Screen\YANUpdateScreen.resx">
-      <DependentUpon>YANUpdateScreen.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Screen\YANWaitScreen.resx">
-      <DependentUpon>YANWaitScreen.cs</DependentUpon>
-    </EmbeddedResource>
-    <None Include="nuget.config" />
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-    </Compile>
+    <None Include="..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\pic\0.png" Pack="true" PackagePath="\icon.png" Visible="false" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\pPTTCB.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\pCalendarBlack.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\pCalendarWhite.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\pUserSolid1.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.8.1">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.8.1 %28x86 and x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="ic.ico" />
-    <None Include="Resources\gLoad.gif" />
-    <None Include="Resources\gWait.gif" />
-    <None Include="Resources\pMessWarning.png" />
-    <None Include="Resources\pMessQuestion.png" />
-    <None Include="Resources\pMessInfomation.png" />
-    <None Include="Resources\pMessError.png" />
-    <None Include="Resources\pMessChat.png" />
-    <None Include="Resources\pQO.png" />
-    <None Include="Resources\pBO.png" />
-    <None Include="Resources\pQI.png" />
-    <None Include="Resources\pUserSolid2.png" />
-    <None Include="Resources\pPA.png" />
-    <None Include="Resources\pPM.png" />
-    <None Include="Resources\pPB.png" />
-    <None Include="Resources\pPL.png" />
-    <None Include="Resources\pPT.png" />
-    <None Include="Resources\pPG.png" />
-    <None Include="Resources\pBI.png" />
-    <None Include="Resources\pXO.png" />
-    <None Include="Resources\pQL.png" />
-    <None Include="Resources\pPS.png" />
-    <None Include="Resources\pPU.png" />
-    <None Include="Resources\pPE.png" />
-    <None Include="Resources\pPF.png" />
-    <None Include="Resources\pXI.png" />
-    <None Include="Resources\gUpdate.gif" />
-    <None Include="Resources\pPTLT.png" />
-    <None Include="Resources\pPTTKN.png" />
-    <None Include="Resources\pPTTBH.png" />
-    <None Include="Resources\pPTTCV.png" />
-    <None Include="Resources\pPTTMR.png" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
 </Project>

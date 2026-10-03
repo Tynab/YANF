@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Demo application for YANF. Uses the library's public API only (no InternalsVisibleTo), so building it
+       also checks that everything the demo shows is reachable by consumers. Not packed. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- net10.0-windows runs the demo on .NET, where the default font is Segoe UI 9pt instead of Microsoft Sans Serif
+         8.25pt, so the controls that take their font family from it look slightly different -->
+    <TargetFrameworks>net481;net10.0-windows</TargetFrameworks>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>12</LangVersion>
+    <RootNamespace>YANF.Demo</RootNamespace>
+    <AssemblyName>YANF.Demo</AssemblyName>
+    <ApplicationIcon>ic.ico</ApplicationIcon>
+    <Deterministic>true</Deterministic>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- Per-monitor DPI awareness (PerMonitorV2); the forms are designed at 96 dpi with AutoScaleMode.Dpi. .NET Framework:
+       app.manifest (Windows 10 compatibility and dpiAwareness) and App.config (DpiAwareness). .NET: ApplicationHighDpiMode,
+       applied by ApplicationConfiguration.Initialize() in Program.cs; a DPI setting in the manifest is not recommended there
+       (analyzer WFAC010), so the .NET build keeps the default manifest. TargetFramework, not TargetFrameworkIdentifier: the
+       latter is not set yet when these properties are evaluated. -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net481'">
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' != 'net481'">
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'">
+    <!-- .NET does not read the Windows Forms section of App.config: no YANF.Demo.dll.config -->
+    <None Remove="App.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\YANF\YANF.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <!-- Lets the .NET SDK build net481 without a targeting pack installed (CI, non-Windows); build-time only -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+</Project>

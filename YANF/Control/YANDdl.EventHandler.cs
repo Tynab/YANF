@@ -3,8 +3,8 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using static System.Drawing.Drawing2D.SmoothingMode;
-using static System.Math;
 using static System.Windows.Forms.ComboBoxStyle;
+using static YANF.Control.YANPaint;
 
 namespace YANF.Control;
 
@@ -13,33 +13,31 @@ public partial class YANDdl
     #region Ctrl
     // Raises the key up event
     private void Ctrl_KeyUp(object sender, KeyEventArgs e) => OnKeyUp(e);
-
-    // Check border size and radius when resize the control
-    private void Ctrl_Resize(object sender, EventArgs e)
-    {
-        var minSize = Width > Height ? Height : Width;
-        _borderSize = Min(_borderSize, minSize / 2);
-    }
     #endregion
 
     #region Cmb
-    // Raises the selected index changed event
+    // Raises the legacy selected index changed event (sender = the inner combo box, as in 1.0), then the selected index changed event (sender = this)
     private void Cmb_SelectedIndexChanged(object sender, EventArgs e)
     {
-        _lblText.Text = _cmbList.Text;
+        ShowComboText();
         OnSelectedIndexChanged?.Invoke(sender, e);
+        SelectedIndexChanged?.Invoke(this, e);
     }
 
-    // Raises the text changed event
+    // Raises the selected value changed event (sender = this)
+    private void Cmb_SelectedValueChanged(object sender, EventArgs e) => OnSelectedValueChanged(e);
+
+    // Raises the legacy string changed event (sender = the inner combo box, as in 1.0)
     private void Cmb_StringChanged(object sender, EventArgs e) => StringChanged?.Invoke(sender, e);
 
-    // Raises the text changed event
+    // Shows the typed text (or the prompt once it is cleared) in the label and raises the text changed event (sender = this)
     private void Cmb_TextChanged(object sender, EventArgs e)
     {
-        if (_cmbList.DropDownStyle != DropDownList && !string.IsNullOrWhiteSpace(_cmbList.Text))
+        if (_cmbList.DropDownStyle != DropDownList)
         {
-            _lblText.Text = _cmbList.Text;
+            ShowComboText();
         }
+        OnTextChanged(e);
     }
     #endregion
 
@@ -47,13 +45,15 @@ public partial class YANDdl
     // Icon paint event
     private void Ic_Paint(object sender, PaintEventArgs e)
     {
-        var wIc = 14;
-        var hIc = 6;
+        // the arrow is 14 x 6 with a pen of 2 at 96 dpi, scaled to the DPI of the control
+        var dpi = GetDpi(this);
+        var wIc = LogicalToDevice(ARROW_WIDTH, dpi);
+        var hIc = LogicalToDevice(ARROW_HEIGHT, dpi);
         var rectIc = new Rectangle((_btnIc.Width - wIc) / 2, (_btnIc.Height - hIc) / 2, wIc, hIc);
         var graphics = e.Graphics;
-        // draw arrow down icon
+        // draw arrow down icon, highlighted while the control has the focus
         using var path = new GraphicsPath();
-        using var pen = new Pen(_iconColor, 2);
+        using var pen = new Pen(GetIconColor(), LogicalToDevice(ARROW_PEN_WIDTH, dpi));
         graphics.SmoothingMode = AntiAlias;
         path.AddLine(rectIc.X, rectIc.Y, rectIc.X + wIc / 2, rectIc.Bottom);
         path.AddLine(rectIc.X + wIc / 2, rectIc.Bottom, rectIc.Right, rectIc.Y);
@@ -91,6 +91,9 @@ public partial class YANDdl
     // Raises the enter event
     private void Ddl_Enter(object sender, EventArgs e)
     {
+        SetFocusHighlight(true);
+        // AccessibleName has no change event: pick up a value set after the control was created before it is announced
+        ForwardAccessibility();
         if (_cmbList.DropDownStyle != DropDownList)
         {
             if (string.IsNullOrWhiteSpace(_string))
@@ -104,6 +107,7 @@ public partial class YANDdl
     // Raises the leave event
     private void Ddl_Leave(object sender, EventArgs e)
     {
+        SetFocusHighlight(false);
         if (_cmbList.DropDownStyle != DropDownList && string.IsNullOrWhiteSpace(_lblText.Text))
         {
             _lblText.Text = _string;

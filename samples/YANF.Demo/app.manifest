@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Application manifest of the .NET Framework build of the demo (net481; the .NET build uses ApplicationHighDpiMode instead,
+     see YANF.Demo.csproj). Together with App.config it makes the demo per-monitor DPI aware (PerMonitorV2): the forms, designed
+     at 96 dpi with AutoScaleMode.Dpi, and the YANF controls are scaled to the DPI of their monitor, and again when a window moves
+     to a monitor with another DPI. -->
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <assemblyIdentity version="1.0.0.0" name="YANF.Demo.app" />
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+    <security>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 10 and 11: required for the per-monitor DPI support of Windows Forms (App.config) -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+    </application>
+  </compatibility>
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <!-- The same awareness as App.config (the manifest wins when they differ). Every Windows version that runs .NET Framework
+           4.8.1 supports PerMonitorV2 -->
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+    </windowsSettings>
+  </application>
+</assembly>
