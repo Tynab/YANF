@@ -755,7 +755,147 @@ namespace YANF.Tests.Services
             if (IsNativeInput && canActivate)
             {
                 Assert.True(PumpUntil(() => Form.ActiveForm == owner), "the form was not activated: the active form is " + Form.ActiveForm?.Text);
-                Assert.True(PumpUntil(() => txt.Focused), "the form's first control has no keyboard focus");
+                // the form is the foreground window: the keyboard focus of this thread is inside it
+                Assert.True(PumpUntil(() => txt.Focused), "the form's first control has no keyboard focus; it is on " + DescribeFocus(owner));
+            }
+        });
+
+        // Windows gives the focus to the window it activates. A form activated while a scope opened in Load disables it holds the focus
+        // itself: WinForms could not pass it on to its active control, a child of a disabled window. When the scope ends, the focus goes
+        // on to that control (the user32 calls stand in for Windows here, so that it runs everywhere)
+        [Fact]
+        public void ScopeOpenedInLoad_FocusOnTheFormItself_GoesToTheActiveControl() => Run(() =>
+        {
+            using var owner = NewOwner();
+            var txt = new TextBox { Location = new Point(10, 10) };
+            owner.Controls.Add(txt);
+            var input = new FocusInput(YANLoaderScope.Native);
+            YANLoaderScope.Native = input;
+            Task task = null;
+            owner.Load += (s, e) =>
+            {
+                task = owner.RunWithLoaderAsync((p, ct) => Task.Delay(10, ct));
+                // what Windows does when it then shows and activates the disabled form
+                input.Active = input.Focus = owner.Handle;
+            };
+            owner.Show();
+            Assert.NotNull(task);
+            Complete(task);
+            Assert.True(IsEnabled(owner), "the form was not given back");
+            Assert.Equal(txt.Handle, input.Focus);
+            Assert.Same(txt, owner.ActiveControl);
+        });
+
+        // The README pattern: a scope around awaited work in an async event handler, raised from the message loop like a click. The
+        // scope's screen is the first window that the handler creates; every await of the handler comes back to the UI thread, where
+        // the scope is disposed
+        [Fact]
+        public void Scope_AroundAwaitedWork_InAnAsyncHandler_StaysOnTheUiThread() => Run(() =>
+        {
+            using var owner = ShowOwner();
+            var ui = Thread.CurrentThread;
+            var steps = new List<bool>();
+            Exception error = null;
+            var isDone = false;
+            async void Handler()
+            {
+                try
+                {
+                    using var scope = YANLoader.Show(owner, new YANLoaderOptions { Kind = Update, ShowDelay = 0, FadeDuration = 0 });
+                    for (var percent = 20; percent <= 100; percent += 20)
+                    {
+                        await Task.Delay(10);
+                        steps.Add(Thread.CurrentThread == ui);
+                        scope.SetProgress(percent, $"{percent} MB / 100 MB");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+                finally
+                {
+                    isDone = true;
+                }
+            }
+            Dispatch(owner, Handler);
+            Assert.False(IsEnabled(owner), "the owner took input while the work ran");
+            Assert.True(PumpUntil(() => isDone), "the handler did not end");
+            Assert.Null(error);
+            Assert.Equal(new[] { true, true, true, true, true }, steps);
+            Assert.True(PumpUntil(() => OpenScreens().Length == 0), "the screen was not closed");
+            Assert.True(IsEnabled(owner), "the owner was not given back");
+        });
+
+        // Without a WinForms SynchronizationContext (WinForms leaves a plain one once its outermost message loop ends: Application.DoEvents
+        // or ShowDialog outside Application.Run), awaits continue on the thread pool. RunWithLoaderAsync with work that ends there still
+        // fades the screen out and closes it, gives the owner back and ends its task, all on the UI thread
+        [Fact]
+        public void RunWithLoader_WithoutAWinFormsContext_ClosesOnTheUiThread() => Run(() =>
+        {
+            var oldEffects = YANDisplay.UIEffectsOverride;
+            try
+            {
+                YANDisplay.UIEffectsOverride = true;
+                using var owner = ShowOwner();
+                var input = PlainContext();
+                using var gate = new ManualResetEventSlim();
+                YANLoaderScope scope = null;
+                var task = owner.RunWithLoaderAsync((p, ct) =>
+                {
+                    scope = (YANLoaderScope)p;
+                    return Task.Run(() => gate.Wait(ct), ct);
+                }, new YANLoaderOptions { ShowDelay = 0, FadeDuration = 80 }, CancellationToken.None);
+                var scr = scope.Screen;
+                Thread closedOn = null;
+                scr.FormClosed += (s, e) => closedOn = Thread.CurrentThread;
+                Assert.True(PumpUntil(() => scr.Visible && scr.Opacity >= 1 - 1e-6), "not shown, or not faded in");
+                gate.Set();
+                var isFading = false;
+                Assert.True(PumpUntil(() =>
+                {
+                    isFading |= !scr.IsDisposed && scr.IsClosing && scr.Opacity < 1;
+                    return task.IsCompleted;
+                }), "the loader task did not end");
+                Assert.Equal(TaskStatus.RanToCompletion, task.Status);
+                Assert.True(isFading, "closed without the fade-out");
+                Assert.True(scr.IsDisposed, "the screen was still there when the task ended");
+                Assert.Same(Thread.CurrentThread, closedOn);
+                Assert.True(IsEnabled(owner), "the owner was not given back");
+                Assert.Equal(0, input.OffThreadCalls);
+            }
+            finally
+            {
+                YANDisplay.UIEffectsOverride = oldEffects;
+            }
+        });
+
+        // The same for a scope disposed while there is no WinForms SynchronizationContext: the owner is given back at once, the screen
+        // fades out and closes on the UI thread
+        [Fact]
+        public void Dispose_WithoutAWinFormsContext_FadesOutAndClosesOnTheUiThread() => Run(() =>
+        {
+            var oldEffects = YANDisplay.UIEffectsOverride;
+            try
+            {
+                YANDisplay.UIEffectsOverride = true;
+                using var owner = ShowOwner();
+                var input = PlainContext();
+                var scope = YANLoader.Show(owner, new YANLoaderOptions { Kind = Update, ShowDelay = 0, FadeDuration = 80 });
+                var scr = scope.Screen;
+                Thread closedOn = null;
+                scr.FormClosed += (s, e) => closedOn = Thread.CurrentThread;
+                Assert.True(PumpUntil(() => scr.Visible && scr.Opacity >= 1 - 1e-6), "not shown, or not faded in");
+                scope.Dispose();
+                Assert.True(IsEnabled(owner), "the owner was not given back at once");
+                Assert.False(scr.IsDisposed, "closed without the fade-out");
+                Assert.True(PumpUntil(() => scr.IsDisposed), "the screen was not closed");
+                Assert.Same(Thread.CurrentThread, closedOn);
+                Assert.Equal(0, input.OffThreadCalls);
+            }
+            finally
+            {
+                YANDisplay.UIEffectsOverride = oldEffects;
             }
         });
 
@@ -845,7 +985,6 @@ namespace YANF.Tests.Services
             var oldAutoInstall = WindowsFormsSynchronizationContext.AutoInstall;
             var oldContext = SynchronizationContext.Current;
             var oldCheck = Control.CheckForIllegalCrossThreadCalls;
-            var oldAnimate = YANOverlayScreen.CanAnimateOverride;
             Control marshal = null;
             try
             {
@@ -863,11 +1002,10 @@ namespace YANF.Tests.Services
                     marshal.CreateControl();
                     _ = marshal.Handle;
                     SynchronizationContext.SetSynchronizationContext(new ControlContext(marshal));
-                    // it brings the fades' continuations back to this thread like the WinForms context does
-                    YANOverlayScreen.CanAnimateOverride = true;
                 }
                 else
                 {
+                    // installed until the first pump ends: see Dispatch
                     SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
                 }
                 // mono's X11 driver itself reads windows of other threads while pumping (see skip.txt): check only on .NET
@@ -883,7 +1021,6 @@ namespace YANF.Tests.Services
                     frm.Dispose();
                 }
                 Control.CheckForIllegalCrossThreadCalls = oldCheck;
-                YANOverlayScreen.CanAnimateOverride = oldAnimate;
                 SynchronizationContext.SetSynchronizationContext(oldContext);
                 WindowsFormsSynchronizationContext.AutoInstall = oldAutoInstall;
                 YANLoaderScope.Native = oldInput;
@@ -925,6 +1062,15 @@ namespace YANF.Tests.Services
         /// Whether the owner window takes input (through the same user32 calls, or their stand-in, as the library).
         /// </summary>
         public static bool IsEnabled(Form frm) => YANLoaderScope.Native.IsWindowEnabled(frm.Handle);
+
+        /// <summary>
+        /// Where the keyboard focus of this thread is (through the same user32 call, or its stand-in, as the library), for failure messages.
+        /// </summary>
+        public static string DescribeFocus(Form frm)
+        {
+            var focus = YANLoaderScope.Native.GetFocus();
+            return focus == IntPtr.Zero ? "no window" : focus == frm.Handle ? "the form itself" : Control.FromHandle(focus)?.ToString() ?? $"window 0x{focus.ToInt64():X}";
+        }
 
         /// <summary>
         /// Expected screen bounds: over the owner's visible frame (Load, Wait) or centred on it inside the working area (Update).
@@ -992,6 +1138,39 @@ namespace YANF.Tests.Services
         /// Pumps messages until the task has ended.
         /// </summary>
         public static void Complete(Task task) => Assert.True(PumpUntil(() => task.IsCompleted), "the loader task did not end");
+
+        /// <summary>
+        /// Runs <paramref name="action"/> from the message loop, as Windows raises a click: posted to <paramref name="target"/> and run by
+        /// a pump. Raise async event handlers this way. On .NET this thread has the WinForms synchronization context only while it pumps:
+        /// WinForms replaces it with a plain SynchronizationContext each time the outermost message loop ends (every Application.DoEvents
+        /// of the pumps here; under Application.Run that never happens while the application runs). Called straight from the test body,
+        /// a handler's awaits would continue on the thread pool; one that creates a control before its first await (YANLoader.Show)
+        /// would even leave WinForms unable to install the context again on this thread.
+        /// </summary>
+        public static void Dispatch(Control target, Action action)
+        {
+            var isDone = false;
+            _ = target.BeginInvoke(new Action(() =>
+            {
+                isDone = true;
+                action();
+            }));
+            Assert.True(PumpUntil(() => isDone), "the posted action did not run");
+        }
+
+        /// <summary>
+        /// Leaves this thread without a WinForms SynchronizationContext, as WinForms does once its outermost message loop ends: a plain
+        /// one, with auto-install off so that no control or pump installs one again (Run restores both). Returns a stand-in for the user32
+        /// calls that counts the calls made on another thread.
+        /// </summary>
+        public static ThreadCheckInput PlainContext()
+        {
+            WindowsFormsSynchronizationContext.AutoInstall = false;
+            SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+            var input = new ThreadCheckInput(YANLoaderScope.Native);
+            YANLoaderScope.Native = input;
+            return input;
+        }
 
         /// <summary>
         /// Posts an input message to a window of this thread, as the keyboard or the mouse wheel does: through user32, or through mono's
@@ -1186,6 +1365,97 @@ namespace YANF.Tests.Services
             public bool IsToolWindow(IntPtr hWnd) => _windows.TryGetValue(hWnd, out var w) ? w.IsToolWindow : _inner.IsToolWindow(hWnd);
 
             public IntPtr GetActiveWindow() => Active != IntPtr.Zero ? Active : _inner.GetActiveWindow();
+        }
+
+        /// <summary>
+        /// Passes the user32 calls (real or stand-in) on and counts those made on another thread than the one that created it.
+        /// </summary>
+        public sealed class ThreadCheckInput : YANLoaderScope.IWindowInput
+        {
+            private readonly YANLoaderScope.IWindowInput _inner;
+            private readonly Thread _thread = Thread.CurrentThread;
+            private int _offThreadCalls;
+
+            public ThreadCheckInput(YANLoaderScope.IWindowInput inner) => _inner = inner;
+
+            /// <summary>
+            /// Calls made on another thread.
+            /// </summary>
+            public int OffThreadCalls => Volatile.Read(ref _offThreadCalls);
+
+            public bool IsWindowEnabled(IntPtr hWnd) => Check(() => _inner.IsWindowEnabled(hWnd));
+
+            public bool EnableWindow(IntPtr hWnd, bool enable) => Check(() => _inner.EnableWindow(hWnd, enable));
+
+            public IntPtr GetFocus() => Check(_inner.GetFocus);
+
+            public void SetFocus(IntPtr hWnd) => Check(() =>
+            {
+                _inner.SetFocus(hWnd);
+                return 0;
+            });
+
+            public bool IsChild(IntPtr hWndParent, IntPtr hWnd) => Check(() => _inner.IsChild(hWndParent, hWnd));
+
+            public IntPtr[] GetThreadWindows() => Check(_inner.GetThreadWindows);
+
+            public bool IsWindowVisible(IntPtr hWnd) => Check(() => _inner.IsWindowVisible(hWnd));
+
+            public IntPtr GetOwner(IntPtr hWnd) => Check(() => _inner.GetOwner(hWnd));
+
+            public bool IsToolWindow(IntPtr hWnd) => Check(() => _inner.IsToolWindow(hWnd));
+
+            public IntPtr GetActiveWindow() => Check(_inner.GetActiveWindow);
+
+            private T Check<T>(Func<T> call)
+            {
+                if (Thread.CurrentThread != _thread)
+                {
+                    _ = Interlocked.Increment(ref _offThreadCalls);
+                }
+                return call();
+            }
+        }
+
+        /// <summary>
+        /// Stands in for the keyboard focus and the active window of the real or stand-in user32 calls: <see cref="Focus"/> and
+        /// <see cref="Active"/> are what Windows would report, and SetFocus moves <see cref="Focus"/>.
+        /// </summary>
+        public sealed class FocusInput : YANLoaderScope.IWindowInput
+        {
+            private readonly YANLoaderScope.IWindowInput _inner;
+
+            public FocusInput(YANLoaderScope.IWindowInput inner) => _inner = inner;
+
+            /// <summary>
+            /// The window reported to have the keyboard focus.
+            /// </summary>
+            public IntPtr Focus { get; set; }
+
+            /// <summary>
+            /// The window reported as the active window of this thread.
+            /// </summary>
+            public IntPtr Active { get; set; }
+
+            public bool IsWindowEnabled(IntPtr hWnd) => _inner.IsWindowEnabled(hWnd);
+
+            public bool EnableWindow(IntPtr hWnd, bool enable) => _inner.EnableWindow(hWnd, enable);
+
+            public IntPtr GetFocus() => Focus;
+
+            public void SetFocus(IntPtr hWnd) => Focus = hWnd;
+
+            public bool IsChild(IntPtr hWndParent, IntPtr hWnd) => _inner.IsChild(hWndParent, hWnd);
+
+            public IntPtr[] GetThreadWindows() => _inner.GetThreadWindows();
+
+            public bool IsWindowVisible(IntPtr hWnd) => _inner.IsWindowVisible(hWnd);
+
+            public IntPtr GetOwner(IntPtr hWnd) => _inner.GetOwner(hWnd);
+
+            public bool IsToolWindow(IntPtr hWnd) => _inner.IsToolWindow(hWnd);
+
+            public IntPtr GetActiveWindow() => Active;
         }
 
         /// <summary>

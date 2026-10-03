@@ -120,19 +120,31 @@ namespace YANF.Tests.Script
             });
         });
 
-        // Explicit line breaks keep the 1.0 layout: the label loses its side padding and the box keeps the width of the padded text
+        // Explicit line breaks keep the 1.0 layout: the label loses its side padding (its wrap width stays) and the box keeps the width of
+        // the padded text, 1.0's Max(text + icon, buttons, caption) taken before the padding goes; the texts here are wider than the button.
+        // The text widths are WinForms' own measurement of the label: on Windows the two-line text measures a few pixels wider than its
+        // first line alone (7 px in the box font at 96 dpi), on mono just as wide, so each box is checked against its own text
         [Fact]
         public void Layout_MultiLineText_KeepsTheOriginalLayout() => Sta.Run(() =>
         {
+            const int min = 100 + 2 * 10 + 4; // the box of the OK button alone
+            const int side = 2 * 10;          // the designed side padding of the label
+            const int icon = 50 + 10;         // the icon and the left padding of the body
             using var one = new YANMessageBoxScreen(new YANMessageBoxOptions { Text = "A first line of text" });
             using var two = new YANMessageBoxScreen(new YANMessageBoxOptions { Text = "A first line of text\nsecond" });
+            using var wide = new YANMessageBoxScreen(new YANMessageBoxOptions { Text = "A first line of text second" });
             var lbl1 = Priv.Field<Label>(one, "lblMessage");
             var lbl2 = Priv.Field<Label>(two, "lblMessage");
-            // (a font taller than 17 px, as on mono, already counts one line as multi-line, hence lbl1's own padding)
             Assert.Equal(new Padding(0, 0, 0, 15), lbl2.Padding);
-            Assert.Equal(lbl1.Width - lbl1.Padding.Horizontal, lbl2.Width);
-            Assert.Equal(lbl2.Width + 20 + 60, two.Width);
-            Assert.Equal(one.Width, two.Width);
+            Assert.Equal(new Size(SystemInformation.WorkingArea.Width / 2 - side, 0), lbl2.MaximumSize);
+            Assert.True(lbl2.Height - lbl2.Padding.Vertical > lbl1.Height - lbl1.Padding.Vertical, $"two lines expected: {lbl1.Size} {lbl2.Size}");
+            // (a font taller than 17 px, as on mono, already counts one line as multi-line, hence lbl1's own padding)
+            var text1 = lbl1.Width - lbl1.Padding.Horizontal;
+            Assert.True(text1 + side + icon > min, $"the text should set the width, not the button: {text1}");
+            Assert.Equal(text1 + side + icon, one.Width);
+            Assert.Equal(lbl2.Width + side + icon, two.Width);
+            // the first line sets the width: the second one is not added to it (the same words on one line make a wider box)
+            Assert.InRange(two.Width, one.Width, wide.Width - 1);
         });
 
         // 2.0 (AutoScaleMode.Dpi): at 150 % the designed sizes are scaled before the layout runs, and its own pixel constants (the 10 px
@@ -187,8 +199,9 @@ namespace YANF.Tests.Script
             }
         });
 
-        // Multi-line text at 150 %: the single-line height (17 px at 96 dpi) and the bottom padding (15 px) are scaled too, and the scaled
-        // side padding is taken off the wrap width as at 96 dpi
+        // Multi-line text at 150 %: the single-line height (17 px at 96 dpi) and the bottom padding (15 px) are scaled too, the scaled side
+        // padding is taken off the wrap width, and the box keeps the width of the padded text as at 96 dpi, with the scaled sizes (the texts
+        // are wider than the 150 px button; see Layout_MultiLineText_KeepsTheOriginalLayout for why the two boxes are not compared directly)
         [Fact]
         public void Layout_At150Percent_MultiLineText() => Sta.Run(() =>
         {
@@ -200,12 +213,17 @@ namespace YANF.Tests.Script
                 var lbl1 = Priv.Field<Label>(one, "lblMessage");
                 var lbl2 = Priv.Field<Label>(two, "lblMessage");
                 var side = _is_Mono ? 10 : 15;
+                // the 50 px icon and the 10 px left padding of the body, scaled (mono leaves the padding at 10)
+                var icon = 75 + side;
+                var min = 150 + 2 * 15 + one.Padding.Horizontal;
                 // one line of a 96-dpi font (the test DPI does not enlarge the fonts) stays under the scaled 26 px line height
                 Assert.Equal(_is_Mono ? new Padding(10, 5, 10, 25) : new Padding(15, 8, 15, 38), lbl1.Padding);
                 Assert.Equal(new Padding(0, 0, 0, 22), lbl2.Padding);
                 Assert.Equal(new Size(SystemInformation.WorkingArea.Width / 2 - 2 * side, 0), lbl2.MaximumSize);
-                Assert.Equal(lbl1.Width - 2 * side, lbl2.Width);
-                Assert.Equal(one.Width, two.Width);
+                Assert.True(lbl1.Width + icon > min, $"the text should set the width, not the buttons: {lbl1.Width}");
+                Assert.Equal(lbl1.Width + icon, one.Width);
+                Assert.Equal(lbl2.Width + 2 * side + icon, two.Width);
+                Assert.True(two.Width >= one.Width, $"the box of the two lines is narrower than the box of the first line: {two.Width} < {one.Width}");
             }
             finally
             {

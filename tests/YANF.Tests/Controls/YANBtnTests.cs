@@ -391,8 +391,10 @@ namespace YANF.Tests.Controls
             using (var bmp = ui.Render(Colored(new AllControlsTests.FocusedBtn())))
             {
                 Assert.True(Gdi.Count(bmp, Gdi.IsLime) > 0, "focus cue not drawn");
-                // a sharp dotted line on row 3 (3 pixels from the edge) along the straight part of the top edge
+                // a sharp dotted line on row 3 (3 pixels from the edge) along the straight part of the top edge: whole-pixel dots, none
+                // spread over two half-colored pixels by anti-aliasing
                 Assert.True(Count(bmp, new Rectangle(40, 3, 70, 1), Gdi.IsLime) >= 70 / 3, "focus cue not sharp on row 3");
+                Assert.Equal(0, Count(bmp, new Rectangle(40, 3, 70, 1), AllControlsTests.IsPartlyLime));
                 // inside the shape: nothing in the outer 3 pixels, nor in the corner that the rounded end cuts off (a rectangular
                 // cue inset by 3 pixels would cross it)
                 Assert.Equal(0, Count(bmp, new Rectangle(0, 0, 150, 3), Gdi.IsLime));

@@ -188,7 +188,9 @@ namespace YANF.Script
             }
         }
 
-        // UI thread: start the work, wait for it (continuing on the UI thread), always close the scope
+        // UI thread: start the work, wait for it, always close the scope. The awaits continue on the UI thread through its WinForms
+        // SynchronizationContext, or on the thread pool where the thread has none (WinForms leaves a plain one once its outermost message
+        // loop ends): CloseAsync closes on the UI thread from any thread, and nothing else here touches a window
         private static async Task RunAsync(YANLoaderScope scope, Func<IProgress<int>, CancellationToken, Task> work, CancellationToken cancellationToken)
         {
             try
@@ -201,7 +203,7 @@ namespace YANF.Script
             }
         }
 
-        // UI thread: start the work, wait for its result (continuing on the UI thread), always close the scope
+        // UI thread: start the work, wait for its result, always close the scope (the awaits: see RunAsync above)
         private static async Task<T> RunAsync<T>(YANLoaderScope scope, Func<IProgress<int>, CancellationToken, Task<T>> work, CancellationToken cancellationToken)
         {
             try

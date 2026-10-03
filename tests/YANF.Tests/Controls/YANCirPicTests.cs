@@ -138,10 +138,15 @@ namespace YANF.Tests.Controls
 
         // An odd border is painted in whole pixels, as 1.x painted it: outside the contour (row 0) and in the ring (half the border
         // rounded up) the parent shows, then whole rows of border, with no row blended half and half. Tolerance: the circle bends a
-        // little across the pixel at its top and left
+        // little across the pixel at its top and left. It lies a hair inside the edge of the first row of the border and of the
+        // first row of the picture there, and GDI+ antialiasing works in quarter-pixel steps across a row: these two rows may
+        // take a quarter of the color before them (Windows: 3/4 border over 1/4 ring), never a half. A border half a pixel off
+        // still fails: it blends the last row of the ring, or leaves at most half of the first row of the border
         [Fact]
         public void Border_OddSize_StaysCrisp() => Sta.Run(ui =>
         {
+            const int TOLERANCE = 8;
+            const int QUARTER_STEP = 72;
             var c = OnLime(ui, new YANCirPic { BorderTopColor = Color.Red, BorderBottomColor = Color.Red });
             foreach (var (border, ring) in new[] { (1, 1), (3, 2) })
             {
@@ -150,8 +155,9 @@ namespace YANF.Tests.Controls
                 for (var i = 0; i < 8; i++)
                 {
                     var expected = i < 1 + ring ? Color.Lime : i < 1 + ring + border ? Color.Red : Color.Blue;
-                    PaintingTests.AssertColor(expected, bmp.GetPixel(50, i), $"BorderSize {border}, top row {i}", 8);
-                    PaintingTests.AssertColor(expected, bmp.GetPixel(i, 50), $"BorderSize {border}, left column {i}", 8);
+                    var tolerance = i == 1 + ring || i == 1 + ring + border ? QUARTER_STEP : TOLERANCE;
+                    PaintingTests.AssertColor(expected, bmp.GetPixel(50, i), $"BorderSize {border}, top row {i}", tolerance);
+                    PaintingTests.AssertColor(expected, bmp.GetPixel(i, 50), $"BorderSize {border}, left column {i}", tolerance);
                 }
             }
         });

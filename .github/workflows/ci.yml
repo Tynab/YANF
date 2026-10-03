@@ -49,11 +49,11 @@ jobs:
       # The tests create windows, so they need the interactive desktop of the hosted runner. One step per target
       # framework, so that a failure names its framework and the second run still happens after the first one failed
       - name: Test (net481)
-        run: dotnet test tests/YANF.Tests/YANF.Tests.csproj --configuration Release --framework net481 --no-build --logger "trx;LogFileName=YANF.Tests.net481.trx" --results-directory TestResults
+        run: dotnet test tests/YANF.Tests/YANF.Tests.csproj --configuration Release --framework net481 --no-build --logger "trx;LogFileName=YANF.Tests.net481.trx" --results-directory TestResults --blame
 
       - name: Test (net10.0-windows)
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-        run: dotnet test tests/YANF.Tests/YANF.Tests.csproj --configuration Release --framework net10.0-windows --no-build --logger "trx;LogFileName=YANF.Tests.net10.0-windows.trx" --results-directory TestResults
+        run: dotnet test tests/YANF.Tests/YANF.Tests.csproj --configuration Release --framework net10.0-windows --no-build --logger "trx;LogFileName=YANF.Tests.net10.0-windows.trx" --results-directory TestResults --blame
 
       # Package validation (EnablePackageValidation, baseline 1.0.1) runs as part of Pack
       - name: Pack

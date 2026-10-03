@@ -271,8 +271,8 @@ namespace YANF.Control
             // the surface is a pill with half circles of diameter Height - 1 at both ends (2 and 1 are 96-dpi pixels)
             var rectSurface = new RectangleF(0, 0, Width - LogicalToDevice(2, dpi), Height - LogicalToDevice(1, dpi));
             _pathSurface = RoundedRect(rectSurface, rectSurface.Height / 2f);
-            // the focus cue runs one pixel inside the edge of the surface, concentric with its ends; whole-pixel coordinates keep the
-            // one-pixel dotted line sharp (with anti-aliasing, GDI+ centres pixels on whole coordinates)
+            // the focus cue runs one pixel inside the edge of the surface, concentric with its ends; on whole-pixel coordinates the
+            // one-pixel dotted line covers a single row (GDI+ centres pixels on whole coordinates)
             var inset = LogicalToDevice(1, dpi);
             var rectCue = RectangleF.Inflate(rectSurface, -inset, -inset);
             _pathCue = RoundedRect(rectCue, rectCue.Height / 2f);
@@ -288,7 +288,8 @@ namespace YANF.Control
             _shapeDpi = 0;
         }
 
-        // Draw the keyboard focus cue: a dotted outline inside the surface, between its edge and the toggle
+        // Draw the keyboard focus cue: a dotted outline inside the surface, between its edge and the toggle, in whole-pixel dots as
+        // Windows draws its focus rectangles (anti-aliased, a dot that does not start on a pixel edge blurs over two pixels)
         private void DrawFocusCue(Graphics graphics, Color color)
         {
             if (_pathCue == null)
@@ -297,7 +298,10 @@ namespace YANF.Control
             }
             using var penCue = new Pen(color, LogicalToDevice(this, 1));
             penCue.DashStyle = Dot;
+            var smoothing = graphics.SmoothingMode;
+            graphics.SmoothingMode = None;
             graphics.DrawPath(penCue, _pathCue);
+            graphics.SmoothingMode = smoothing;
         }
 
         // Slide the toggle from a position to the rest position of Checked (ease-out). It jumps there when Windows animation effects

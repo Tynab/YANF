@@ -28,9 +28,6 @@ namespace YANF.Screen
         #region Fields
         private const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
         private static bool _is_DwmMissing;
-        // Per-thread override of the synchronization context check (null: check)
-        [ThreadStatic]
-        private static bool? _canAnimateOverride;
         private Form _owner;
         // The parents of an MDI child or embedded owner, up to its top-level form: moving them moves the owner on screen
         private readonly List<System.Windows.Forms.Control> _ancestors = new();
@@ -82,17 +79,6 @@ namespace YANF.Screen
 
         // The tracked owner cannot show an overlay right now (hidden or minimized, or its top-level form is minimized)
         private bool IsOwnerHidden => _owner.IsDisposed || !_owner.Visible || _owner.WindowState == Minimized || _owner.TopLevelControl is Form { WindowState: Minimized };
-
-        // Tests: the thread's synchronization context brings continuations back to it although it is not a
-        // WindowsFormsSynchronizationContext (per thread; null checks the context)
-        internal static bool? CanAnimateOverride
-        {
-            get => _canAnimateOverride;
-            set => _canAnimateOverride = value;
-        }
-
-        // The async fades need the thread's WinForms synchronization context (their Task.Delay continuations come back through it)
-        private static bool CanAnimate => _canAnimateOverride ?? SynchronizationContext.Current is WindowsFormsSynchronizationContext;
         #endregion
 
         #region Overridden
@@ -139,13 +125,10 @@ namespace YANF.Screen
                     // Legacy services and screens created by the caller: the 1.0.x blocking fade
                     this.FadeIn();
                 }
-                else if (CanAnimate)
-                {
-                    _fadeIn = this.FadeToAsync(1, _fadeDuration);
-                }
                 else
                 {
-                    Opacity = 1;
+                    // YANLoader: frames from a timer on this thread, whatever the current SynchronizationContext
+                    _fadeIn = this.FadeToAsync(1, _fadeDuration);
                 }
             }
             base.OnShown(e);
@@ -264,9 +247,9 @@ namespace YANF.Screen
             Show(_owner);
         }
 
-        // YANLoader: fade out without blocking the thread, then run beforeClose, close and dispose; every call returns the same task
-        // (only the first beforeClose is kept). Without a visible window or a WinForms synchronization context the screen closes at
-        // once (and a failure is thrown to the caller)
+        // YANLoader (on the screen's thread): fade out without blocking the thread, then run beforeClose, close and dispose; every call
+        // returns the same task (only the first beforeClose is kept). Without a visible window the screen closes at once (and a failure
+        // is thrown to the caller)
         internal Task CloseAnimatedAsync(Action beforeClose)
         {
             if (_closing != null)
@@ -274,7 +257,7 @@ namespace YANF.Screen
                 return _closing;
             }
             _beforeClose = beforeClose;
-            if (_fadeDuration > 0 && IsHandleCreated && Visible && Opacity > 0 && CanAnimate)
+            if (_fadeDuration > 0 && IsHandleCreated && Visible && Opacity > 0)
             {
                 return _closing = FadeOutAndCloseAsync();
             }
@@ -283,25 +266,56 @@ namespace YANF.Screen
             return _closing;
         }
 
-        // Let a running fade-in finish (it cannot be cut short), fade out from there, then close (also after a failed fade)
-        private async Task FadeOutAndCloseAsync()
+        // Let a running fade-in finish (it cannot be cut short), fade out from there, then close (also after a failed fade). The task
+        // ends once the screen is closed, with the failure of the fade or of the close. The steps run on the screen's thread, posted to
+        // it: no await, whose continuation would run on the thread pool when the thread has no WinForms SynchronizationContext (WinForms
+        // leaves a plain one once its outermost message loop ends)
+        private Task FadeOutAndCloseAsync()
+        {
+            var closed = new TaskCompletionSource<bool>();
+            WhenDone(_fadeIn ?? Task.CompletedTask, fadeIn =>
+            {
+                Task fadeOut;
+                try
+                {
+                    fadeOut = fadeIn.IsFaulted || IsDisposed ? fadeIn : this.FadeToAsync(0, _fadeDuration);
+                }
+                catch (Exception ex)
+                {
+                    fadeOut = Task.FromException(ex);
+                }
+                WhenDone(fadeOut, faded =>
+                {
+                    try
+                    {
+                        CloseNow();
+                    }
+                    catch (Exception ex)
+                    {
+                        _ = closed.TrySetException(ex);
+                        return;
+                    }
+                    _ = faded.Exception is { } error ? closed.TrySetException(error.InnerExceptions) : closed.TrySetResult(true);
+                });
+            });
+            return closed.Task;
+        }
+
+        // Once the task has ended, run the step on the screen's thread through its message queue (never inside the code that ended the
+        // task). Where the window is gone already (the screen was disposed), run it at once, on the thread that ended the task (the fades
+        // end on the screen's thread): it only starts no fade, forgets the owner and runs beforeClose, which YANLoader brings to its thread
+        private void WhenDone(Task task, Action<Task> step) => _ = task.ContinueWith(t =>
         {
             try
             {
-                if (_fadeIn != null)
-                {
-                    await _fadeIn;
-                }
-                if (!IsDisposed)
-                {
-                    await this.FadeToAsync(0, _fadeDuration);
-                }
+                _ = BeginInvoke(step, t);
             }
-            finally
+            catch (InvalidOperationException)
             {
-                CloseNow();
+                // no window any more (ObjectDisposedException is an InvalidOperationException)
+                step(t);
             }
-        }
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
         // Run beforeClose once (while the window is still there), then close (FormClosing and FormClosed are raised) and dispose
         private void CloseNow()

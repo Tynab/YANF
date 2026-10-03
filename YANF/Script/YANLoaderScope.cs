@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -173,8 +174,14 @@ namespace YANF.Script
             return closing.Task.Unwrap();
         }
 
-        // A failed close is reported like any other UI-thread failure (Application.ThreadException)
-        private static async void Observe(Task task) => await task;
+        // A failed close is reported like any other UI-thread failure: rethrown on the UI thread, by its message loop
+        // (Application.ThreadException). Not with an async void method: where the thread has no WinForms SynchronizationContext (WinForms
+        // leaves a plain one once its outermost message loop ends) that rethrows on the thread pool, which ends the process
+        private void Observe(Task task) => _ = task.ContinueWith(t =>
+        {
+            var error = t.Exception.InnerException;
+            _ = TryPost(_ => ExceptionDispatchInfo.Capture(error).Throw());
+        }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
         // UI thread: close the screen once. The owner is given back before the screen closes (so Windows activates it when the screen
         // goes): at once (Dispose, or no screen on show), or right after the fade-out when isFadeBlocking (RunWithLoaderAsync)
@@ -210,21 +217,64 @@ namespace YANF.Script
         }
 
         // UI thread: fade the screen out, give the owner back (if not done yet) and close the screen; bring the owner forward if the
-        // screen was the active window
-        private async Task CloseScreenAsync(bool isActive)
+        // screen was the active window. The task ends after that, with the failure of the close. What follows the fade-out is posted to
+        // the UI thread: an await would continue on the thread pool where the thread has no WinForms SynchronizationContext
+        private Task CloseScreenAsync(bool isActive)
+        {
+            Task closing;
+            try
+            {
+                closing = _scr.CloseAnimatedAsync(ReleaseOnUi);
+            }
+            catch (Exception ex)
+            {
+                closing = Task.FromException(ex);
+            }
+            if (closing.IsCompleted)
+            {
+                return AfterClose(closing, isActive);
+            }
+            var done = new TaskCompletionSource<Task>();
+            _ = closing.ContinueWith(t =>
+            {
+                if (!TryPost(_ => done.TrySetResult(AfterClose(t, isActive))))
+                {
+                    // The owner's window or its thread is gone: no owner to give back
+                    _ = done.TrySetResult(t);
+                }
+            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            return done.Task.Unwrap();
+        }
+
+        // UI thread: after the close, also a failed one that did not give the owner back: give it back and bring it forward if the screen
+        // was the active window. Returns the close (or the failure of this step)
+        private Task AfterClose(Task closing, bool isActive)
         {
             try
             {
-                await _scr.CloseAnimatedAsync(Release);
-            }
-            finally
-            {
-                // Also when the close failed before it gave the owner back
                 Release();
                 if (isActive && !_is_OwnerGone && !_owner.IsDisposed && _owner.Visible && Form.ActiveForm == null)
                 {
                     _owner.Activate();
                 }
+            }
+            catch (Exception ex)
+            {
+                return Task.FromException(ex);
+            }
+            return closing;
+        }
+
+        // The screen gives the owner back just before it closes, on the UI thread (elsewhere only when its window was gone already)
+        private void ReleaseOnUi()
+        {
+            if (Thread.CurrentThread == _thread)
+            {
+                Release();
+            }
+            else
+            {
+                _ = TryPost(_ => Release());
             }
         }
 
@@ -488,46 +538,68 @@ namespace YANF.Script
             RestoreFocus(block);
         }
 
-        // Right after the owner is enabled again: give the keyboard focus back when the owner is the active window without it (a
-        // disabled window takes no focus). A top-level owner blocked before it was first on screen (a scope opened in Load) whose screen
-        // never appeared may not have been activated at all: activate it now, as showing it would have
+        // Right after the owner is enabled again: give the keyboard focus back when the owner is the active window without it on one of
+        // its controls (a disabled window takes no focus). Windows gives the focus to the window it activates: an owner activated while
+        // disabled (a scope opened in Load, before Windows first shows and activates the form) holds it itself, as WinForms could not
+        // pass it on to the active control then. A top-level owner blocked before it was first on screen whose screen never appeared may
+        // not have been activated at all: activate it now, as showing it would have
         private void RestoreFocus(OwnerBlock block)
         {
             var focus = Native.GetFocus();
-            if (IsInOwner(focus))
+            if (IsFocusKept(focus, block))
             {
                 return;
             }
-            if (Native.GetActiveWindow() == _hwnd)
+            if (Native.GetActiveWindow() != _hwnd)
             {
-                if (focus != IntPtr.Zero)
+                if (block.IsShown || !_owner.TopLevel || _scr.IsHandleCreated || !_owner.Visible || _owner.WindowState == Minimized || !Native.IsWindowVisible(_hwnd))
                 {
                     return;
                 }
-                if (IsInOwner(block.Focus))
-                {
-                    Native.SetFocus(block.Focus);
-                }
-                else if (_owner.TopLevel && _owner.WindowState != Minimized)
-                {
-                    FocusOwner();
-                }
-            }
-            else if (!block.IsShown && _owner.TopLevel && !_scr.IsHandleCreated && _owner.Visible && _owner.WindowState != Minimized && Native.IsWindowVisible(_hwnd))
-            {
                 // Form.Active then focuses its active control
                 _owner.Activate();
+                focus = Native.GetFocus();
+                if (Native.GetActiveWindow() != _hwnd || IsFocusKept(focus, block))
+                {
+                    return;
+                }
+            }
+            if (focus != IntPtr.Zero && focus != _hwnd)
+            {
+                return;
+            }
+            if (block.Focus != _hwnd && IsInOwner(block.Focus))
+            {
+                Native.SetFocus(block.Focus);
+            }
+            else if (_owner.TopLevel && _owner.WindowState != Minimized)
+            {
+                FocusOwner();
             }
         }
 
-        // Focus the active owner as WinForms does when a form is activated: its active control, else its first control, else the form
+        // The focus is where it belongs once the owner is enabled: on a child window of the owner, or on the owner window itself when it
+        // had it before the block (a form without a control that takes the focus)
+        private bool IsFocusKept(IntPtr focus, OwnerBlock block) => focus == _hwnd ? block.Focus == _hwnd : IsInOwner(focus);
+
+        // Focus the active owner as WinForms does when a form is activated: its active control, else its first control, else the form.
+        // When the owner window holds the focus itself, its WM_SETFOCUS has come and gone: pass the focus on to the active control directly
         private void FocusOwner()
         {
             if (_owner.ActiveControl == null)
             {
+                // focuses the control too when the owner window has the focus
                 _ = _owner.SelectNextControl(null, true, true, true, false);
             }
-            if (!IsInOwner(Native.GetFocus()))
+            var focus = Native.GetFocus();
+            if (focus == _hwnd)
+            {
+                if (_owner.ActiveControl is { IsHandleCreated: true, Visible: true } active)
+                {
+                    Native.SetFocus(active.Handle);
+                }
+            }
+            else if (!IsInOwner(focus))
             {
                 // WM_SETFOCUS: the form passes the focus on to its active control
                 Native.SetFocus(_hwnd);

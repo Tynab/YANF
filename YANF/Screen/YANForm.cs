@@ -24,9 +24,9 @@ namespace YANF.Screen
     /// (<see cref="FormBorderStyle"/> None); the chrome applies to a top-level form while it stays borderless, and with another border style
     /// the form behaves like a plain Form. Sizes in pixels are 96-dpi logical pixels, scaled to the DPI of the window.</para>
     /// <para>A borderless window also gets the system menu and the minimize and maximize window styles that <see cref="Form.ControlBox"/>,
-    /// <see cref="Form.MinimizeBox"/> and <see cref="Form.MaximizeBox"/> ask for (a borderless Form has none of them), so that clicking its
-    /// taskbar button minimizes and restores it and its taskbar menu offers them. None of this is drawn: the form draws its own title bar and
-    /// buttons.</para>
+    /// <see cref="Form.MinimizeBox"/> and <see cref="Form.MaximizeBox"/> ask for, and only those (a borderless Form has no system menu and no
+    /// minimize style, and the maximize style whatever MaximizeBox says), so that clicking its taskbar button minimizes and restores it and its
+    /// taskbar menu offers them. None of this is drawn: the form draws its own title bar and buttons.</para>
     /// <para>A maximized borderless Form covers the whole monitor, taskbar included; a YANForm maximizes to the working area of its monitor
     /// (it sets <see cref="Form.MaximizedBounds"/> when Windows asks for the maximized size). A derived form that wants the whole screen, a
     /// kiosk for example, sets MaximizedBounds itself: YANForm leaves a value it did not set alone. Along an auto-hide taskbar the maximized
@@ -306,7 +306,7 @@ namespace YANF.Screen
         #region Overridden
         /// <summary>
         /// Adds the chrome of a borderless top-level window: the CS_DROPSHADOW class style (see <see cref="DropShadow"/>), and the system menu
-        /// and the minimize and maximize styles that ControlBox, MinimizeBox and MaximizeBox ask for.
+        /// and the minimize and maximize styles that ControlBox, MinimizeBox and MaximizeBox ask for (and only those).
         /// </summary>
         protected override CreateParams CreateParams
         {
@@ -319,18 +319,12 @@ namespace YANF.Screen
                     {
                         cp.ClassStyle |= CS_DROPSHADOW;
                     }
-                    if (ControlBox)
-                    {
-                        cp.Style |= WS_SYSMENU;
-                    }
-                    if (MinimizeBox)
-                    {
-                        cp.Style |= WS_MINIMIZEBOX;
-                    }
-                    if (MaximizeBox)
-                    {
-                        cp.Style |= WS_MAXIMIZEBOX;
-                    }
+                    // Set or cleared, as Form does for a window with a border: WS_MAXIMIZEBOX is the bit of WS_TABSTOP, which Control sets
+                    // for every tab stop, a Form included, and left alone it would let Windows maximize the window although MaximizeBox is
+                    // false (a caption double-click through DefWindowProc, Win+Up, the taskbar menu)
+                    cp.Style = ControlBox ? cp.Style | WS_SYSMENU : cp.Style & ~WS_SYSMENU;
+                    cp.Style = MinimizeBox ? cp.Style | WS_MINIMIZEBOX : cp.Style & ~WS_MINIMIZEBOX;
+                    cp.Style = MaximizeBox ? cp.Style | WS_MAXIMIZEBOX : cp.Style & ~WS_MAXIMIZEBOX;
                 }
                 return cp;
             }
@@ -393,7 +387,7 @@ namespace YANF.Screen
                     m.Result = (IntPtr)ChromeHitTest(unchecked((int)m.Result.ToInt64()), PointFromLParam(m.LParam));
                     break;
                 case WM_NCLBUTTONDBLCLK when m.WParam == (IntPtr)HTCAPTION && IsChromeActive && MaximizeBox:
-                    // Windows maximizes on a caption double-click only for a window with a caption
+                    // maximize or restore like a title bar (DefWindowProc does it only for a window with the maximize style)
                     WindowState = WindowState == Maximized ? Normal : Maximized;
                     m.Result = IntPtr.Zero;
                     break;

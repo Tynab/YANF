@@ -86,7 +86,8 @@ namespace YANF.Tests.Controls
 
         // The cue is drawn in the toggle color in both styles, on the row just inside the edge of the surface: it contrasts with a
         // solid surface, and on an outlined one it stands out from the outline it runs along (in the outline color it would only
-        // make the outline look thicker)
+        // make the outline look thicker). Its dots are whole pixels: anti-aliased, a dot that does not start on a pixel edge is
+        // spread over two half-colored pixels (on Windows the line then looked blurred, with no pixel in the toggle color)
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
@@ -112,6 +113,7 @@ namespace YANF.Tests.Controls
                 // row 0 is the edge (the outline, or the edge of the solid surface): the cue stays inside it, on row 1
                 Assert.Equal(0, CountLime(bmp, straight));
                 Assert.True(CountLime(bmp, Row(straight, 1)) >= straight.Width / 3, "focus cue not drawn in the toggle color on row 1");
+                Assert.Equal(0, Count(bmp, Row(straight, 1), AllControlsTests.IsPartlyLime));
             }
         });
 
@@ -287,7 +289,8 @@ namespace YANF.Tests.Controls
             }
         });
 
-        // High contrast mode paints system colors: a highlighted surface when on, an outline in the text color when off
+        // High contrast mode paints system colors: a highlighted surface when on, an outline in the text color when off, through
+        // which the parent shows (a lime panel that paints itself: the hidden host form has no window, so it paints nothing)
         [Fact]
         public void HighContrast_PaintsSystemColors() => Sta.Run(ui =>
         {
@@ -295,16 +298,18 @@ namespace YANF.Tests.Controls
             try
             {
                 var on = new YANTg { Size = new Size(90, 40), Checked = true };
+                var pnl = AllControlsTests.OnParent(ui, new PaintingTests.ColorPanel(Color.Lime), on, Point.Empty);
                 using (var bmp = ui.Render(on))
                 {
                     PaintingTests.AssertColor(SystemColors.Highlight, bmp.GetPixel(20, 20), "on: surface");
                     PaintingTests.AssertColor(SystemColors.HighlightText, bmp.GetPixel(70, 20), "on: toggle");
                 }
-                var off = new YANTg { Size = new Size(90, 40), Location = new Point(0, 50) };
+                var off = new YANTg { Size = new Size(90, 40) };
+                AllControlsTests.OnParent(ui, pnl, off, new Point(0, 50));
                 using (var bmp = ui.Render(off))
                 {
                     PaintingTests.AssertColor(SystemColors.ControlText, bmp.GetPixel(19, 20), "off: toggle");
-                    PaintingTests.AssertColor(ui.Host.BackColor, bmp.GetPixel(70, 20), "off: outlined surface shows the parent");
+                    PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(70, 20), "off: outlined surface shows the parent");
                 }
             }
             finally
@@ -316,14 +321,17 @@ namespace YANF.Tests.Controls
         private static Rectangle Row(Rectangle rect, int y) => new(rect.X, y, rect.Width, 1);
 
         // Counts the lime pixels of a part of the bitmap
-        private static int CountLime(Bitmap bmp, Rectangle rect)
+        private static int CountLime(Bitmap bmp, Rectangle rect) => Count(bmp, rect, Gdi.IsLime);
+
+        // Counts the matching pixels of a part of the bitmap
+        private static int Count(Bitmap bmp, Rectangle rect, Func<Color, bool> match)
         {
             var n = 0;
             for (var x = rect.Left; x < rect.Right; x++)
             {
                 for (var y = rect.Top; y < rect.Bottom; y++)
                 {
-                    if (Gdi.IsLime(bmp.GetPixel(x, y)))
+                    if (match(bmp.GetPixel(x, y)))
                     {
                         n++;
                     }

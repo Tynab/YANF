@@ -114,7 +114,10 @@ namespace YANF.Tests.Controls
             Assert.True(invalidated > 0, "not repainted when it lost the focus");
         });
 
-        // The focus cue is drawn only while the control has the focus and the focus cues are shown
+        // The focus cue is drawn only while the control has the focus and the focus cues are shown. Each control is drawn on a panel
+        // that paints itself: on Windows, the first control that asks for its keyboard cues (YANRdo's text) gives the hidden host
+        // form a window (Control.ShowKeyboardCues sends WM_CHANGEUISTATE to the top-level window), and from then on the form paints
+        // its BackColor behind the transparent controls drawn on it, so two identical controls would differ by their background
         [Theory]
         [InlineData(typeof(YANBtn), typeof(FocusedBtn))]
         [InlineData(typeof(YANTg), typeof(FocusedTg))]
@@ -122,11 +125,17 @@ namespace YANF.Tests.Controls
         [InlineData(typeof(YANDp), typeof(FocusedDp))]
         public void FocusCue_DrawnOnlyWhenFocused(Type plain, Type focused) => Sta.Run(ui =>
         {
-            using var bmpPlain = ui.Render(Setup((Control)Activator.CreateInstance(plain)));
-            using var bmpFocused = ui.Render(Setup((Control)Activator.CreateInstance(focused)));
+            Bitmap Render(Type type)
+            {
+                var c = Setup((Control)Activator.CreateInstance(type));
+                OnParent(ui, new PaintingTests.ColorPanel(Color.Lime), c, Point.Empty);
+                return ui.Render(c);
+            }
+            using var bmpPlain = Render(plain);
+            using var bmpFocused = Render(focused);
             Assert.True(Differences(bmpPlain, bmpFocused) > 0, "no focus cue drawn");
             // the same control without the focus: no cue
-            using var bmpPlain2 = ui.Render(Setup((Control)Activator.CreateInstance(plain)));
+            using var bmpPlain2 = Render(plain);
             Assert.Equal(0, Differences(bmpPlain, bmpPlain2));
         });
 
@@ -340,6 +349,11 @@ namespace YANF.Tests.Controls
         /// A blend of lime and blue: an anti-aliased edge between the parent and the control.
         /// </summary>
         internal static bool IsLimeBlueBlend(Color color) => color.R < 40 && color.G is > 30 and < 225 && color.B is > 30 and < 225;
+
+        /// <summary>
+        /// Some lime blended into another color that has no green (blue, red, black): an anti-aliased edge of a lime line or dot.
+        /// </summary>
+        internal static bool IsPartlyLime(Color color) => color.G > 40 && !Gdi.IsLime(color);
 
         /// <summary>
         /// Sends WM_NCHITTEST for a point (client coordinates) through the control's window procedure and returns the result.

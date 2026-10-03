@@ -137,18 +137,24 @@ namespace YANF.Tests.Screen
             }
         });
 
-        // A borderless Form has no system menu and no minimize/maximize styles (no taskbar minimize, no Win+Arrow): YANForm adds the ones
-        // that ControlBox, MinimizeBox and MaximizeBox ask for
+        // A borderless Form has no system menu and no minimize style (no taskbar minimize, no Win+Arrow): YANForm adds the ones that
+        // ControlBox, MinimizeBox and MaximizeBox ask for, and only those. On Windows a borderless Form has the maximize style whatever
+        // MaximizeBox says: it is the bit of WS_TABSTOP, which Control sets for every tab stop (Form fixes it only for a window with a
+        // border), so YANForm clears it when MaximizeBox is false
         [Fact]
         public void CreateParams_BorderlessWindow_GetsTheSystemMenuAndBoxStyles() => Sta.Run(() =>
         {
             using var frm = new Probe();
+            Assert.True(frm.TabStop);
             Assert.Equal(WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX, frm.Params.Style & (WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX));
             frm.MinimizeBox = false;
             Assert.Equal(WS_SYSMENU | WS_MAXIMIZEBOX, frm.Params.Style & (WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX));
             frm.MaximizeBox = false;
+            Assert.Equal(WS_SYSMENU, frm.Params.Style & (WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX));
             frm.ControlBox = false;
             Assert.Equal(0, frm.Params.Style & (WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX));
+            frm.MaximizeBox = true;
+            Assert.Equal(WS_MAXIMIZEBOX, frm.Params.Style & (WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX));
         });
 
         // The class style belongs to the window class: an existing window gets a new handle when it changes, and only then
@@ -500,7 +506,8 @@ namespace YANF.Tests.Screen
         #endregion
 
         #region Caption
-        // A double-click on the caption maximizes and restores a borderless window (Windows only does it for a window with a caption)
+        // A double-click on the caption maximizes and restores a borderless window, and does nothing when MaximizeBox is false (the
+        // window has no maximize style then, so DefWindowProc does not maximize it either)
         [Fact]
         public void CaptionDoubleClick_MaximizesAndRestores() => Sta.Run(() =>
         {

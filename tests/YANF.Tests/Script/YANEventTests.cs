@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Drawing;
+using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using Xunit;
@@ -178,36 +180,93 @@ namespace YANF.Tests.Script
     }
 
     /// <summary>
-    /// Counts the handlers subscribed to an event of a component (its key in Component.Events is a private static field:
-    /// EventXxx or EVENT_XXX on .NET Framework, s_xxxEvent on .NET, XxxEvent on mono).
+    /// The handlers subscribed to an event of a component. The key of an event in Component.Events is a private static field whose
+    /// name differs between .NET Framework, .NET and mono, and between the events of one runtime (a guessed name picked a key that
+    /// VisibleChanged does not use on .NET Framework 4.8.1), so the key is found instead: a probe handler is subscribed through the
+    /// event itself on a blank instance of the type, and the key is the static field of the type hierarchy under which Events stores it.
     /// </summary>
     internal static class Handlers
     {
-        public static int Count(Component component, string eventName)
-        {
-            var list = Priv.Property<EventHandlerList>(component, "Events");
-            return list[Key(component.GetType(), eventName)]?.GetInvocationList().Length ?? 0;
-        }
+        private const BindingFlags STATIC = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly;
+        private static readonly ConcurrentDictionary<(Type, string), object> _keys = new();
 
-        private static object Key(Type type, string eventName)
+        /// <summary>
+        /// Number of handlers of the event; with <paramref name="declaredBy"/>, only the handlers whose method that type declares (for
+        /// example the ones a YANF helper subscribed, whatever the runtime itself or the test subscribed besides).
+        /// </summary>
+        public static int Count(Component component, string eventName, Type declaredBy = null) => Of(component, eventName).Count(d => declaredBy == null || d.Method.DeclaringType == declaredBy);
+
+        /// <summary>
+        /// The handlers of the event, in the order they are called.
+        /// </summary>
+        public static Delegate[] Of(Component component, string eventName) => Priv.Property<EventHandlerList>(component, "Events")[Key(component.GetType(), eventName)]?.GetInvocationList() ?? new Delegate[0];
+
+        // The key of the event in Component.Events (the keys are static: found once per type and event). SampleKit calls it by name
+        private static object Key(Type type, string eventName) => _keys.GetOrAdd((type, eventName), k => FindKey(k.Item1, k.Item2));
+
+        private static object FindKey(Type type, string eventName)
         {
-            var bare = eventName.EndsWith("Changed", StringComparison.Ordinal) ? eventName.Substring(0, eventName.Length - "Changed".Length) : eventName;
-            var names = new[] { "Event" + eventName, "EVENT_" + eventName.ToUpperInvariant(), eventName + "Event", "Event" + bare, Net(eventName), Net(bare) };
+            var evt = FindEvent(type, eventName) ?? throw new MissingMemberException(type.FullName, eventName);
+            // a blank instance: no constructor runs (no window, no synchronization context installed), and the add accessors of the
+            // WinForms events only store the handler in Events
+            var blank = (Component)Blank(type);
+            GC.SuppressFinalize(blank);
+            var probe = Delegate.CreateDelegate(evt.EventHandlerType, new Probe(), typeof(Probe).GetMethod(nameof(Probe.Handle)));
+            evt.AddEventHandler(blank, probe);
+            var list = Priv.Property<EventHandlerList>(blank, "Events");
             for (var t = type; t != null; t = t.BaseType)
             {
-                foreach (var name in names)
+                foreach (var f in t.GetFields(STATIC))
                 {
-                    var f = t.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
-                    if (f != null && !f.FieldType.IsValueType)
+                    // the probe is the only handler of the blank instance: the one key with an entry is the event's
+                    if (!f.FieldType.IsValueType && !f.FieldType.IsPointer && Value(f) is { } key && list[key] != null)
                     {
-                        return f.GetValue(null);
+                        return key;
                     }
                 }
             }
             throw new MissingFieldException(type.FullName, "event key of " + eventName);
         }
 
-        // .NET (Core) naming: s_mouseDownEvent, s_visibleEvent (VisibleChanged)
-        private static string Net(string name) => "s_" + char.ToLowerInvariant(name[0]) + name.Substring(1) + "Event";
+        // Value of a static field (null for one that cannot be read through reflection)
+        private static object Value(FieldInfo f)
+        {
+            try
+            {
+                return f.GetValue(null);
+            }
+            catch (Exception ex) when (ex is NotSupportedException or FieldAccessException or TargetInvocationException)
+            {
+                return null;
+            }
+        }
+
+        // The event as the type exposes it (the most derived declaration when a class hides an inherited event)
+        private static EventInfo FindEvent(Type type, string eventName)
+        {
+            for (var t = type; t != null; t = t.BaseType)
+            {
+                if (t.GetEvent(eventName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly) is { } evt)
+                {
+                    return evt;
+                }
+            }
+            return null;
+        }
+
+        // An instance of the type whose constructors have not run
+#if NETFRAMEWORK
+        private static object Blank(Type type) => System.Runtime.Serialization.FormatterServices.GetUninitializedObject(type);
+#else
+        private static object Blank(Type type) => System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(type);
+#endif
+
+        // Target of the probe handler (bound to any EventHandler-shaped delegate type: its parameters are the base types)
+        private sealed class Probe
+        {
+            public void Handle(object sender, EventArgs e)
+            {
+            }
+        }
     }
 }

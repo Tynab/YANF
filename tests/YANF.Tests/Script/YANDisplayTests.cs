@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -19,6 +18,8 @@ namespace YANF.Tests.Script
     // parentless controls and same-named non-Label controls. The label style it sets is exactly Bold or Regular, as in 1.0.1
     public class YANDisplayTests
     {
+        private static readonly bool _is_Mono = Type.GetType("Mono.Runtime") != null;
+
         [Fact]
         public void HighLight_AllocatesFontOnlyWhenTheStyleChanges() => Sta.Run(ui =>
         {
@@ -164,7 +165,6 @@ namespace YANF.Tests.Script
         [Fact]
         public void FadeToAsync_IsTimeBased_Eased_AndReachesTheTarget() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             var frm = ui.Show();
             var samples = new List<double>();
@@ -197,7 +197,6 @@ namespace YANF.Tests.Script
         [Fact]
         public void FadeToAsync_WithoutAnimation_CompletesAtOnce_AndClamps() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             var frm = ui.Show();
             YANDisplay.UIEffectsOverride = true;
             var fade = frm.FadeToAsync(0.5, 0);
@@ -219,7 +218,6 @@ namespace YANF.Tests.Script
         [Fact]
         public void FadeToAsync_FormDisposedBeforeOrDuringTheFade_CompletesQuietly() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             using var gone = NewForm();
             gone.Dispose();
@@ -239,7 +237,6 @@ namespace YANF.Tests.Script
         [Fact]
         public void EnableFade_StartsTransparent_AndFadesInToTheDesignedOpacity() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             using var frm = NewForm(0.8);
             frm.EnableFade(80, 60);
@@ -293,7 +290,6 @@ namespace YANF.Tests.Script
         [Fact]
         public void EnableFade_HiddenDuringTheFadeIn_StopsAndFadesInAgainWhenShown() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             using var frm = NewForm();
             frm.EnableFade(400, 50);
@@ -323,7 +319,6 @@ namespace YANF.Tests.Script
         [Fact]
         public void EnableFade_NonModalClose_FadesOutThenCloses() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             using var frm = NewForm();
             frm.EnableFade(30, 150);
@@ -358,7 +353,6 @@ namespace YANF.Tests.Script
         [Fact]
         public void EnableFade_FormWithOwnedForms_ClosesWithoutTheFade() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             using var owner = NewForm();
             owner.EnableFade(20, 200);
@@ -383,7 +377,6 @@ namespace YANF.Tests.Script
         [Fact]
         public void EnableFade_KeepsTheModalDialogResult() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             // DialogResult set as soon as the dialog is shown (during the fade-in)
             using (var dlg = NewForm())
@@ -419,7 +412,6 @@ namespace YANF.Tests.Script
         [Fact]
         public void EnableFade_ModalDialog_CanBeShownAgain() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             foreach (var fadeIn in new[] { 40, 0 })
             {
@@ -452,7 +444,6 @@ namespace YANF.Tests.Script
         [Fact]
         public void EnableFade_ModalSecondCloseCancelled_FadesBackIn_ThenCloses() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             using var dlg = NewForm();
             dlg.EnableFade(30, 60);
@@ -505,7 +496,6 @@ namespace YANF.Tests.Script
         {
             YANDisplay.UIEffectsOverride = true;
             using var frm = NewForm(0.8);
-            var before = HandlerCounts(frm);
             var previous = System.ComponentModel.LicenseManager.CurrentContext;
             // what the Visual Studio designer sets while it runs the constructor of a base form
             System.ComponentModel.LicenseManager.CurrentContext = new System.ComponentModel.Design.DesigntimeLicenseContext();
@@ -518,7 +508,7 @@ namespace YANF.Tests.Script
                 System.ComponentModel.LicenseManager.CurrentContext = previous;
             }
             Assert.Equal(0.8, frm.Opacity, 3);
-            Assert.Equal(before, HandlerCounts(frm));
+            Assert.Equal(new[] { 0, 0, 0 }, HandlerCounts(frm));
             // at run time the same call makes the form transparent until it is shown
             frm.EnableFade(40, 40);
             Assert.Equal(0, frm.Opacity, 3);
@@ -528,16 +518,14 @@ namespace YANF.Tests.Script
         [Fact]
         public void EnableFade_Twice_SubscribesOnce() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             using var frm = NewForm();
-            var before = HandlerCounts(frm);
             frm.EnableFade(40, 40);
             frm.EnableFade(40, 60);
-            Assert.Equal(before.Select(n => n + 1), HandlerCounts(frm));
+            Assert.Equal(new[] { 1, 1, 1 }, HandlerCounts(frm));
             frm.Show();
             frm.EnableFade(30, 60);
-            Assert.Equal(before.Select(n => n + 1), HandlerCounts(frm));
+            Assert.Equal(new[] { 1, 1, 1 }, HandlerCounts(frm));
             Assert.True(PumpUntil(() => frm.Opacity >= 1 - 1e-6));
             var closed = 0;
             frm.FormClosed += (_, _) => closed++;
@@ -553,7 +541,6 @@ namespace YANF.Tests.Script
         [InlineData("in Load")]
         public void EnableFade_CloseCancelledByAnotherHandler_StaysCancelled(string when) => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             using var frm = NewForm();
             var cancel = true;
@@ -592,7 +579,6 @@ namespace YANF.Tests.Script
         [Fact]
         public void EnableFade_SecondCloseCancelled_FadesBackIn() => Sta.Run(ui =>
         {
-            using var context = UiContext.Install();
             YANDisplay.UIEffectsOverride = true;
             using var frm = NewForm();
             frm.EnableFade(30, 60);
@@ -614,6 +600,148 @@ namespace YANF.Tests.Script
             Assert.True(PumpUntil(() => frm.Opacity >= 1 - 1e-6), "left at opacity " + frm.Opacity);
             Assert.False(frm.IsDisposed);
             Assert.True(frm.Visible);
+            ui.ThrowIfFailed();
+        });
+
+        // Without a WinForms SynchronizationContext: WinForms itself leaves a plain (thread-pool) context on the thread once its outermost
+        // message loop ends, so after every Application.DoEvents or ShowDialog run outside Application.Run (between the pumps of these
+        // tests on .NET). 2.0.0 awaited Task.Delay between frames, so its fades and the postponed close then ran on thread-pool threads:
+        // with the cross-thread check on (as in the sample's tests) the fade-out threw there and the form never closed, and a fade-in
+        // started there on a form being disposed threw ObjectDisposedException from an async void method, which killed the process.
+        // The frames run from the form's own message loop now: nothing moves while its thread does not pump messages
+        [Fact]
+        public void EnableFade_WithoutAWinFormsContext_FadesAndClosesOnTheFormThread() => Sta.Run(ui =>
+        {
+            YANDisplay.UIEffectsOverride = true;
+            using var frm = NewForm();
+            frm.EnableFade(80, 120);
+            var closed = 0;
+            var closedOpacity = -1d;
+            frm.FormClosed += (_, _) =>
+            {
+                closed++;
+                closedOpacity = frm.Opacity;
+            };
+            using var pool = PoolContext.Install();
+            frm.Show();
+            var shown = frm.Opacity;
+            Thread.Sleep(200);
+            Assert.Equal(shown, frm.Opacity, 6);
+            Assert.True(PumpUntil(() => frm.Opacity >= 1 - 1e-6), "did not fade in: " + frm.Opacity);
+            frm.Close();
+            var closing = frm.Opacity;
+            Thread.Sleep(250);
+            Assert.Equal(closing, frm.Opacity, 6);
+            Assert.False(frm.IsDisposed, "closed without the fade-out");
+            Assert.True(PumpUntil(() => frm.IsDisposed), "never closed");
+            Assert.Equal(1, closed);
+            Assert.Equal(0, closedOpacity, 3);
+            ui.ThrowIfFailed();
+        });
+
+        // The same for a modal dialog: the postponed close keeps the DialogResult
+        [Fact]
+        public void EnableFade_WithoutAWinFormsContext_ModalDialogKeepsItsResult() => Sta.Run(ui =>
+        {
+            YANDisplay.UIEffectsOverride = true;
+            using var dlg = NewForm();
+            dlg.EnableFade(40, 80);
+            var closing = 0;
+            var closedOpacity = -1d;
+            dlg.FormClosing += (_, _) => closing++;
+            dlg.FormClosed += (_, _) => closedOpacity = dlg.Opacity;
+            using var pool = PoolContext.Install();
+            using (var closer = CloseWhenOpaque(dlg, () => dlg.DialogResult = Yes))
+            {
+                Assert.Equal(Yes, ShowDialogGuarded(dlg));
+            }
+            Assert.Equal(2, closing);
+            Assert.Equal(0, closedOpacity, 3);
+            ui.ThrowIfFailed();
+        });
+
+        // Still without a WinForms context: forms disposed while they fade in, while they fade out for a postponed close, and just after
+        // a FormClosing handler cancelled the second close (the fade-in that shows the form again has just started: the 2.0.0 crash).
+        // Their fades end quietly, without a frame, a close or an exception once they are disposed
+        [Fact]
+        public void EnableFade_WithoutAWinFormsContext_FormDisposedWhileFading_IsLeftAlone() => Sta.Run(ui =>
+        {
+            YANDisplay.UIEffectsOverride = true;
+            using var fadingIn = NewForm();
+            using var fadingOut = NewForm();
+            using var vetoed = NewForm();
+            using var pool = PoolContext.Install();
+            var closed = 0;
+            foreach (var frm in new[] { fadingIn, fadingOut, vetoed })
+            {
+                frm.FormClosed += (_, _) => closed++;
+            }
+            fadingIn.EnableFade(400, 300);
+            fadingIn.Show();
+            Assert.True(PumpUntil(() => fadingIn.Opacity > 0), "did not start fading in");
+            Assert.True(fadingIn.Opacity < 1, "faded in already");
+            fadingIn.Dispose();
+            fadingOut.EnableFade(30, 400);
+            fadingOut.Show();
+            Assert.True(PumpUntil(() => fadingOut.Opacity >= 1 - 1e-6), "did not fade in: " + fadingOut.Opacity);
+            fadingOut.Close();
+            Assert.True(PumpUntil(() => fadingOut.Opacity < 1), "did not start fading out");
+            Assert.False(fadingOut.IsDisposed, "closed without the fade-out");
+            Assert.True(fadingOut.Opacity > 0, "faded out already");
+            fadingOut.Dispose();
+            vetoed.EnableFade(300, 30);
+            vetoed.Show();
+            Assert.True(PumpUntil(() => vetoed.Opacity >= 1 - 1e-6), "did not fade in: " + vetoed.Opacity);
+            var asked = 0;
+            vetoed.FormClosing += (_, e) =>
+            {
+                if (!e.Cancel)
+                {
+                    asked++;
+                    e.Cancel = true;
+                }
+            };
+            vetoed.Close();
+            Assert.True(PumpUntil(() => asked == 1), "second close not raised");
+            Assert.False(vetoed.IsDisposed);
+            // the fade-in that shows it again waits for the message loop too
+            var vetoedOpacity = vetoed.Opacity;
+            Thread.Sleep(100);
+            Assert.Equal(vetoedOpacity, vetoed.Opacity, 6);
+            vetoed.Dispose();
+            var left = new[] { fadingIn.Opacity, fadingOut.Opacity, vetoed.Opacity };
+            PumpFor(400);
+            Assert.Equal(left, new[] { fadingIn.Opacity, fadingOut.Opacity, vetoed.Opacity });
+            // and no postponed close ran on them (Dispose itself raises no FormClosed)
+            Assert.Equal(0, closed);
+            ui.ThrowIfFailed();
+        });
+
+        // FadeToAsync without a WinForms context: the frames come from the form's message loop, and an await of the task resumes on the
+        // form's thread (2.0.0 resumed on a thread-pool thread, which then touched the form from there)
+        [Fact]
+        public void FadeToAsync_WithoutAWinFormsContext_RunsAndResumesOnTheFormThread() => Sta.Run(ui =>
+        {
+            YANDisplay.UIEffectsOverride = true;
+            using var frm = NewForm();
+            frm.Show();
+            using var pool = PoolContext.Install();
+            var thread = Thread.CurrentThread;
+            Thread resumedOn = null;
+            async Task FadeTwiceAsync()
+            {
+                await frm.FadeToAsync(0.3, 120);
+                resumedOn = Thread.CurrentThread;
+                await frm.FadeToAsync(0.6, 60);
+            }
+            var fade = FadeTwiceAsync();
+            var start = frm.Opacity;
+            Thread.Sleep(200);
+            Assert.Equal(start, frm.Opacity, 6);
+            Assert.True(PumpUntil(() => fade.IsCompleted), "the fade did not complete");
+            Assert.Equal(TaskStatus.RanToCompletion, fade.Status);
+            Assert.Same(thread, resumedOn);
+            Assert.Equal(0.6, frm.Opacity, 3);
             ui.ThrowIfFailed();
         });
 
@@ -788,47 +916,39 @@ namespace YANF.Tests.Script
             return timer;
         }
 
-        // Makes awaits resume on the test thread. .NET Framework gives every UI thread its own WindowsFormsSynchronizationContext
-        // marshaling control; mono keeps one per process (made by the first UI thread, long gone for later tests), so a continuation
-        // would never run: for the test, point mono's shared control at a control of this thread (a no-op on .NET Framework)
-        private sealed class UiContext : IDisposable
+        // The UI thread as WinForms leaves it once its outermost message loop has ended (Application.DoEvents or ShowDialog outside
+        // Application.Run): a plain SynchronizationContext, which runs awaited continuations on the thread pool. AutoInstall off keeps it
+        // current for the whole test (the next control or message loop would install a WinForms context again for a while). On .NET the
+        // cross-thread check is on, as under a debugger, so a form touched from a pool thread throws (mono's own X11 driver trips it)
+        private sealed class PoolContext : IDisposable
         {
-            private static readonly FieldInfo _monoInvokeControl = typeof(WindowsFormsSynchronizationContext).GetField("invoke_control", BindingFlags.NonPublic | BindingFlags.Static);
-            private readonly System.Windows.Forms.Control _target = new();
-            private readonly object _previous;
+            private readonly SynchronizationContext _previous = SynchronizationContext.Current;
+            private readonly bool _autoInstall = WindowsFormsSynchronizationContext.AutoInstall;
+            private readonly bool _crossThreadCheck = System.Windows.Forms.Control.CheckForIllegalCrossThreadCalls;
 
-            private UiContext()
+            private PoolContext()
             {
-                _ = _target.Handle;
-                if (SynchronizationContext.Current is not WindowsFormsSynchronizationContext)
-                {
-                    SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
-                }
-                if (_monoInvokeControl != null)
-                {
-                    _previous = _monoInvokeControl.GetValue(null);
-                    _monoInvokeControl.SetValue(null, _target);
-                }
+                WindowsFormsSynchronizationContext.AutoInstall = false;
+                SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+                System.Windows.Forms.Control.CheckForIllegalCrossThreadCalls = !_is_Mono;
             }
 
-            public static UiContext Install() => new();
+            public static PoolContext Install() => new();
 
             public void Dispose()
             {
-                if (_monoInvokeControl != null && ReferenceEquals(_monoInvokeControl.GetValue(null), _target))
-                {
-                    _monoInvokeControl.SetValue(null, _previous);
-                }
-                _target.Dispose();
+                System.Windows.Forms.Control.CheckForIllegalCrossThreadCalls = _crossThreadCheck;
+                SynchronizationContext.SetSynchronizationContext(_previous);
+                WindowsFormsSynchronizationContext.AutoInstall = _autoInstall;
             }
         }
 
-        // Handlers on the events EnableFade uses (mono's Form subscribes to its own VisibleChanged, so compare with a baseline)
+        // YANDisplay's handlers on the events EnableFade uses (only those: mono's Form subscribes to its own VisibleChanged)
         private static int[] HandlerCounts(Form frm) => new[]
         {
-            Handlers.Count(frm, nameof(Form.VisibleChanged)),
-            Handlers.Count(frm, nameof(Form.FormClosing)),
-            Handlers.Count(frm, nameof(Form.FormClosed))
+            Handlers.Count(frm, nameof(Form.VisibleChanged), typeof(YANDisplay)),
+            Handlers.Count(frm, nameof(Form.FormClosing), typeof(YANDisplay)),
+            Handlers.Count(frm, nameof(Form.FormClosed), typeof(YANDisplay))
         };
     }
 }

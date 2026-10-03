@@ -171,8 +171,8 @@ namespace YANF.Tests.Samples
             using var boxes = new BoxWatcher(box => box.Hide());
             var values = new List<string>();
             var sw = Stopwatch.StartNew();
-            // an async void handler: returns at its first await
-            Priv.Call(frm, handler, frm, EventArgs.Empty);
+            // an async void handler, raised from the message loop like a click (see Dispatch): returns at its first await
+            Dispatch(frm, () => Priv.Call(frm, handler, frm, EventArgs.Empty));
             Assert.False(IsEnabled(frm), "the form took input while the work ran");
             YANOverlayScreen scr = null;
             Assert.True(PumpUntil(() => (scr = OpenScreens().OfType<YANOverlayScreen>().FirstOrDefault(s => s.Visible)) != null), "no screen was shown");

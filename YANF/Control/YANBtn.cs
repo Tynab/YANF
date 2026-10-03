@@ -392,7 +392,7 @@ public partial class YANBtn : Button, IButtonControl
         var rectSurface = ClientRectangle;
         // a rounded border lies inside the ring (half its size, rounded up); without a border the cue keeps its 1.x place
         var inset = (_is_Rounded && _deviceBorderSize > 0 ? _deviceRing : 0) + _deviceBorderSize + LogicalToDevice(FOCUS_CUE_GAP, dpi);
-        // whole-pixel coordinates keep the one-pixel dotted line sharp (GDI+ centres pixels on whole coordinates)
+        // on whole-pixel coordinates the one-pixel dotted line covers a single row or column (GDI+ centres pixels on whole coordinates)
         var rectCue = new RectangleF(rectSurface.X + inset, rectSurface.Y + inset, rectSurface.Width - 2 * inset - 1, rectSurface.Height - 2 * inset - 1);
         using var pathCue = RoundedRect(rectCue, _is_Rounded ? _deviceRadius - inset : 0);
         if (pathCue == null)
@@ -403,8 +403,10 @@ public partial class YANBtn : Button, IButtonControl
         {
             DashStyle = Dot
         };
+        // whole-pixel dots, rounded or not, as Windows draws its focus rectangles: anti-aliased, a dot that does not start on a pixel
+        // edge (where it starts depends on the length GDI+ gives the rounded corners) blurs over two half-colored pixels
         var smoothing = graphics.SmoothingMode;
-        graphics.SmoothingMode = _is_Rounded ? SmoothingMode.AntiAlias : SmoothingMode.None;
+        graphics.SmoothingMode = SmoothingMode.None;
         graphics.DrawPath(penCue, pathCue);
         graphics.SmoothingMode = smoothing;
     }

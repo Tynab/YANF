@@ -106,7 +106,8 @@ namespace YANF.Tests.Samples
 
         // 1.1: EnableFade instead of the blocking FadeIn/FadeOut calls in Shown and FormClosing. 1.0 designed the forms at opacity 0
         // for FadeIn; they are designed opaque now (EnableFade makes them transparent until shown), so they also show without
-        // Windows animations
+        // Windows animations. LoaderKit.Run turns the cross-thread check on: 2.0.0 ran the fade-out on a thread-pool thread once
+        // Application.DoEvents had left WinForms' thread-pool context on the thread, so it threw there and the form never closed
         [Theory]
         [InlineData(typeof(Demo1))]
         [InlineData(typeof(Demo2))]

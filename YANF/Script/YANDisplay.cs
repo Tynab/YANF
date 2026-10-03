@@ -106,9 +106,11 @@ namespace YANF.Script
         /// <returns>A task that completes when the form has reached the target opacity, or earlier when the form is disposed.</returns>
         /// <remarks>
         /// The opacity follows an ease-out curve over the elapsed time (measured with a <see cref="Stopwatch"/>), so the length of the
-        /// fade does not depend on the timer resolution. Between frames it awaits a short <see cref="Task.Delay(int)"/>, so the message
-        /// loop keeps running (input, painting, other forms). The target is applied at once when <paramref name="duration"/> is 0 or less
-        /// or when Windows animation effects are turned off (<see cref="SystemInformation.UIEffectsEnabled"/> or the Windows 10/11
+        /// fade does not depend on the timer resolution. The frames are applied by a Windows Forms timer on the form's thread, so the
+        /// message loop keeps running between them (input, painting, other forms) and the fade does not depend on the current
+        /// <see cref="SynchronizationContext"/>. The task completes on that thread too: an await resumes through the context it
+        /// captured, or on that thread when it captured none. The target is applied at once when <paramref name="duration"/> is 0 or
+        /// less or when Windows animation effects are turned off (<see cref="SystemInformation.UIEffectsEnabled"/> or the Windows 10/11
         /// "Animation effects" switch). A disposed form is left
         /// alone, including one disposed during the fade. Unlike <see cref="FadeIn"/> and <see cref="FadeOut"/>, this method returns at
         /// once: await the task where the next step must wait for the fade.
@@ -180,7 +182,7 @@ namespace YANF.Script
             frm.VisibleChanged += Fade_VisibleChanged;
             frm.FormClosing += Fade_FormClosing;
             frm.FormClosed += Fade_FormClosed;
-            if (frm.IsDisposed)
+            if (!IsAlive(frm))
             {
                 return;
             }
@@ -189,7 +191,7 @@ namespace YANF.Script
                 // not shown yet: start transparent (the fade-in starts when the form is shown)
                 if (CanFade(frm, fadeInDuration))
                 {
-                    frm.Opacity = 0;
+                    TrySetOpacity(frm, 0);
                     state.IsTransparent = true;
                 }
                 else if (frm.Opacity <= 0)
@@ -288,56 +290,53 @@ namespace YANF.Script
             }
         }
 
-        // Time-based ease-out fade to an already clamped opacity; stops when the form is disposed or the token is cancelled
-        private static async Task FadeAsync(Form frm, double opacity, int duration, CancellationToken token)
+        // Time-based ease-out fade to an already clamped opacity, on the form's thread (see Fader); stops when the form is disposed or
+        // the token is cancelled. done (optional) runs on the form's thread once the fade is over, never inside this call
+        private static Task FadeAsync(Form frm, double opacity, int duration, CancellationToken token, Action done = null)
         {
-            if (!IsAlive(frm) || token.IsCancellationRequested)
-            {
-                return;
-            }
-            var from = frm.Opacity;
-            if (duration <= 0 || !IsAnimated || from == opacity)
-            {
-                frm.Opacity = opacity;
-                return;
-            }
-            var clock = Stopwatch.StartNew();
-            while (true)
-            {
-                var t = Min(1d, clock.Elapsed.TotalMilliseconds / duration);
-                // ease-out cubic; the last frame sets the exact target
-                frm.Opacity = t < 1d ? from + (opacity - from) * (1d - Pow(1d - t, 3)) : opacity;
-                if (t >= 1d)
-                {
-                    return;
-                }
-                // yields to the message loop between frames
-                await Task.Delay(FADE_FRAME_MS);
-                if (!IsAlive(frm) || token.IsCancellationRequested)
-                {
-                    return;
-                }
-            }
+            var isInstant = duration <= 0 || !IsAnimated || frm.Opacity == opacity;
+            return new Fader(frm, opacity, isInstant ? 0 : duration, token, done).Start();
         }
 
         // Form still usable for Opacity changes
         private static bool IsAlive(Form frm) => !frm.IsDisposed && !frm.Disposing;
 
+        // Set the opacity of a form that is still usable; false when it is disposed or being disposed, before or during the call. On
+        // .NET a form that stops being layered reads its window style, which creates the handle: that throws for a disposed form
+        // (ObjectDisposedException is an InvalidOperationException)
+        private static bool TrySetOpacity(Form frm, double opacity)
+        {
+            if (!IsAlive(frm))
+            {
+                return false;
+            }
+            try
+            {
+                frm.Opacity = opacity;
+                return true;
+            }
+            catch (InvalidOperationException) when (!IsAlive(frm))
+            {
+                return false;
+            }
+        }
+
         // Opacity only has an effect on top-level windows (not on MDI children) and only when animations are on
         private static bool CanFade(Form frm, int duration) => duration > 0 && frm.TopLevel && IsAnimated;
 
         // Start (or restart) the EnableFade fade-in from opacity 0; without a fade-in, just show the form at its target opacity
-        private static async void StartFadeIn(Form frm, FadeState state)
+        private static void StartFadeIn(Form frm, FadeState state)
         {
             var token = state.Restart();
             state.IsTransparent = false;
             if (!CanFade(frm, state.InDuration))
             {
-                frm.Opacity = state.Target;
-                return;
+                TrySetOpacity(frm, state.Target);
             }
-            frm.Opacity = 0;
-            await FadeAsync(frm, state.Target, state.InDuration, token);
+            else if (TrySetOpacity(frm, 0))
+            {
+                _ = FadeAsync(frm, state.Target, state.InDuration, token);
+            }
         }
 
         // EnableFade: fade in each time the form is shown (before it is painted: WinForms raises VisibleChanged from WM_SHOWWINDOW)
@@ -372,7 +371,7 @@ namespace YANF.Script
         }
 
         // EnableFade: postpone an approved close until the form has faded out, then close it again
-        private static async void Fade_FormClosing(object sender, FormClosingEventArgs e)
+        private static void Fade_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (sender is not Form frm || !_fades.TryGetValue(frm, out var state))
             {
@@ -418,29 +417,20 @@ namespace YANF.Script
             var session = state.Session;
             e.Cancel = true;
             state.IsFadingOut = true;
-            try
-            {
-                var fade = FadeAsync(frm, 0, state.OutDuration, state.Restart());
-                if (fade.IsCompleted)
-                {
-                    // never close again from inside this FormClosing call
-                    await Task.Yield();
-                }
-                await fade;
-            }
-            finally
-            {
-                // (also after a failure: a form stuck in this state could never be closed by the user)
-                if (session == state.Session)
-                {
-                    state.IsFadingOut = false;
-                }
-            }
+            // the fade timer closes the form again once the fade is over (also after a failed frame: a form stuck fading out could never
+            // be closed by the user), never from inside this FormClosing call
+            _ = FadeAsync(frm, 0, state.OutDuration, state.Restart(), () => CloseFaded(frm, state, session, isModal, result));
+        }
+
+        // EnableFade: the fade-out of a postponed close is over (called by the fade timer, on the form's thread): close the form again
+        private static void CloseFaded(Form frm, FadeState state, int session, bool isModal, DialogResult result)
+        {
             if (session != state.Session)
             {
                 // shown again meanwhile: that showing has its own fade-in
                 return;
             }
+            state.IsFadingOut = false;
             // from here the form stays transparent unless it is shown again or the second close is cancelled
             state.IsTransparent = true;
             // unless the form was closed, disposed or taken out of its modal loop another way meanwhile
@@ -517,6 +507,122 @@ namespace YANF.Script
                 _cts?.Cancel();
                 _cts = new CancellationTokenSource();
                 return _cts.Token;
+            }
+        }
+
+        // One fade of FadeAsync. The frames are applied by a Windows Forms timer, whose Tick comes through the message loop of the
+        // thread that started it (the form's) whatever SynchronizationContext.Current is. Awaited delays would resume on thread-pool
+        // threads when there is no WinForms context: WinForms itself leaves a thread-pool context on the thread once its outermost
+        // message loop ends (Application.DoEvents or ShowDialog run outside Application.Run), and from there the fade and the postponed
+        // close would touch the form from another thread, even after it was disposed
+        private sealed class Fader
+        {
+            private readonly Form _frm;
+            private readonly double _from;
+            private readonly double _to;
+            private readonly int _duration;
+            private readonly CancellationToken _token;
+            private readonly Action _done;
+            private readonly Stopwatch _clock = new();
+            private readonly TaskCompletionSource<bool> _tcs = new();
+            private System.Windows.Forms.Timer _timer;
+            private Exception _error;
+            private bool _is_Over;
+
+            public Fader(Form frm, double opacity, int duration, CancellationToken token, Action done)
+            {
+                _frm = frm;
+                _from = frm.Opacity;
+                _to = opacity;
+                _duration = duration;
+                _token = token;
+                _done = done;
+            }
+
+            // Apply the first frame now and the next ones from the timer (which also reports the end when done is given, so that done
+            // never runs inside the caller's event handler)
+            public Task Start()
+            {
+                _clock.Start();
+                Step();
+                if (_is_Over && _done is null)
+                {
+                    Complete();
+                }
+                else
+                {
+                    _timer = new System.Windows.Forms.Timer
+                    {
+                        Interval = FADE_FRAME_MS
+                    };
+                    _timer.Tick += Timer_Tick;
+                    _timer.Start();
+                }
+                return _tcs.Task;
+            }
+
+            // Next frame, or the end of the fade
+            private void Timer_Tick(object sender, EventArgs e)
+            {
+                if (!_is_Over)
+                {
+                    Step();
+                }
+                if (_is_Over)
+                {
+                    _timer.Dispose();
+                    Complete();
+                    _done?.Invoke();
+                }
+            }
+
+            // Apply the frame for the elapsed time (ease-out cubic; the last frame sets the exact target). Over once the target is
+            // set, the token is cancelled or the form is gone; a failed frame ends the fade too, the task then carries the exception
+            private void Step()
+            {
+                if (_token.IsCancellationRequested || !IsAlive(_frm))
+                {
+                    _is_Over = true;
+                    return;
+                }
+                if (_frm.RecreatingHandle)
+                {
+                    // never while the window is recreated (the setter could create the new handle too early): the next frame
+                    return;
+                }
+                var t = _duration > 0 ? Min(1d, _clock.Elapsed.TotalMilliseconds / _duration) : 1d;
+                try
+                {
+                    _is_Over = !TrySetOpacity(_frm, t < 1d ? _from + (_to - _from) * (1d - Pow(1d - t, 3)) : _to) || t >= 1d;
+                }
+                catch (Exception ex)
+                {
+                    _error = ex;
+                    _is_Over = true;
+                }
+            }
+
+            // Complete the task with no synchronization context current, so that every await of it resumes on this (the form's)
+            // thread: one that captured a context is posted to it, one that captured none runs here, not on the thread pool
+            private void Complete()
+            {
+                var context = SynchronizationContext.Current;
+                SynchronizationContext.SetSynchronizationContext(null);
+                try
+                {
+                    if (_error is null)
+                    {
+                        _tcs.TrySetResult(true);
+                    }
+                    else
+                    {
+                        _tcs.TrySetException(_error);
+                    }
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(context);
+                }
             }
         }
         #endregion
