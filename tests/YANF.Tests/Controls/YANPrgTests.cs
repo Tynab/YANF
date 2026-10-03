@@ -76,11 +76,12 @@ namespace YANF.Tests.Controls
         });
 
         // In the sliding style the band of the value over the progress shows the parent again: its own pixels (lime), where 1.x
-        // filled it with Parent.BackColor (white)
+        // filled it with Parent.BackColor (white). The bars are taller than the band (the text height + 2) with any default font:
+        // Segoe UI 9pt on .NET, whose band nearly fills a 20 px bar, Microsoft Sans Serif 8.25pt on .NET Framework
         [Fact]
         public void Sliding_BandOverTheProgress_ShowsTheParent() => Sta.Run(ui =>
         {
-            var p = new YANPrg { Size = new Size(200, 20), ChannelHeight = 20, SliderHeight = 20, ChannelColor = Color.Red, SliderColor = Color.Blue, TextAlign = PrgTextPosition.Sliding };
+            var p = new YANPrg { Size = new Size(200, 40), ChannelHeight = 40, SliderHeight = 40, ChannelColor = Color.Red, SliderColor = Color.Blue, TextAlign = PrgTextPosition.Sliding };
             p.Value = 50;
             var pnl = new PaintingTests.LimePanel();
             ui.Host.Controls.Add(pnl);
@@ -91,6 +92,8 @@ namespace YANF.Tests.Controls
             var o = Ui.ClientOrigin(p);
             PaintingTests.AssertColor(Color.Lime, bmp.GetPixel(o.X + 2, o.Y + 2), "band over the progress, left of the value");
             PaintingTests.AssertColor(Color.Red, bmp.GetPixel(o.X + 150, o.Y + 2), "channel right of the progress");
+            var band = TextRenderer.MeasureText("50%", p.Font).Height + 2;
+            Assert.True(band < p.ClientSize.Height - 1, $"the {band} px band leaves no slider row below it");
             PaintingTests.AssertColor(Color.Blue, bmp.GetPixel(o.X + 2, o.Y + p.ClientSize.Height - 1), "slider below the band");
         });
 
